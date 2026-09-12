@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@noble/hashes": "1.8.0",
+    "@polkadot-community-foundation/polkadot-app-deploy": "0.16.1",
     "@polkadot-labs/hdkd": "0.0.28",
     "@polkadot-labs/hdkd-helpers": "0.0.30",
     "ethers": "^6.13.0"

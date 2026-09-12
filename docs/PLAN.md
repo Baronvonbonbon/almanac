@@ -63,6 +63,7 @@ re-checks the ones marked with a check ID.
 | The 2026-09-08 devnet update required a reinstall; accounts did not carry over | Parity release notes, press coverage | Backups are not optional, and restore must not depend on the old account |
 | `pad` registers any eligible name it is pointed at; republishing needs a phone signature in an interactive terminal | broadside `DEPLOY.md` | `tools/whois.mjs` for name checks; deploys run by hand |
 | `pad login` cannot pair with the current Polkadot app ("Mode BIGINT is not implemented"); with no session `pad` signs with its default key, the public dev phrase, which would keep the name | Our deploy attempts, 2026-09-11; [pad#231](https://github.com/paritytech/polkadot-app-deploy/issues/231) (pairing), [pad#234](https://github.com/paritytech/polkadot-app-deploy/issues/234) (fallback, filed by us) | Publish with a local deploy key (`tools/deploy-key.mjs`), then `pad transfer` the name to the phone account once pairing works. `deploy` refuses to run with no owner |
+| A deploy key is not authorized to store on devnet Bulletin, and devnet declares no authorizer to ask; `pad`'s CLI signs the upload with the owner key whenever one is set. Its shared upload pool (`//deploy/0…9` of the dev phrase) is authorized | Our first deploy, and a read-only `polkadot-app-bootstrap` status check, 2026-09-12 | `tools/deploy.mjs` calls `pad` as a library: the deploy key signs DotNS, a pool account signs the upload |
 
 ---
 

@@ -39,6 +39,10 @@ npm run deploy -w probe       # uses the deploy key automatically
 The deploy tooling lives in [`tools/`](../tools/) and is shared with the app, which publishes to the
 same name — see [One name, two bundles](#one-name-two-bundles).
 
+The deploy key signs only the name. The files are uploaded by one of `pad`'s shared upload accounts,
+because devnet does not authorize a deploy key to store on Bulletin (2026-09-12). Those accounts can
+upload and nothing else: they never own the name or change what it points to.
+
 The key's words are never printed; the file is readable only by you and lives outside the repo. Back
 it up — **it owns the name** until you hand it to your phone account, once login works again:
 

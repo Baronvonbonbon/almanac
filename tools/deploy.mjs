@@ -11,6 +11,7 @@
 // or reassigned. So this asks for the label to be typed back before doing anything.
 
 import { spawnSync } from "node:child_process";
+import { randomInt } from "node:crypto";
 import { readdirSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
@@ -73,10 +74,8 @@ if (!process.stdin.isTTY) {
 }
 
 // Who will own the name. An explicit MNEMONIC wins; otherwise the local deploy key (deploy-key.mjs),
-// if one exists; otherwise pad's login session. pad reads MNEMONIC from the environment and then
-// ignores the session entirely.
+// if one exists; otherwise pad's login session.
 const key = process.env.MNEMONIC ?? readKey();
-const env = key ? { ...process.env, MNEMONIC: key } : process.env;
 
 if (key) {
   const { ss58, h160 } = accountOf(key);
@@ -121,11 +120,44 @@ if (typed !== DOT_NAME) {
   process.exit(1);
 }
 
-// npx, not pnpm dlx: pad imports @polkadot-api/json-rpc-provider without declaring it, which npm's
-// flat node_modules satisfies and pnpm's strict layout refuses.
+// With a key, pad runs as a library rather than as its CLI. The CLI signs the Bulletin upload with the
+// owner key whenever one is set, and on devnet an owner key is not authorized to store: no authorizer
+// is declared there, so none can be requested (pad 0.16.1, 2026-09-12). pad's shared upload pool is —
+// public dev-phrase accounts //deploy/0…9, authorized by the devnet operators. So the key signs DotNS
+// and a pool account signs the upload. A pool account can spend upload quota and nothing more: it
+// never owns the name, or sets what the name points to.
+async function deployWithKey(mnemonic) {
+  process.env.PAD_TELEMETRY = "0"; // off by default in pad 0.16.1, which ships with no DSN; kept off here
+  const { derivePoolAccounts } = await import("@polkadot-community-foundation/polkadot-app-deploy");
+  const { deploy } = await import("@polkadot-community-foundation/polkadot-app-deploy/deploy");
+  const pool = derivePoolAccounts();
+  // If this one's authorization has lapsed, pad falls back to another authorized pool account.
+  const uploader = pool[randomInt(pool.length)];
+  console.log(`Upload signer: pad's pool account ${uploader.index} (${uploader.address})\n`);
+  try {
+    const result = await deploy(join(root, "dist"), DOT_NAME, {
+      mnemonic,
+      storageSigner: uploader.signer,
+      storageSignerAddress: uploader.address,
+      env: CLOUD_ENV,
+      jsMerkle: true,
+    });
+    console.log(`\nPublished ${result.fullDomain} — ${result.cid}`);
+    return 0;
+  } catch (e) {
+    console.error(`\nDeployment failed: ${e?.message ?? e}`);
+    return 1;
+  }
+}
+
+// Exit explicitly: pad can leave chain connections open after it finishes.
+if (key) process.exit(await deployWithKey(key));
+
+// No key: pad's CLI, signing with the login session. npx, not pnpm dlx: pad imports
+// @polkadot-api/json-rpc-provider without declaring it, which npm's flat node_modules satisfies and
+// pnpm's strict layout refuses.
 const r = spawnSync("npx", ["--yes", PAD, "./dist", DOT_NAME, "--env", CLOUD_ENV, "--js-merkle"], {
   cwd: root,
-  env,
   stdio: "inherit",
 });
 process.exit(r.status ?? 1);
