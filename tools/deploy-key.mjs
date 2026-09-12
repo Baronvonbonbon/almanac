@@ -8,7 +8,9 @@
 // The words are written once to KEY_FILE (mode 600, outside the repo) and never printed. Only the
 // address to fund is shown.
 //
-// Usage:  npm run deploy-key -w probe     create the key if there is none, and print its address
+// Usage, from the repo root:
+//   npm run deploy-key                    create the key if there is none, and print its address
+//   node tools/deploy-key.mjs --check     only check the derivation still matches pad's (CI)
 
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { sr25519CreateDerive } from "@polkadot-labs/hdkd";
@@ -48,6 +50,10 @@ export function readKey() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  if (process.argv.includes("--check")) {
+    console.log("deploy-key: derivation matches pad's");
+    process.exit(0);
+  }
   let mnemonic = readKey();
   if (mnemonic) {
     console.log(`Using the deploy key in ${KEY_FILE}.`);

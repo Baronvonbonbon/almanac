@@ -10,7 +10,8 @@
     "test": "vitest run",
     "build": "vite build",
     "guard": "node scripts/guard-dist.mjs",
-    "check": "npm run typecheck && npm run test && npm run build && npm run guard"
+    "check": "npm run typecheck && npm run test && npm run build && npm run guard",
+    "deploy": "npm run check && node ../tools/deploy.mjs"
   },
   "dependencies": {
     "@noble/hashes": "1.8.0",

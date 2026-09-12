@@ -28,11 +28,16 @@ implemented"* (2026-09-11), and
 [paritytech/polkadot-app-deploy#231](https://github.com/paritytech/polkadot-app-deploy/issues/231)
 reports the same on iOS 0.9.2. The workaround that issue confirms is a separate key:
 
+From the repo root:
+
 ```bash
-npm run deploy-key -w probe   # creates ~/.config/almanac/deploy-key once; prints only its address
+npm run deploy-key            # creates ~/.config/almanac/deploy-key once; prints only its address
 # fund that address with test PAS on Paseo Asset Hub (faucet.polkadot.io) — about 10 PAS to register
 npm run deploy -w probe       # uses the deploy key automatically
 ```
+
+The deploy tooling lives in [`tools/`](../tools/) and is shared with the app, which publishes to the
+same name — see [One name, two bundles](#one-name-two-bundles).
 
 The key's words are never printed; the file is readable only by you and lives outside the repo. Back
 it up — **it owns the name** until you hand it to your phone account, once login works again:
@@ -47,8 +52,8 @@ MNEMONIC="$(cat ~/.config/almanac/deploy-key)" npx @polkadot-community-foundatio
 Always with `--env devnet`, which these scripts pin (`pad`'s own default is `paseo-next-v2`):
 
 ```bash
-npm run pad:login -w probe    # scan the QR code with the Polkadot app
-npm run pad:whoami -w probe   # should name your account
+npm run pad:login             # scan the QR code with the Polkadot app
+npm run pad:whoami            # should name your account
 npm run deploy -w probe
 ```
 
@@ -63,6 +68,14 @@ signing with your phone, and each step needs your approval.
 This builds, then publishes `dist/` to **`almanacapp.dot`** with `pad`. It must run in an interactive
 terminal, and asks you to type the label back first — **the first publish registers the name, and
 that is permanent.** Later publishes need a signature on your phone.
+
+### One name, two bundles
+
+The app and the probe share `almanacapp.dot` on purpose: host storage, product accounts and
+allowances all belong to the name, so the probe measures exactly what the app will get. A name
+serves one bundle at a time, so publishing one replaces the other. What each keeps on the phone
+survives the swap — the probe's journal and the app's vault use different storage keys — and
+republishing brings a bundle back. Export the probe's reports before publishing the app anyway.
 
 ## Run it on a phone
 

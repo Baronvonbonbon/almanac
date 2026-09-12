@@ -28,7 +28,7 @@ asked them to.
 | [`app/`](app/) | The app. So far: the encrypted store, predictions, and a screen that checks storage works on a phone |
 | [`probe/`](probe/) | Phase 0 device probe, published to `almanacapp.dot` |
 | [`product.mjs`](product.mjs) | The published identity, shared by the app and the probe |
-| [`tools/whois.mjs`](tools/whois.mjs) | Read-only DotNS lookup. Never registers anything |
+| [`tools/`](tools/) | `whois.mjs`, a read-only DotNS lookup; `deploy.mjs` and `deploy-key.mjs`, which publish the app or the probe |
 
 ## License
 

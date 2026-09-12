@@ -1,4 +1,7 @@
-// Publish the probe to its .dot label with pad.
+// Publish app/ or probe/ to the product's .dot name with pad.
+//
+// Usage, from the repo root:  npm run deploy -w app   or   npm run deploy -w probe
+// Each workspace checks or builds first, then runs this from its own directory.
 //
 // Interactive on purpose. Once the name is owned, re-linking it needs a phone signature and pad reads
 // the confirmation from this terminal: a closed stdin aborts, and `yes |` answers before the phone
@@ -9,13 +12,33 @@
 
 import { spawnSync } from "node:child_process";
 import { readdirSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { CLOUD_ENV, DOT_NAME } from "../product.mjs";
 import { KEY_FILE, accountOf, readKey } from "./deploy-key.mjs";
 
 const PAD = "@polkadot-community-foundation/polkadot-app-deploy@0.16.1";
-const root = resolve(import.meta.dirname, "..");
+const repo = resolve(import.meta.dirname, "..");
+
+// Per workspace: what dist/ is built from (besides ../product.mjs, which both read), a check that must
+// pass on the built dist/ whatever way this was started, and what to say before publishing.
+const TARGETS = {
+  probe: { sources: ["src", "index.html", "product.mjs"] },
+  app: {
+    sources: ["src", "index.html"],
+    // The promise of no external requests and the bundle budget, enforced at the last step too.
+    verify: ["node", ["scripts/guard-dist.mjs"]],
+    note: "If the probe is published there now, export its reports first.",
+  },
+};
+
+const root = process.cwd();
+const name = basename(root);
+const target = dirname(root) === repo ? TARGETS[name] : undefined;
+if (!target) {
+  console.error("refusing: run `npm run deploy -w app` or `npm run deploy -w probe` from the repo root");
+  process.exit(1);
+}
 
 function newest(path) {
   const s = statSync(path);
@@ -27,13 +50,21 @@ let built;
 try {
   built = statSync(join(root, "dist/index.html")).mtimeMs;
 } catch {
-  console.error("refusing: no dist/ — run `npm run build` first");
+  console.error(`refusing: no ${name}/dist — build it first`);
   process.exit(1);
 }
-const sources = Math.max(newest(join(root, "src")), newest(join(root, "product.mjs")), newest(join(root, "index.html")));
+const sources = Math.max(...[...target.sources.map((s) => join(root, s)), join(repo, "product.mjs")].map(newest));
 if (sources > built) {
-  console.error("refusing: dist/ is older than its sources — rebuild first");
+  console.error(`refusing: ${name}/dist is older than its sources — rebuild first`);
   process.exit(1);
+}
+
+if (target.verify) {
+  const [cmd, args] = target.verify;
+  if (spawnSync(cmd, args, { cwd: root, stdio: "inherit" }).status !== 0) {
+    console.error(`refusing: ${name}/dist failed its check`);
+    process.exit(1);
+  }
 }
 
 if (!process.stdin.isTTY) {
@@ -60,19 +91,27 @@ if (key) {
   const whoText = `${who.stdout ?? ""}${who.stderr ?? ""}`.trim();
   console.log(`\n${whoText}`);
   if (/could not be read|expired/i.test(whoText)) {
-    console.error("\nrefusing: pad's login session is not usable. Run `npm run pad:logout -w probe`, then `npm run pad:login -w probe`.");
+    console.error("\nrefusing: pad's login session is not usable. From the repo root: `npm run pad:logout`, then `npm run pad:login`.");
     process.exit(1);
   }
   if (/not logged in/i.test(whoText)) {
     console.error(
       "\nrefusing: not signed in and no deploy key, so pad would register the name to its public dev key." +
-        "\nSign in (`npm run pad:login -w probe`) or create a deploy key (`npm run deploy-key -w probe`).",
+        "\nFrom the repo root: sign in (`npm run pad:login`) or create a deploy key (`npm run deploy-key`).",
     );
     process.exit(1);
   }
 }
 
-console.log(`\nThis publishes ./dist to ${DOT_NAME} on ${CLOUD_ENV}.`);
+const git = (...args) => spawnSync("git", args, { cwd: repo, encoding: "utf8" }).stdout?.trim() ?? "";
+const commit = git("rev-parse", "--short", "HEAD") || "an unknown commit";
+const dirty = git("status", "--porcelain") !== "";
+
+console.log(`\nThis publishes ${name}/dist — ${commit}${dirty ? ", plus uncommitted changes" : ""} — to ${DOT_NAME} on ${CLOUD_ENV}.`);
+// app/ and probe/ share the name, and a name serves one bundle at a time. What each keeps on the phone
+// survives the swap: host storage belongs to the name, not the bundle, and their keys do not overlap.
+console.log(`${DOT_NAME} serves one bundle at a time, so this replaces whichever of the app or the probe is there now.`);
+if (target.note) console.log(target.note);
 console.log(`If ${DOT_NAME} is not yours yet, pad will REGISTER it — permanently.\n`);
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 const typed = (await rl.question(`Type ${DOT_NAME} to continue: `)).trim();

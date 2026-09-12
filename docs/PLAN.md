@@ -62,7 +62,7 @@ re-checks the ones marked with a check ID.
 | Scheduled notifications exist in the SDK: `push({ text, deeplink?, scheduledAt? })` | `product-sdk-host` 0.19.1 | Reminders are possible if they fire with the app closed (**P3**) |
 | The 2026-09-08 devnet update required a reinstall; accounts did not carry over | Parity release notes, press coverage | Backups are not optional, and restore must not depend on the old account |
 | `pad` registers any eligible name it is pointed at; republishing needs a phone signature in an interactive terminal | broadside `DEPLOY.md` | `tools/whois.mjs` for name checks; deploys run by hand |
-| `pad login` cannot pair with the current Polkadot app ("Mode BIGINT is not implemented"); with no session `pad` signs with its default key, the public dev phrase, which would keep the name | Our deploy attempts, 2026-09-11; [pad#231](https://github.com/paritytech/polkadot-app-deploy/issues/231) (pairing), [pad#234](https://github.com/paritytech/polkadot-app-deploy/issues/234) (fallback, filed by us) | Publish with a local deploy key (`probe/scripts/deploy-key.mjs`), then `pad transfer` the name to the phone account once pairing works. `deploy` refuses to run with no owner |
+| `pad login` cannot pair with the current Polkadot app ("Mode BIGINT is not implemented"); with no session `pad` signs with its default key, the public dev phrase, which would keep the name | Our deploy attempts, 2026-09-11; [pad#231](https://github.com/paritytech/polkadot-app-deploy/issues/231) (pairing), [pad#234](https://github.com/paritytech/polkadot-app-deploy/issues/234) (fallback, filed by us) | Publish with a local deploy key (`tools/deploy-key.mjs`), then `pad transfer` the name to the phone account once pairing works. `deploy` refuses to run with no owner |
 
 ---
 
@@ -130,8 +130,8 @@ by it).
 
 **Gate**
 - [ ] The vault round-trips on a device through the real host. The start screen does exactly this.
-      One name holds one bundle, so the app goes to `almanacapp.dot` once the probe's reports are
-      exported; it needs a deploy script like the probe's
+      One name holds one bundle, so the app goes to `almanacapp.dot` (`npm run deploy -w app`) once
+      the probe's reports are exported
 - [x] `dist/` fits the budget — 350 KiB of 512 KiB, no trimming needed
 - [x] The prediction engine passes fixtures: regular, irregular, PCOS-like, postpartum gap, one
       cycle, no cycles

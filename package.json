@@ -7,10 +7,17 @@
     "app"
   ],
   "scripts": {
-    "check": "npm run check -w app && npm run build -w probe",
-    "whois": "node tools/whois.mjs"
+    "check": "npm run check -w app && npm run build -w probe && node tools/deploy-key.mjs --check",
+    "whois": "node tools/whois.mjs",
+    "deploy-key": "node tools/deploy-key.mjs",
+    "pad:login": "npx --yes @polkadot-community-foundation/polkadot-app-deploy@0.16.1 login --env devnet",
+    "pad:logout": "npx --yes @polkadot-community-foundation/polkadot-app-deploy@0.16.1 logout --env devnet",
+    "pad:whoami": "npx --yes @polkadot-community-foundation/polkadot-app-deploy@0.16.1 whoami --env devnet"
   },
   "devDependencies": {
+    "@noble/hashes": "1.8.0",
+    "@polkadot-labs/hdkd": "0.0.28",
+    "@polkadot-labs/hdkd-helpers": "0.0.30",
     "ethers": "^6.13.0"
   }
 }
