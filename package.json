@@ -1,0 +1,14 @@
+{
+  "name": "almanac-workspace",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "workspaces": [
+    "probe"
+  ],
+  "scripts": {
+    "whois": "node tools/whois.mjs"
+  },
+  "devDependencies": {
+    "ethers": "^6.13.0"
+  }
+}

@@ -1,0 +1,226 @@
+# almanac — plan
+
+> The tracked plan. A phase closes when the commit that records its evidence lands — the probe
+> report, the passing run, the device recording — not when someone says it is done.
+
+| Phase | | Status |
+|---|---|---|
+| 0 | Device probe — measure the platform before building on it | 🟡 probe built, not yet run on a device |
+| 1 | Foundations — vault, data model, predictions | ⬜ |
+| 2 | Core experience — design, logging, calendar, tryout mode | ⬜ |
+| 3 | Protection — PIN, duress PIN, erase, export file, backup code | ⬜ |
+| 4 | Encrypted Bulletin backups | ⬜ |
+| 5 | Sharing — live share, timed link, printable report | ⬜ |
+| 6 | Reminders, insights, health nudges | ⬜ |
+| 7 | Production readiness | ⬜ |
+
+## What almanac is
+
+A period and cycle tracker that runs as a Product inside the Polkadot app. It is built around four
+things, in this order: **rock-solid privacy, ease of use, no technical jargon, and a soft, warm look.**
+
+The design is local-first. Polkadot delivers the app (a static bundle on Bulletin under a `.dot`
+name) and carries encrypted backups and shares. **No cycle data — encrypted or not — is ever written
+to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`](DESIGN.md) and
+[`THREAT-MODEL.md`](THREAT-MODEL.md).
+
+## Decisions
+
+| Decision | Choice |
+|---|---|
+| Name | **almanac** |
+| Labels | `almanacapp.dot` — prototype and probe, open to any account. `almanac.dot` — production, needs Full personhood. **Neither is registered yet** — registration is permanent. *Corrected 2026-09-11:* the prototype was `almanac01.dot` until `pad` refused it. `pad` requires Personhood Lite for a base of 6–8 letters with two trailing digits; only a base of 9+ letters (with or without two digits) is open to a NoStatus signer. The chain's own v2 check had said "Available to all" — `tools/whois.mjs` now prints `pad`'s rule first |
+| Environment | Products Devnet, which since the 2026-09-08 update runs on Paseo system chains: Asset Hub 1000, People 1004, Bulletin 1010 (`pad` 0.16.1 `environments.json`) |
+| Build standard | Production quality from day one. Devnet is labelled as a preview in the app, because it resets |
+| Contracts | **None** |
+| Stack | React + Vite + TypeScript. `@parity/product-sdk` 0.27, `-host` 0.19.1, `-crypto` 0.1.1, `-local-storage` 0.3.9, `-statement-store` 0.6.9. npm, not pnpm — `pad` has a phantom dependency pnpm refuses (see `broadside/docs/DEPLOY.md`) |
+| Crypto | XChaCha20-Poly1305 and HKDF-SHA256 from `@parity/product-sdk-crypto`; scrypt from `@noble/hashes` for PINs |
+| Identity | `deriveEntropy` only. **`getUserId` is never called** — it is a global handle any Product can read. Enforced in CI |
+| Optional modes | Fertility window, trying to conceive, pregnancy — all off by default |
+| Protection | Optional PIN. Optional duress PIN that opens a decoy; "also erase the real data" is a separate, informed opt-in |
+| Backups | Encrypted Bulletin backups + a backup code + an encrypted export file |
+| Sharing | Selective by category and date range. Every share expires — default 7 days, maximum 90. Revocable |
+| Web gateway | Tryout mode: sample data, nothing saved, a clear "use the Polkadot app" banner |
+| Look | Soft, warm, minimal |
+| License · language | GPL-3.0-or-later · English, with every string externalised from day one |
+
+## Constraints already known
+
+Measured in sibling repos or read from the installed SDK. Each one shaped the design; the probe
+re-checks the ones marked with a check ID.
+
+| Fact | Source | Consequence |
+|---|---|---|
+| Every host-routed signature needs a tap — `AutoSigning` is `NotAvailable` on Android and iOS | broadside Phase 1, device-measured | No chain writes in the daily flow |
+| `createLocalKvStore` throws outside a host container | broadside Phase 3, `local-storage` 0.3.9 | An in-memory host for dev and tests; the web gateway can only be a tryout |
+| `deriveEntropy` is deterministic across a full app restart and scoped per product | broadside Phase 1, device-measured | The device key regenerates from nothing (**P2** checks reinstall and a second device) |
+| `getUserId` returns a global username every Product can read | broadside Phase 1 | Never called |
+| Bulletin reads are public by CID; retention measured at ~2 weeks, while Parity's docs say content persists | sonde, broadside, le1zuxt9l `DEPLOY.md`; docs.polkadotcommunity.foundation | Everything uploaded is encrypted and padded. Ciphertext is treated as possibly permanent, and backups as possibly expiring (**P7**) |
+| A statement holds at most 512 bytes; **1024 bytes per user in total**; default TTL 30 s | `product-sdk-statement-store` 0.6.9 constants | At most two live statements per account: one sharing outbox and one backup pointer (**P9** checks the chain agrees) |
+| Statements are signed by "the product's allowance-bearing account, which [the host] picks internally" | `product-sdk-host` 0.19.1, `createProofAuthorized` | No per-share signing account on that path |
+| Product accounts derive from the **parent public key**: `deriveProductAccountPublicKey(parentPublicKey, productId, index)` | `product-sdk-keys` | Anyone who knows a user's root account can find their almanac accounts — THREAT-MODEL **R1** (**P8** checks which account really signs) |
+| Scheduled notifications exist in the SDK: `push({ text, deeplink?, scheduledAt? })` | `product-sdk-host` 0.19.1 | Reminders are possible if they fire with the app closed (**P3**) |
+| The 2026-09-08 devnet update required a reinstall; accounts did not carry over | Parity release notes, press coverage | Backups are not optional, and restore must not depend on the old account |
+| `pad` registers any eligible name it is pointed at; republishing needs a phone signature in an interactive terminal | broadside `DEPLOY.md` | `tools/whois.mjs` for name checks; deploys run by hand |
+| `pad login` cannot pair with the current Polkadot app ("Mode BIGINT is not implemented"); with no session `pad` signs with its default key, the public dev phrase, which would keep the name | Our deploy attempts, 2026-09-11; [pad#231](https://github.com/paritytech/polkadot-app-deploy/issues/231) (pairing), [pad#234](https://github.com/paritytech/polkadot-app-deploy/issues/234) (fallback, filed by us) | Publish with a local deploy key (`probe/scripts/deploy-key.mjs`), then `pad transfer` the name to the phone account once pairing works. `deploy` refuses to run with no owner |
+
+---
+
+## Phase 0 — Device probe 🟡
+
+**The riskiest assumptions, measured first.** Each answer below can change the design, so none is
+assumed. The probe is published under the prototype label — so its answers are about the same
+product identity the app will use (host local storage, product accounts and allowances are all keyed
+by it).
+
+**Produces**
+- [x] `probe/` — a Product that runs each check, keeps a journal in host local storage across runs
+      and app restarts, and exports a JSON report
+- [x] `tools/whois.mjs` — read-only DotNS lookup
+- [ ] `almanacapp.dot` registered and the probe published — by hand, needs a phone
+- [ ] `docs/PROBE-REPORT.md` — the answers, with the raw JSON reports committed next to it
+
+| ID | Question | How | Decides |
+|---|---|---|---|
+| P1 | Does host local storage survive a restart, an app update, a reinstall? How much fits? | Install marker + run history; capacity ladder 64 KiB → 4 MiB | Whether reinstall means data loss; record sizing |
+| P2 | Is `deriveEntropy` the same after a reinstall, and on a second device with the same account? | An 8-byte fingerprint of the entropy, compared by hand across runs | Whether the device key regenerates, or every restore needs the backup code |
+| P3 | Does a scheduled notification fire with the app closed? | `push` with `scheduledAt` two minutes out; confirm on next open | Reminders in v1, or later |
+| P4 | Which export paths work inside the app? | Download link, Web Share with a file, share text, clipboard, print | Export file and printable report |
+| P5 | Is host storage included in iCloud / Google device backups? | Manual: back up, restore to another phone, open the probe, read P1's marker | THREAT-MODEL R6 |
+| P6 | How large can a Bulletin upload be? | Allowance, then 1 KiB → 1 MiB ladder | Backup padding buckets |
+| P7 | How long does Bulletin keep data? | Re-fetch every recorded CID over at least three weeks | Backup schedule and the status wording |
+| P8 | Which account signs uploads and statements, and can it be derived from the root account? | Compare the selected account, product accounts 0–2, locally derived keys, and the proof signer | THREAT-MODEL R1 |
+| P9 | Statement store: longest TTL, channel replacement, per-account quota, delivery to another phone | TTL ladder 1 h → 90 d; A-then-B on one channel; 400-byte statements until refused; listen on a shared code from a second phone | Revocation design and the backup pointer |
+| P10 | What can the web gateway reach? | Fetch a CID through the devnet IPFS gateway; WebSocket to a People-chain RPC, look for `statement_*` methods | A web viewer for timed links, or expire-only links |
+| P11 | How fast are scrypt and XChaCha on a phone? | scrypt N = 2¹⁵ … 2¹⁷; XChaCha over 1 MiB | PIN KDF parameters |
+| P12 | Host theme and camera | Theme subscription; `getUserMedia` + `BarcodeDetector` | Dark mode; QR pairing for live shares |
+
+**Gate**
+- [ ] Every check answered on at least one Android and one iOS device (P2 and P9-delivery need two)
+- [ ] P7 has a fetch at 15 days or later
+- [ ] `DESIGN.md` corrected wherever an answer contradicts it, each correction dated
+
+---
+
+## Phase 1 — Foundations ⬜
+
+**Produces**
+- [ ] `app/` scaffold (React + Vite + TS) with the same identity check as the probe
+- [ ] `src/platform/` — one adapter over host local storage, entropy, notifications, cloud storage and
+      statements, plus an in-memory host for dev and tests (check `local-storage`'s `./testing` entry first)
+- [ ] `src/vault/` — key hierarchy, two-slot layout, month records, schema versions and migrations
+      ([DESIGN §6](DESIGN.md#6-keys-and-vaults))
+- [ ] `src/cycle/` — period detection, predictions, fertile-window estimate
+      ([DESIGN §7](DESIGN.md#7-predictions)), with property-based tests
+- [ ] `src/i18n/` — every string externalised
+- [ ] CI: typecheck, tests, crypto test vectors, a `dist/` guard (no external URLs, no word from the
+      banned list) and a `src/` guard against `getUserId`. The SDK itself contains that string, so
+      `dist/` cannot be grepped for it — found in the probe build, 2026-09-11
+- [ ] A bundle budget. The probe's `dist/` is 8.9 MB in 46 files (entry chunk 636 KB), mostly chain
+      metadata the SDK bundles for eight networks. Every byte is uploaded to Bulletin and renewed, so
+      ship only what the devnet host needs
+
+**Gate**
+- [ ] The vault round-trips on a device through the real host
+- [ ] `dist/` fits the budget set after trimming
+- [ ] The prediction engine passes fixtures: regular, irregular, PCOS-like, postpartum gap, one
+      cycle, no cycles
+- [ ] The `dist/` guard fails a build with a planted external URL
+
+## Phase 2 — Core experience ⬜
+
+Starts with a design canvas: two or three soft, warm, minimal explorations of onboarding, home, the
+log sheet and the calendar. One is chosen before any screen is built.
+
+**Produces**
+- [ ] Onboarding (three screens at most), home (cycle ring + **Log today**), log sheet (three taps at
+      most), calendar, history, settings with the mode toggles
+- [ ] Web tryout mode
+- [ ] Light and dark, following the host theme
+
+**Gate**
+- [ ] Published to `almanacapp.dot` and used daily for a week on a real device
+- [ ] Three to five people outside the project log a day without help, and none of them meets a word
+      from the banned list
+- [ ] WCAG 2.2 AA contrast, a screen-reader pass, reduced motion honoured
+- [ ] Tryout mode on `almanacapp.dev-dot.li` stores nothing — verified empty after a reload
+
+## Phase 3 — Protection ⬜
+
+**Produces**
+- [ ] Optional PIN with growing lockout delays; auto-lock when the app goes to the background
+- [ ] Optional duress PIN → decoy vault; "also erase" as a separate opt-in
+- [ ] Erase everything
+- [ ] Backup code (12 words) and encrypted export file, with restore
+
+**Gate**
+- [ ] Restore from export file + backup code on a second device with a **different** account
+- [ ] With no duress PIN set, the raw store has the same shape as with one — automated test
+- [ ] After erase, no record decrypts with any old key — automated test
+
+## Phase 4 — Encrypted Bulletin backups ⬜
+
+Depends on P6, P7, P8, P9.
+
+**Produces**
+- [ ] Scheduled, padded backups; the backup pointer statement; restore by backup code on a fresh
+      install; "Backed up 3 days ago" status
+
+**Gate**
+- [ ] Reinstall → restore from the backup code alone, on a new account
+- [ ] Backup timing and size do not depend on how much was logged
+
+## Phase 5 — Sharing ⬜
+
+Depends on P9, P10, P12.
+
+**Produces**
+- [ ] Live share (QR pairing), timed link + access code, printable report
+- [ ] Category and date-range selection; expiry (default 7 days, maximum 90); revoke
+- [ ] The recipient's view deletes shared data at expiry or revocation
+
+**Gate**
+- [ ] Revoke before opening → the recipient cannot open it. If P9/P10 rule this out, the app says
+      timed links are expire-only instead
+- [ ] Revoke after opening → no further updates reach the recipient
+- [ ] Sensitive categories are off in every new share — automated test
+
+## Phase 6 — Reminders, insights, health nudges ⬜
+
+**Produces**
+- [ ] Discreet scheduled reminders (P3)
+- [ ] Insights: cycle-length trend, symptom patterns
+- [ ] Gentle nudges — cycles under 21 or over 35 days, very heavy flow, missed periods
+
+**Gate**
+- [ ] A clinician has reviewed every health-related string
+
+## Phase 7 — Production readiness ⬜
+
+**Produces**
+- [ ] Importers: Clue, Flo, Drip, Apple Health
+- [ ] Reproducible build, and a record of which commit each published CID was built from
+- [ ] External security review of the vault, backups and sharing
+- [ ] A renewal keeper for the app bundle on Bulletin
+- [ ] `almanac.dot` (Full personhood) and a directory listing
+- [ ] A plain-language privacy policy
+
+**Gate**
+- [ ] An independent rebuild of a tagged commit yields the published CID
+- [ ] Every security-review finding resolved or documented
+- [ ] The production label points at a reviewed build
+
+---
+
+## Open questions
+
+Not decidable by measurement alone.
+
+- **Decoy vault and backups.** Should the decoy also back up on the same schedule, so upload history
+  cannot reveal which vault is in use? See THREAT-MODEL R3.
+- **Quantum.** Shares use X25519 sealed boxes. If ciphertext outlives Bulletin's retention, a future
+  quantum adversary could open it. `product-sdk-crypto` declares ML-KEM types but has not implemented
+  them. Revisit before Phase 5 ships.
+- **If the statement store cannot hold long-lived pointers** (P9), the backup pointer needs another
+  home: a tiny pointer contract written through a relay (which gives up "no server"), or restore by
+  file only.

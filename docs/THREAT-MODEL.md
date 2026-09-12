@@ -1,0 +1,78 @@
+# almanac — threat model
+
+Cycle data can reveal pregnancy, pregnancy loss, sexual activity and fertility treatment. In some
+places that information has legal consequences. This document says who almanac protects you from,
+how, and — just as plainly — what it cannot do.
+
+## What we protect
+
+1. **Cycle data** — dates, flow, symptoms, mood, notes, fertility and pregnancy entries.
+2. **The fact that you use almanac**, and when you use it.
+3. **Who you share with.**
+
+## Who we protect you from
+
+| Adversary | What they can reach | How almanac holds up |
+|---|---|---|
+| **Chain observers** | Everything on-chain and on Bulletin, forever | No cycle data on any chain. Bulletin blobs are encrypted and padded; backups run on a schedule, not on every log |
+| **almanac's developers** | Nothing — no server, no analytics, no telemetry | There is nothing to hand over. Open source; builds reproducible (Phase 7) |
+| **Other Products** in the Polkadot app | Their own storage; `getUserId` | Host storage is separated per product. almanac never calls `getUserId`, and its keys come from product-scoped `deriveEntropy` |
+| **Network and gateway** | Requests leaving the phone | No external requests from the app: fonts bundled, CSP set, CI fails any external URL in `dist/` |
+| **Someone who picks up your phone** | The unlocked phone | Optional PIN, auto-lock, discreet notifications, a neutral name, erase everything |
+| **Someone forcing you to unlock** | You | Optional duress PIN that opens a decoy vault. The store has two vaults from the first launch, so it never reveals whether a decoy exists |
+| **Legal demands on anyone but you** | Whatever exists off your phone | Only ciphertext exists off the phone, and only you hold the keys |
+| **A share recipient** | What you shared with them | Only the categories and dates you chose; every share ends; stopping a share cuts off anything not yet opened and all future updates |
+| **Supply chain** | Dependencies, the build, the published bundle | Few dependencies, pinned with a lockfile; reproducible builds; each published CID recorded against its commit |
+
+## Named risks
+
+What the design cannot fully prevent. Each stays listed until it is closed.
+
+**R1 — Your almanac accounts can be linked to your main account.** Product accounts are derived from
+the parent **public** key (`deriveProductAccountPublicKey(parentPublicKey, productId, index)`), so
+anyone who knows your main Polkadot account can compute your almanac accounts. If those accounts
+sign backups and share updates, an observer can learn *that you use almanac and when you back up* —
+never what is inside. Mitigations: scheduled, fixed-size uploads; a name that does not say "period
+tracker". P8 measures which account actually signs. If it is a product account, this risk is real
+and stays in the app's privacy explainer.
+
+**R2 — Recipients can keep what they see.** Screenshots, photos, copies. Stopping a share cannot
+reach into someone else's phone. The sharing screen says this before every share.
+
+**R3 — A careful coercer might tell the decoy from the real vault by behaviour,** not by storage —
+for example, upload history on Bulletin that does not match the decoy's contents. Open question: the
+decoy should probably back up on the same schedule. See [PLAN open questions](PLAN.md#open-questions).
+
+**R4 — Short PINs are guessable.** A 6-digit PIN has a million possibilities. Inside the app,
+guesses are slowed by growing delays. Outside it, the PIN key also needs the device key, which only
+the host can produce for this product — so copying the raw storage off the phone is not enough.
+
+**R5 — We trust the host.** The Polkadot app provides almanac's storage and entropy. A compromised
+host could read both. almanac cannot defend against the app it runs inside, nor against malware on
+the phone.
+
+**R6 — Device backups may copy host storage.** iCloud or Google backups might include the Polkadot
+app's storage. Records are encrypted either way; the device key still binds them to the host. P5
+measures it.
+
+**R7 — Ciphertext may outlive its purpose.** Parity's docs say Bulletin content persists; measured
+retention is about two weeks. We assume the worst: anything uploaded may be public forever. Records
+use 256-bit symmetric keys, which hold up. Shares use X25519 sealed boxes, which a future quantum
+computer could open. See PLAN open questions.
+
+**R8 — Devnet resets.** A reset can wipe accounts and host storage. The backup code does not depend
+on the account, and the app labels devnet as a preview.
+
+## Not in scope
+
+- Malware or a compromised operating system on the phone
+- Screenshots and screen recording
+- A compromised Polkadot app (R5)
+
+## Guards in CI
+
+- No external URLs in `dist/` (explicit allowlist, empty by default)
+- No call to `getUserId` in almanac's own source. The SDK bundles the function itself — found in the
+  probe's `dist/` on 2026-09-11 — so this check reads `src/`, not `dist/`
+- No word from the banned list in user-facing strings ([DESIGN §3](DESIGN.md#words))
+- Crypto test vectors for every wrap, unwrap, backup and share format

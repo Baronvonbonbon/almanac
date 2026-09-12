@@ -1,0 +1,202 @@
+/* almanac's starting palette (docs/DESIGN.md §4). System fonts only: the probe makes no request it
+   does not mean to measure. */
+:root {
+  --bg: #fbf6f0;
+  --surface: #fffbf7;
+  --ink: #3b2f2a;
+  --ink-soft: #6e5e55;
+  --accent: #a9533a;
+  --on-accent: #ffffff;
+  --line: #eadfd2;
+  --good: #4f6b45;
+  --problem: #a23b2c;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1f1a17;
+    --surface: #29221e;
+    --ink: #f3eae2;
+    --ink-soft: #bfafa4;
+    --accent: #e08c6d;
+    --on-accent: #1f1a17;
+    --line: #3a312c;
+    --good: #9db08d;
+    --problem: #e8907f;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+main {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: max(1.25rem, env(safe-area-inset-top)) 1rem max(4rem, env(safe-area-inset-bottom));
+}
+
+h1 {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  font-size: 2rem;
+  letter-spacing: -0.01em;
+  margin: 0.5rem 0 0;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.sub {
+  margin: 0 0 1rem;
+  color: var(--ink-soft);
+}
+
+.env,
+.note {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1rem 1.1rem;
+  margin: 1rem 0;
+}
+
+.head {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.id {
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0 0.5rem;
+}
+
+.decides {
+  margin: 0.35rem 0 0.6rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+ol {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+}
+
+label {
+  display: block;
+}
+
+.label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+input[type="text"] {
+  width: 100%;
+  font: inherit;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 0.55rem 1.2rem;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.5;
+}
+
+.confirm,
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.status {
+  margin: 0.75rem 0 0;
+}
+
+.status.pass strong {
+  color: var(--good);
+}
+
+.status.fail strong {
+  color: var(--problem);
+}
+
+.status.info strong,
+.status.skip strong {
+  color: var(--ink-soft);
+}
+
+.when,
+.recorded {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+details {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.log,
+details pre,
+textarea {
+  font: 0.75rem/1.4 ui-monospace, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 0.6rem;
+  margin: 0.6rem 0 0;
+}
+
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+}
