@@ -82,8 +82,9 @@ plain language.
 | fertile window (estimate) | safe days |
 | you | women, ladies, girls |
 
-The right-hand column is a CI check against `dist/`, with an allowlist for strings that are not
-user-facing.
+The right-hand column is a CI check over every message in `app/src/i18n/`, where every string the
+app shows lives. *Corrected 2026-09-11 (Phase 1): it was planned against `dist/`, but the SDK's own
+code there is full of words like "transaction" and "sign" that almanac never shows.*
 
 ## 4. Look — soft, warm, minimal
 
@@ -146,12 +147,25 @@ interface Settings {
 
 | Key | Holds |
 |---|---|
-| `a/v1/slots` | Two wrapped-key records of identical shape, in random order |
-| `a/v1/s0/settings`, `a/v1/s1/settings` | Encrypted settings per vault |
-| `a/v1/s0/m/2026-09`, … | One encrypted, padded record per month per vault |
+| `a/v1/meta` | Format version, scrypt salt and parameters — plaintext, and the same with or without a PIN |
+| `a/v1/slots` | Two wrapped keys of identical shape, in random order |
+| `a/v1/names` | The list of record names, encrypted under KN — shared by both vaults, so erase can find every record |
+| `a/v1/r/0/<id>`, `a/v1/r/1/<id>` | Encrypted, padded records, one set per slot. `<id>` is derived from the record name under KE, so the store does not list months in the clear |
 
-One record per month means logging a day rewrites one small record, not the whole history. Records
-are padded to 1 KiB steps. The record size limit comes from P1.
+Records are named `settings`, `m/2026-09`, and so on. One record per month means logging a day
+rewrites one small record, not the whole history. Records are padded to 1 KiB steps. The record size
+limit comes from P1.
+
+- **Every record is mirrored.** Under each record name, both slots hold bytes of the same length, and
+  that length never shrinks. Where a vault has no record of its own, the bytes are random. Bytes that
+  may be the other vault's are only ever lengthened with random bytes, never replaced, so a record is
+  read by trying each 1 KiB prefix until one opens. A copy of the store therefore shows how large each
+  record has ever been, but not which slot holds it, or whether both do.
+- **Each record carries its own name inside the encryption,** so a record copied onto another key
+  fails to open instead of showing the wrong month.
+
+*Corrected 2026-09-11 (Phase 1): the first layout named months in the clear and did not mirror
+records, so the store would have shown which slot held data, and when a decoy was in use.*
 
 ## 6. Keys and vaults
 
@@ -160,6 +174,7 @@ deriveEntropy("almanac/v1/device") ──HKDF──►  KE   device key, never s
 PIN        ──scrypt──►  P′ ;   KP = HKDF(KE ‖ P′)    PIN key — needs the device AND the PIN
 duress PIN ──scrypt──►  D′ ;   KD = HKDF(KE ‖ D′)
 backup code (12 words, 132 bits) ──HKDF──►  KB (backup key),  TB (backup topic)
+KE ──HKDF──►  KN    seals the list of record names; also derives each record's storage id
 
 DK  random 32 bytes per vault; encrypts that vault's records (XChaCha20-Poly1305)
     stored wrapped under:  KE (no PIN)  or  KP (PIN on)
@@ -176,7 +191,8 @@ DK  random 32 bytes per vault; encrypts that vault's records (XChaCha20-Poly1305
   lived-in. **"Also erase the real data"** is a separate opt-in: it overwrites the real slot with
   random bytes, which cannot be undone. In some places destroying data under pressure carries legal
   risk, and the setting says so in plain words.
-- **Erase everything** overwrites both slots and every record with random bytes.
+- **Erase everything** overwrites both wrapped keys with random bytes first — from then on no record
+  can be opened, whatever happens next — and then removes every record.
 - **Because KP includes KE,** someone who copies the raw storage off the phone cannot brute-force
   the PIN offline; they would also need the device key, which only the host can produce for this
   product.

@@ -1,0 +1,73 @@
+/* Starting tokens from docs/DESIGN.md §4. System fonts until Phase 2 bundles Fraunces and DM Sans —
+   never a font CDN, which would reveal who opens the app. */
+:root {
+  --bg: #fbf6f0;
+  --surface: #fffbf7;
+  --ink: #3b2f2a;
+  --ink-soft: #6e5e55;
+  --accent: #a9533a;
+  --period: #c96f5a;
+  --blush: #f2d9cf;
+  --sage: #7a8b6c;
+  --line: #eadfd2;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1f1a17;
+    --surface: #29221e;
+    --ink: #f3eae2;
+    --ink-soft: #bfafa4;
+    --accent: #e08c6d;
+    --period: #d9826c;
+    --blush: #4a3029;
+    --sage: #9db08d;
+    --line: #3a312c;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+main {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: max(2rem, env(safe-area-inset-top)) 1.25rem max(2rem, env(safe-area-inset-bottom));
+}
+
+.wordmark {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  font-size: 2.25rem;
+  letter-spacing: -0.01em;
+  margin: 0 0 1.5rem;
+}
+
+.banner {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.quiet {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

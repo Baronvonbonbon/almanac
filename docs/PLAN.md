@@ -6,7 +6,7 @@
 | Phase | | Status |
 |---|---|---|
 | 0 | Device probe — measure the platform before building on it | 🟡 probe built, not yet run on a device |
-| 1 | Foundations — vault, data model, predictions | ⬜ |
+| 1 | Foundations — vault, data model, predictions | 🟡 built and tested; the on-device check waits on publishing |
 | 2 | Core experience — design, logging, calendar, tryout mode | ⬜ |
 | 3 | Protection — PIN, duress PIN, erase, export file, backup code | ⬜ |
 | 4 | Encrypted Bulletin backups | ⬜ |
@@ -102,30 +102,40 @@ by it).
 
 ---
 
-## Phase 1 — Foundations ⬜
+## Phase 1 — Foundations 🟡
 
 **Produces**
-- [ ] `app/` scaffold (React + Vite + TS) with the same identity check as the probe
-- [ ] `src/platform/` — one adapter over host local storage, entropy, notifications, cloud storage and
-      statements, plus an in-memory host for dev and tests (check `local-storage`'s `./testing` entry first)
-- [ ] `src/vault/` — key hierarchy, two-slot layout, month records, schema versions and migrations
-      ([DESIGN §6](DESIGN.md#6-keys-and-vaults))
-- [ ] `src/cycle/` — period detection, predictions, fertile-window estimate
+- [x] `app/` scaffold (React 19 + Vite 8 + TS). It shares the published identity with the probe through
+      `product.mjs` at the repo root, and its start screen shows it
+- [x] `src/platform/` — host local storage and entropy, plus an in-memory host for dev and tests.
+      Notifications, cloud storage and statements join with the phases that use them (4–6). The SDK's
+      `./testing` fake models storage but not entropy, so it tests the real-host adapter rather than
+      replacing the in-memory host
+- [x] `src/vault/` — key hierarchy, two-slot layout with mirrored records, duress decoy, erase
+      ([DESIGN §6](DESIGN.md#6-keys-and-vaults)). scrypt starts at N = 2¹⁵ until P11 measures phones;
+      the parameters are stored per vault, so they can change without a migration
+- [x] `src/data/` — month records, settings, a data format version and a migration runner (no
+      migrations yet: v1 is the first). Data from a newer almanac is refused, never rewritten
+- [x] `src/cycle/` — period detection, predictions, fertile-window estimate
       ([DESIGN §7](DESIGN.md#7-predictions)), with property-based tests
-- [ ] `src/i18n/` — every string externalised
-- [ ] CI: typecheck, tests, crypto test vectors, a `dist/` guard (no external URLs, no word from the
-      banned list) and a `src/` guard against `getUserId`. The SDK itself contains that string, so
-      `dist/` cannot be grepped for it — found in the probe build, 2026-09-11
-- [ ] A bundle budget. The probe's `dist/` is 8.9 MB in 46 files (entry chunk 636 KB), mostly chain
-      metadata the SDK bundles for eight networks. Every byte is uploaded to Bulletin and renewed, so
-      ship only what the devnet host needs
+- [x] `src/i18n/` — every string externalised
+- [x] CI (`.github/workflows/ci.yml`, not yet run on GitHub): typecheck, tests, crypto test vectors
+      (RFC 5869 and RFC 7914, plus pinned v1 derivations and a sealed v1 record), a `dist/` guard
+      against external URLs, the banned words checked over `src/i18n/`, and a `src/` guard against
+      `getUserId`. Neither text check can read `dist/`: the SDK there contains `getUserId`, and words
+      like "transaction" — found 2026-09-11
+- [x] A bundle budget of 512 KiB, enforced by the guard. The first build is 350 KiB in 3 files,
+      against the probe's 8.9 MB in 46: the app imports `product-sdk-host` and `product-sdk-crypto`
+      only, not `product-sdk`'s `createApp` and its chain metadata
 
 **Gate**
-- [ ] The vault round-trips on a device through the real host
-- [ ] `dist/` fits the budget set after trimming
-- [ ] The prediction engine passes fixtures: regular, irregular, PCOS-like, postpartum gap, one
+- [ ] The vault round-trips on a device through the real host. The start screen does exactly this.
+      One name holds one bundle, so the app goes to `almanacapp.dot` once the probe's reports are
+      exported; it needs a deploy script like the probe's
+- [x] `dist/` fits the budget — 350 KiB of 512 KiB, no trimming needed
+- [x] The prediction engine passes fixtures: regular, irregular, PCOS-like, postpartum gap, one
       cycle, no cycles
-- [ ] The `dist/` guard fails a build with a planted external URL
+- [x] The `dist/` guard fails a build with a planted external URL — checked 2026-09-11
 
 ## Phase 2 — Core experience ⬜
 

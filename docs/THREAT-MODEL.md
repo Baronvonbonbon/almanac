@@ -17,9 +17,9 @@ how, and — just as plainly — what it cannot do.
 | **Chain observers** | Everything on-chain and on Bulletin, forever | No cycle data on any chain. Bulletin blobs are encrypted and padded; backups run on a schedule, not on every log |
 | **almanac's developers** | Nothing — no server, no analytics, no telemetry | There is nothing to hand over. Open source; builds reproducible (Phase 7) |
 | **Other Products** in the Polkadot app | Their own storage; `getUserId` | Host storage is separated per product. almanac never calls `getUserId`, and its keys come from product-scoped `deriveEntropy` |
-| **Network and gateway** | Requests leaving the phone | No external requests from the app: fonts bundled, CSP set, CI fails any external URL in `dist/` |
+| **Network and gateway** | Requests leaving the phone | No external requests from the app: fonts bundled; CI fails any external URL in `dist/`; a content security policy once P10 shows which origin the gateway frames the app in |
 | **Someone who picks up your phone** | The unlocked phone | Optional PIN, auto-lock, discreet notifications, a neutral name, erase everything |
-| **Someone forcing you to unlock** | You | Optional duress PIN that opens a decoy vault. The store has two vaults from the first launch, so it never reveals whether a decoy exists |
+| **Someone forcing you to unlock** | You | Optional duress PIN that opens a decoy vault. The store has two vaults from the first launch, mirrored record for record, so a copy of it does not reveal whether a decoy exists (but see R3) |
 | **Legal demands on anyone but you** | Whatever exists off your phone | Only ciphertext exists off the phone, and only you hold the keys |
 | **A share recipient** | What you shared with them | Only the categories and dates you chose; every share ends; stopping a share cuts off anything not yet opened and all future updates |
 | **Supply chain** | Dependencies, the build, the published bundle | Few dependencies, pinned with a lockfile; reproducible builds; each published CID recorded against its commit |
@@ -42,6 +42,9 @@ reach into someone else's phone. The sharing screen says this before every share
 **R3 — A careful coercer might tell the decoy from the real vault by behaviour,** not by storage —
 for example, upload history on Bulletin that does not match the decoy's contents. Open question: the
 decoy should probably back up on the same schedule. See [PLAN open questions](PLAN.md#open-questions).
+Storage can give it away too, to someone who copies it at two different times: between the copies,
+only the slot in use changes. If they later watch the duress PIN open a slot that never changed,
+they can tell it is the decoy. One copy alone shows nothing (DESIGN §5).
 
 **R4 — Short PINs are guessable.** A 6-digit PIN has a million possibilities. Inside the app,
 guesses are slowed by growing delays. Outside it, the PIN key also needs the device key, which only
@@ -71,7 +74,8 @@ on the account, and the app labels devnet as a preview.
 
 ## Guards in CI
 
-- No external URLs in `dist/` (explicit allowlist, empty by default)
+- No external URLs in `dist/` — an explicit allowlist, each entry explained in
+  `app/scripts/guard-dist.mjs` — and a size budget
 - No call to `getUserId` in almanac's own source. The SDK bundles the function itself — found in the
   probe's `dist/` on 2026-09-11 — so this check reads `src/`, not `dist/`
 - No word from the banned list in user-facing strings ([DESIGN §3](DESIGN.md#words))

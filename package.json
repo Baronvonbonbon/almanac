@@ -3,9 +3,11 @@
   "private": true,
   "license": "GPL-3.0-or-later",
   "workspaces": [
-    "probe"
+    "probe",
+    "app"
   ],
   "scripts": {
+    "check": "npm run check -w app && npm run build -w probe",
     "whois": "node tools/whois.mjs"
   },
   "devDependencies": {

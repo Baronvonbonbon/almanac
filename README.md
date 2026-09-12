@@ -6,8 +6,8 @@ Your cycle data lives on your phone, encrypted. There is no account to create, n
 no tracking. The people who build almanac could not read your data if they wanted to, or if someone
 asked them to.
 
-> **Status: pre-alpha — Phase 0.** We are measuring the platform on real devices before building on
-> it. See [`docs/PLAN.md`](docs/PLAN.md).
+> **Status: pre-alpha.** The Phase 0 device probe is built and waiting to run on phones; Phase 1
+> (foundations) is under way. See [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Promises
 
@@ -25,7 +25,9 @@ asked them to.
 | [`docs/PLAN.md`](docs/PLAN.md) | Phases, gates, decisions, and what has been measured |
 | [`docs/DESIGN.md`](docs/DESIGN.md) | Experience, data, keys, backups, sharing |
 | [`docs/THREAT-MODEL.md`](docs/THREAT-MODEL.md) | Who almanac protects you from — and what it cannot |
+| [`app/`](app/) | The app. So far: the encrypted store, predictions, and a screen that checks storage works on a phone |
 | [`probe/`](probe/) | Phase 0 device probe, published to `almanacapp.dot` |
+| [`product.mjs`](product.mjs) | The published identity, shared by the app and the probe |
 | [`tools/whois.mjs`](tools/whois.mjs) | Read-only DotNS lookup. Never registers anything |
 
 ## License
