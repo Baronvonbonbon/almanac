@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The three looks, as mocked up and chosen on 2026-09-14. A design reference only: it loads Google
+     Fonts to preview them, which the app itself never does (DESIGN §4). -->
+<title>almanac Design Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..700,0..100&family=DM+Sans:opsz,wght@9..40,400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&display=swap">
+<style>
+/* ── The board: quiet, so the phones carry the page ─────────────────────────── */
+:root {
+  --board-bg: #ebe6e1;
+  --board-surface: #f6f2ee;
+  --board-ink: #27211f;
+  --board-soft: #665c57;
+  --board-line: #d6cdc6;
+  --bezel: #2a2422;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --board-bg: #131110;
+    --board-surface: #1c1917;
+    --board-ink: #ece5df;
+    --board-soft: #a3978f;
+    --board-line: #332d2a;
+    --bezel: #060505;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --board-bg: #131110;
+  --board-surface: #1c1917;
+  --board-ink: #ece5df;
+  --board-soft: #a3978f;
+  --board-line: #332d2a;
+  --bezel: #060505;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--board-bg);
+  color: var(--board-ink);
+  font: 15px/1.55 "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 32px); padding-block: 36px 64px; }
+
+.eyebrow { margin: 0 0 8px; font-size: 12px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--board-soft); }
+h1 { margin: 0; font-size: clamp(1.75rem, 3.4vw, 2.5rem); line-height: 1.1; font-weight: 600; letter-spacing: -.02em; text-wrap: balance; }
+.lead { max-width: 62ch; margin: 12px 0 0; color: var(--board-soft); font-size: 1.02rem; }
+.lead b { color: var(--board-ink); font-weight: 600; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 22px; }
+.ctl { display: flex; align-items: center; gap: 10px; }
+.ctl-label { font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--board-soft); }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--board-line); border-radius: 999px; background: var(--board-surface); }
+.seg button { font: 500 13px/1 "Schibsted Grotesk", system-ui, sans-serif; padding: 8px 13px; border: 0; border-radius: 999px; background: transparent; color: var(--board-soft); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--board-ink); color: var(--board-bg); }
+.seg button:focus-visible, .check input:focus-visible { outline: 2px solid var(--board-ink); outline-offset: 2px; }
+.check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--board-ink); margin: 0; }
+.dir-ctl { display: none; }
+
+.directions { display: grid; gap: 48px 28px; margin-top: 34px; }
+.direction { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.dir-head { display: grid; grid-template-columns: auto 1fr; gap: 1px 12px; align-items: center; }
+.letter { grid-row: span 2; width: 34px; height: 34px; display: grid; place-items: center; border: 1.5px solid var(--board-ink); border-radius: 50%; font-weight: 600; font-size: 14px; }
+.dir-head h2 { margin: 0; font-size: 1.3rem; font-weight: 600; letter-spacing: -.01em; }
+.dir-head p { margin: 0; color: var(--board-soft); font-size: 14px; }
+
+.side { display: grid; gap: 16px; align-content: start; }
+.points { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: 14px; max-width: 62ch; }
+.points b { display: block; margin-bottom: 1px; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--board-soft); }
+
+.tokens { border: 1px solid var(--board-line); border-radius: 14px; overflow: hidden; background: var(--board-surface); }
+.swatches { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.sw { display: grid; gap: 3px; padding: 10px 8px 9px; font-size: 11px; min-width: 0; }
+.sw .chip-c { height: 28px; border-radius: 7px; background: var(--sw); box-shadow: inset 0 0 0 1px rgba(128, 110, 100, .25); }
+.sw code { font: 10.5px/1.2 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--board-soft); overflow-wrap: anywhere; }
+.specimen { display: grid; gap: 4px; padding: 16px 16px 14px; background: var(--bg); color: var(--ink); border-top: 1px solid var(--board-line); }
+.spec-d { font-family: var(--display); font-variation-settings: var(--disp-var); font-weight: var(--disp-weight); font-size: 36px; line-height: 1; letter-spacing: -.01em; }
+.spec-b { font-family: var(--body); font-size: 15px; }
+.spec-cap { margin-top: 4px; font: 500 11px/1.3 "Schibsted Grotesk", system-ui, sans-serif; letter-spacing: .06em; color: var(--ink-soft); }
+
+footer.same { margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--board-line); display: grid; gap: 28px 48px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+footer h2 { margin: 0 0 10px; font-size: 1.1rem; font-weight: 600; }
+footer ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; max-width: 62ch; }
+footer p { margin: 0; max-width: 62ch; }
+
+@media (min-width: 1180px) {
+  .directions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1179px) {
+  .dir-ctl { display: flex; }
+  .direction:not(.is-shown) { display: none; }
+}
+@media (min-width: 760px) and (max-width: 1179px) {
+  .direction { display: grid; grid-template-columns: 372px minmax(0, 1fr); gap: 20px 40px; align-items: start; }
+  .dir-head { grid-column: 1 / -1; }
+}
+
+/* ── The three directions. Every colour a phone uses comes from these sets. ─── */
+[data-dir="a"] { --display: "Fraunces", Georgia, serif; --disp-var: "SOFT" 100, "WONK" 0; --disp-weight: 600; --body: "DM Sans", system-ui, sans-serif; --r: 18px; --cell-r: 10px; }
+[data-dir="a"][data-mode="light"] { --bg: #fbf6f0; --surface: #fffbf7; --ink: #3b2f2a; --ink-soft: #6e5e55; --accent: #a9533a; --on-accent: #ffffff; --period: #c96f5a; --blush: #f2d9cf; --sage: #7a8b6c; --line: #eadfd2; --elapsed: #efcdbf; --glow: transparent; }
+[data-dir="a"][data-mode="dark"] { --bg: #1f1a17; --surface: #29221e; --ink: #f3eae2; --ink-soft: #bfafa4; --accent: #e08c6d; --on-accent: #1f1a17; --period: #d9826c; --blush: #4a3029; --sage: #9db08d; --line: #3a312c; --elapsed: #553a31; --glow: transparent; }
+
+[data-dir="b"] { --display: "Instrument Serif", Georgia, serif; --disp-var: normal; --disp-weight: 400; --body: "Instrument Sans", system-ui, sans-serif; --r: 10px; --cell-r: 50%; }
+[data-dir="b"][data-mode="light"] { --bg: #efebf1; --surface: #f9f7fa; --ink: #2b2745; --ink-soft: #5f5a78; --accent: #b0456a; --on-accent: #ffffff; --period: #c4566f; --blush: #ead2dc; --sage: #4f7891; --line: #d9d3df; --elapsed: #d9d3df; --glow: transparent; }
+[data-dir="b"][data-mode="dark"] { --bg: #1b1930; --surface: #24213f; --ink: #ede8f3; --ink-soft: #b2abc8; --accent: #f08ea8; --on-accent: #1b1930; --period: #e8839c; --blush: #472d48; --sage: #8fb6cc; --line: #36325a; --elapsed: #36325a; --glow: transparent; }
+
+[data-dir="c"] { --display: "Bricolage Grotesque", system-ui, sans-serif; --disp-var: normal; --disp-weight: 750; --body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif; --r: 24px; --cell-r: 14px; }
+[data-dir="c"][data-mode="light"] { --bg: #fcebe1; --surface: #fff8f4; --ink: #3a2230; --ink-soft: #775766; --accent: #8e2f5a; --on-accent: #ffffff; --period: #cf5479; --blush: #f6cfd2; --sage: #5e8f70; --line: #efcfc3; --elapsed: #f6cfd2; --glow: #f9c9b4; }
+[data-dir="c"][data-mode="dark"] { --bg: #231920; --surface: #33242d; --ink: #fbede9; --ink-soft: #d0b4bd; --accent: #f29bbe; --on-accent: #231920; --period: #eb7e9c; --blush: #5a3342; --sage: #93c3a2; --line: #48333e; --elapsed: #5a3342; --glow: #4a2a35; }
+
+.disp { font-family: var(--display); font-variation-settings: var(--disp-var); font-weight: var(--disp-weight); }
+
+/* ── Phone frame ─────────────────────────────────────────────────────────── */
+.phone { width: min(100%, 372px); height: 744px; margin-inline: auto; padding: 10px; border-radius: 50px; background: var(--bezel); box-shadow: 0 0 0 1px var(--board-line), 0 30px 50px -34px rgba(40, 24, 16, .55); }
+.screen { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 40px; background: var(--bg); color: var(--ink); font: 16px/1.45 var(--body); }
+.screen :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 420px) {
+  .phone { padding: 6px; border-radius: 42px; height: 710px; }
+  .screen { border-radius: 36px; }
+}
+
+.tryout { display: none; margin: 16px 14px 0; padding: 10px 13px; border-radius: calc(var(--r) - 4px); background: var(--blush); font-size: 13px; line-height: 1.4; }
+.is-tryout .tryout { display: block; }
+.top { display: flex; align-items: center; justify-content: space-between; padding: 24px 22px 4px; }
+.is-tryout .top { padding-top: 12px; }
+.wordmark { font-size: 1.55rem; line-height: 1; letter-spacing: -.01em; }
+.preview { padding: 4px 9px; border: 1px solid var(--line); border-radius: 999px; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+
+.views { flex: 1; overflow-y: auto; padding: 8px 22px 22px; scrollbar-width: thin; }
+[data-dir="c"] .views[data-tab="today"] { background: radial-gradient(130% 55% at 90% 0%, var(--glow) 0%, transparent 62%); }
+
+.tabs { display: flex; gap: 4px; padding: 8px 12px 20px; border-top: 1px solid var(--line); background: var(--bg); }
+.tabs button { flex: 1; display: grid; justify-items: center; gap: 5px; padding: 8px 4px; border: 0; border-radius: 12px; background: none; color: var(--ink-soft); font: 500 13px var(--body); cursor: pointer; }
+.tabs button::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: transparent; }
+.tabs button[aria-current="page"] { color: var(--ink); }
+.tabs button[aria-current="page"]::before { background: var(--accent); }
+[data-dir="b"] .tabs button { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+[data-dir="b"] .tabs button::before { width: 20px; height: 1.5px; border-radius: 0; }
+[data-dir="c"] .tabs { margin: 0 14px 16px; padding: 5px; border: 0; border-radius: 999px; background: var(--surface); }
+[data-dir="c"] .tabs button { padding: 11px 4px; border-radius: 999px; font-weight: 700; font-size: 14px; }
+[data-dir="c"] .tabs button::before { display: none; }
+[data-dir="c"] .tabs button[aria-current="page"] { background: var(--accent); color: var(--on-accent); }
+
+/* ── Today ───────────────────────────────────────────────────────────────── */
+.today { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding-block: 8px 12px; text-align: center; }
+.ring { position: relative; width: 252px; max-width: 100%; aspect-ratio: 1; }
+.ring svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.center { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 2px; }
+.c-num { font-size: 46px; line-height: 1; letter-spacing: -.02em; }
+.c-of { color: var(--ink-soft); font-size: .95rem; }
+[data-dir="b"] .c-k { font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-soft); }
+[data-dir="b"] .c-num { font-size: 92px; line-height: .86; }
+[data-dir="b"] .c-of { font-family: var(--display); font-style: italic; font-size: 19px; color: var(--ink-soft); }
+.likely { margin: 16px 0 0; font-size: 1.05rem; text-wrap: balance; }
+.likely b { font-weight: 700; }
+.soft { margin: 0; color: var(--ink-soft); font-size: .92rem; }
+.logged { width: 100%; margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 4px 10px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font-size: .92rem; }
+.logged .label { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+.primary { width: 100%; min-height: 54px; margin-top: 18px; border: 0; border-radius: var(--r); background: var(--accent); color: var(--on-accent); font: 700 1.02rem var(--body); cursor: pointer; }
+[data-dir="b"] .primary { letter-spacing: .14em; text-transform: uppercase; font-size: .82rem; }
+[data-dir="c"] .primary { min-height: 60px; border-radius: 999px; font-size: 1.1rem; }
+
+/* A: soft ring */
+.a-track { fill: none; stroke: var(--line); stroke-width: 16; }
+.a-elapsed { fill: none; stroke: var(--elapsed); stroke-width: 16; stroke-dasharray: var(--len) 2000; animation: ring-fill .7s ease-out both; }
+@keyframes ring-fill { from { stroke-dasharray: 0 2000; } }
+.a-period { fill: none; stroke: var(--period); stroke-width: 16; }
+.a-fertile { fill: none; stroke: var(--sage); stroke-width: 16; stroke-dasharray: 3 3; }
+.a-predicted { fill: none; stroke: var(--period); stroke-width: 2.5; stroke-dasharray: 2 5; stroke-linecap: round; }
+.a-today { fill: var(--surface); stroke: var(--accent); stroke-width: 4; }
+
+/* B: almanac dial */
+.b-hair { fill: none; stroke: var(--line); }
+.b-period { fill: var(--period); }
+.b-fertile { fill: none; stroke: var(--sage); stroke-width: 1.6; }
+.b-predicted { fill: none; stroke: var(--period); stroke-width: 1.5; stroke-dasharray: 2.2 2.2; }
+.b-past { fill: var(--ink-soft); }
+.b-future { fill: none; stroke: var(--ink-soft); stroke-width: 1; }
+.b-today-ring { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+.b-today { fill: var(--accent); }
+.b-lbl { fill: var(--ink-soft); font: 500 10px var(--body); letter-spacing: .06em; text-anchor: middle; dominant-baseline: central; }
+
+/* C: pebble path */
+[data-dir="c"] .today { align-items: stretch; justify-content: flex-start; text-align: left; }
+.c-hero h2 { margin: 10px 0 0; font-size: 60px; line-height: .95; letter-spacing: -.03em; }
+.c-hero .c-of { margin: 6px 0 0; font-size: 1.02rem; }
+.pebbles { position: relative; display: flex; align-items: center; gap: 7px; margin: 6px -22px 0; padding: 34px 22px 30px; list-style: none; overflow-x: auto; scrollbar-width: none; }
+.pebbles::-webkit-scrollbar { display: none; }
+.pebble { position: relative; flex: none; display: grid; justify-items: center; gap: 7px; transform: translateY(var(--y)); }
+.pb { width: 26px; height: 36px; border-radius: 999px; background: var(--blush); }
+.pebble.future .pb { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ink-soft); opacity: .55; }
+.pebble.period .pb { background: var(--period); }
+.pebble.fertile .pb { background: repeating-linear-gradient(135deg, var(--sage) 0 3px, transparent 3px 7px); box-shadow: inset 0 0 0 1.5px var(--sage); }
+.pebble.likely .pb { background: transparent; border: 2px dashed var(--period); }
+.pebble.is-today .pb { width: 36px; height: 48px; background: var(--accent); box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--accent); }
+.pebble .num { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.pebble.is-today .num { color: var(--ink); font-weight: 700; }
+.today-tag { position: absolute; top: -26px; font-size: 12px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.c-card { padding: 16px 18px; border-radius: var(--r); background: var(--surface); }
+.c-card .likely { margin: 0; }
+
+/* ── Calendar ────────────────────────────────────────────────────────────── */
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin: 6px 0 14px; }
+.cal-head h2 { margin: 0; font-size: 1.3rem; }
+[data-dir="b"] .cal-head h2 { font-size: 1.6rem; }
+.nav-btn { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--ink); font: 400 20px/1 var(--body); cursor: pointer; }
+.nav-btn:disabled { opacity: .35; cursor: default; }
+.wk, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.wk { margin-bottom: 6px; font-size: 11px; letter-spacing: .06em; text-align: center; color: var(--ink-soft); }
+.day { position: relative; aspect-ratio: 1 / 1.12; display: flex; justify-content: center; padding: 5px 0 0; overflow: hidden; border: 1.5px solid transparent; border-radius: var(--cell-r); background: var(--surface); color: var(--ink); font: 500 14px var(--body); font-variant-numeric: tabular-nums; cursor: pointer; }
+[data-dir="b"] .day { aspect-ratio: 1; }
+.day.blank { visibility: hidden; }
+.day .fill { position: absolute; left: 0; right: 0; bottom: 0; height: var(--fill); background: var(--period); }
+.day .n { position: relative; z-index: 1; }
+.day.fertile { background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--sage) 50%, transparent) 0 2px, transparent 2px 6px); }
+.day.predicted { border: 1.5px dashed var(--period); }
+.day.logged::after { content: ""; position: absolute; bottom: 5px; left: 50%; z-index: 1; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--ink); }
+.day.is-today { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; }
+.day[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 14px; font-size: 12px; color: var(--ink-soft); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lg { display: inline-block; width: 14px; height: 14px; border-radius: 4px; }
+[data-dir="b"] .lg { border-radius: 50%; }
+.lg.p { background: linear-gradient(to top, var(--period) 55%, var(--surface) 55%); box-shadow: inset 0 0 0 1px var(--line); }
+.lg.pr { border: 1.5px dashed var(--period); }
+.lg.f { background: repeating-linear-gradient(135deg, var(--sage) 0 2px, transparent 2px 5px); box-shadow: inset 0 0 0 1px var(--sage); }
+.lg.l { width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
+.detail { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.detail h3 { margin: 0 0 6px; font: 700 1rem var(--body); }
+.detail ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: .92rem; }
+.ghost { margin-top: 12px; padding: 9px 16px; border: 1.5px solid var(--accent); border-radius: 999px; background: transparent; color: var(--ink); font: 700 .9rem var(--body); cursor: pointer; }
+
+/* ── Insights ────────────────────────────────────────────────────────────── */
+.ins h2 { margin: 8px 0 2px; font-size: 1.5rem; }
+[data-dir="b"] .ins h2 { font-size: 1.9rem; }
+.bars { display: grid; gap: 14px; margin: 16px 0 0; padding: 0; list-style: none; }
+.bars li { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; font-size: .9rem; }
+.bars .v { font-weight: 700; font-variant-numeric: tabular-nums; }
+.track { grid-column: 1 / -1; height: 10px; border-radius: 99px; background: var(--line); }
+.bar { display: block; height: 100%; width: calc(var(--len) / 35 * 100%); border-radius: 99px; background: var(--period); }
+.scale { position: relative; height: 16px; margin-top: 6px; font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.scale span { position: absolute; transform: translateX(-50%); }
+.scale span:first-child { transform: none; }
+.scale span:last-child { transform: translateX(-100%); }
+.facts { display: grid; gap: 10px; margin-top: 20px; }
+.fact { display: grid; gap: 2px; padding: 12px 16px; border-radius: var(--r); background: var(--surface); }
+.fact b { font-size: 1.35rem; line-height: 1.2; }
+[data-dir="b"] .fact b { font-size: 1.6rem; font-weight: 400; }
+.quiet-note { margin: 16px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+
+/* ── Log sheet ───────────────────────────────────────────────────────────── */
+.scrim { position: absolute; inset: 0; background: rgba(20, 12, 10, .4); opacity: 0; pointer-events: none; transition: opacity .2s ease-out; }
+.sheet-open .scrim { opacity: 1; pointer-events: auto; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 90%; overflow-y: auto; padding: 8px 20px 24px; border-radius: calc(var(--r) + 8px) calc(var(--r) + 8px) 0 0; background: var(--surface); transform: translateY(102%); visibility: hidden; transition: transform .25s ease-out, visibility 0s linear .25s; }
+[data-dir="b"] .sheet { border-radius: 18px 18px 0 0; }
+.sheet-open .sheet { transform: none; visibility: visible; transition: transform .25s ease-out, visibility 0s; }
+.grab { width: 38px; height: 4px; margin: 4px auto 10px; border-radius: 4px; background: var(--line); }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; }
+.sheet-head h3 { margin: 0; font-size: 1.4rem; }
+[data-dir="b"] .sheet-head h3 { font-size: 1.75rem; }
+.close { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--ink); font: 400 22px/1 var(--body); cursor: pointer; }
+fieldset { min-width: 0; margin: 16px 0 0; padding: 0; border: 0; }
+legend, .note-label { display: block; margin-bottom: 8px; padding: 0; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+.note-label { margin-top: 16px; }
+.flows { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.flow-opt { display: grid; justify-items: center; gap: 5px; padding: 10px 2px 8px; border: 1.5px solid var(--line); border-radius: calc(var(--r) - 6px); background: var(--bg); color: var(--ink); font: 500 12px var(--body); cursor: pointer; }
+.flow-opt svg { width: 22px; height: 29px; }
+.flow-opt[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--surface); font-weight: 700; }
+.drop-fill { fill: var(--period); }
+.drop-line { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { padding: 8px 13px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--ink); font: 500 14px var(--body); cursor: pointer; }
+[data-dir="b"] .chip { border-radius: 6px; }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+.chip[aria-pressed="true"]::before { content: "✓ "; }
+textarea { display: block; width: 100%; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: calc(var(--r) - 8px); background: var(--bg); color: var(--ink); font: 15px/1.4 var(--body); resize: none; }
+textarea::placeholder { color: var(--ink-soft); }
+
+.toast { position: absolute; left: 50%; bottom: 92px; padding: 9px 16px; border-radius: 999px; background: var(--ink); color: var(--bg); font-size: 14px; white-space: nowrap; opacity: 0; transform: translate(-50%, 8px); transition: opacity .2s ease-out, transform .2s ease-out; pointer-events: none; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">almanac · Phase 2 design canvas</p>
+    <h1>Three ways almanac could look</h1>
+    <p class="lead">Each phone works. Tap <b>Log today</b>, pick a flow, add a symptom and save. The tabs open the calendar and a first look at insights. Every date and log here is example data, and the fertile window is switched on so you can see how it's marked. In the app it's off by default.</p>
+    <div class="controls">
+      <div class="ctl dir-ctl">
+        <span class="ctl-label" id="dir-label">Direction</span>
+        <div class="seg" role="group" aria-labelledby="dir-label">
+          <button type="button" id="show-a" data-show="a" aria-pressed="true">A · Hearth</button>
+          <button type="button" id="show-b" data-show="b" aria-pressed="false">B · Moonpaper</button>
+          <button type="button" id="show-c" data-show="c" aria-pressed="false">C · Pebble</button>
+        </div>
+      </div>
+      <div class="ctl">
+        <span class="ctl-label" id="mode-label">Phones</span>
+        <div class="seg" role="group" aria-labelledby="mode-label">
+          <button type="button" id="mode-match" data-mode-pref="match" aria-pressed="true">Match page</button>
+          <button type="button" id="mode-light" data-mode-pref="light" aria-pressed="false">Light</button>
+          <button type="button" id="mode-dark" data-mode-pref="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
+      <label class="check" for="tryout"><input type="checkbox" id="tryout"> Show as the web tryout</label>
+    </div>
+  </header>
+
+  <main class="directions">
+    <section class="direction is-shown" id="dir-a" aria-labelledby="h-a">
+      <div class="dir-head"><span class="letter" aria-hidden="true">A</span><h2 id="h-a">Hearth</h2><p>The look DESIGN §4 describes: cream, terracotta and a soft serif.</p></div>
+      <div class="phone" data-dir="a" data-mode="light"></div>
+      <div class="side">
+        <ul class="points">
+          <li><b>Cycle</b>A soft ring that fills as the cycle goes on. Period days are solid, the fertile window is dashed, and a dotted arc outside the ring marks when the next period is likely.</li>
+          <li><b>Type</b>Fraunces at its softest for numbers and headings, DM Sans for everything else.</li>
+          <li><b>Feel</b>Warm and familiar, exactly as specified. It is also the most common look among wellness apps right now, so it's the least distinctive of the three.</li>
+        </ul>
+        <div class="tokens" data-dir="a" data-mode="light">
+          <div class="swatches"></div>
+          <div class="specimen"><span class="spec-d">Day 18</span><span class="spec-b">Period likely between Sep 25 and Sep 27</span><span class="spec-cap">Fraunces · DM Sans</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="direction" id="dir-b" aria-labelledby="h-b">
+      <div class="dir-head"><span class="letter" aria-hidden="true">B</span><h2 id="h-b">Moonpaper</h2><p>A printed almanac: a dial of days in ink blue and rose.</p></div>
+      <div class="phone" data-dir="b" data-mode="light"></div>
+      <div class="side">
+        <ul class="points">
+          <li><b>Cycle</b>A dial of 29 days, like the day tables in a printed almanac. Every day keeps its place, period days are full dots, the fertile window is open rings, and today is circled.</li>
+          <li><b>Type</b>Instrument Serif for the big numbers, Instrument Sans for text, small capital labels.</li>
+          <li><b>Feel</b>Calm and a little bookish. The dark version, deep ink blue, sits naturally inside the Polkadot app's dark theme.</li>
+        </ul>
+        <div class="tokens" data-dir="b" data-mode="light">
+          <div class="swatches"></div>
+          <div class="specimen"><span class="spec-d">Day 18</span><span class="spec-b">Period likely between Sep 25 and Sep 27</span><span class="spec-cap">Instrument Serif · Instrument Sans</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="direction" id="dir-c" aria-labelledby="h-c">
+      <div class="dir-head"><span class="letter" aria-hidden="true">C</span><h2 id="h-c">Pebble</h2><p>Brighter and rounder: a path of days and the biggest buttons.</p></div>
+      <div class="phone" data-dir="c" data-mode="light"></div>
+      <div class="side">
+        <ul class="points">
+          <li><b>Cycle</b>A path of pebbles in place of a ring, scrolled to today. Striped pebbles are the fertile window, dashed ones the days the next period is likely. This departs from the single ring in DESIGN §3.</li>
+          <li><b>Type</b>Bricolage Grotesque for headings. Atkinson Hyperlegible Next for text, a face designed for readers with low vision.</li>
+          <li><b>Feel</b>Friendlier and more playful, with the largest touch targets and a soft wash of colour behind today.</li>
+        </ul>
+        <div class="tokens" data-dir="c" data-mode="light">
+          <div class="swatches"></div>
+          <div class="specimen"><span class="spec-d">Day 18</span><span class="spec-b">Period likely between Sep 25 and Sep 27</span><span class="spec-cap">Bricolage Grotesque · Atkinson Hyperlegible Next</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="same">
+    <div>
+      <h2>Same in all three</h2>
+      <ul>
+        <li>The words: predictions say "likely", and the fertile window is always an estimate.</li>
+        <li>Logging a day takes three taps: Log today, a flow, Save.</li>
+        <li>Meaning never rests on colour alone. Flow is a fill level with a label, predicted days are outlined, and the fertile window has a pattern.</li>
+        <li>Light and dark versions that follow the Polkadot app's theme, not the phone's.</li>
+        <li>In the real app the fonts ship inside almanac, so opening it never contacts a font server. This page borrows them from Google Fonts only to preview them.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>How to choose</h2>
+      <p>Reply with a letter, or a mix. "B's dial in A's colours" is a perfectly good answer. The one you pick becomes the app's theme, and the Phase 2 screens are built on it.</p>
+    </div>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const MON = MONTHS.map((m) => m.slice(0, 3));
+  const WD = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const pad = (n) => String(n).padStart(2, "0");
+  const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const D = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+  const add = (s, n) => { const d = D(s); d.setDate(d.getDate() + n); return iso(d); };
+  const run = (s, n) => Array.from({ length: n }, (_, i) => add(s, i));
+  const short = (s) => { const d = D(s); return `${MON[d.getMonth()]} ${d.getDate()}`; };
+  const long = (s) => { const d = D(s); return `${WD[d.getDay()]}, ${MON[d.getMonth()]} ${d.getDate()}`; };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+  // Example data: five periods about 29 days apart; today is day 18 of the current cycle.
+  const TODAY = "2026-09-14", CYCLE_DAY = 18, ABOUT = 29;
+  const STARTS = ["2026-05-05", "2026-06-03", "2026-07-01", "2026-07-30", "2026-08-28"];
+  const FLOW_RUN = ["medium", "heavy", "medium", "light", "spotting"];
+  const SAMPLE_FLOW = {};
+  STARTS.forEach((s) => run(s, 5).forEach((d, i) => (SAMPLE_FLOW[d] = FLOW_RUN[i])));
+  const SAMPLE_LOGS = {
+    "2026-06-03": { symptoms: ["Cramps"], mood: [] },
+    "2026-07-01": { symptoms: ["Cramps", "Headache"], mood: [] },
+    "2026-07-30": { symptoms: ["Cramps"], mood: ["Low"] },
+    "2026-08-28": { symptoms: ["Cramps", "Tired"], mood: [] },
+    "2026-08-29": { symptoms: ["Cramps", "Backache"], mood: ["Low"] },
+    "2026-09-03": { symptoms: ["Tired"], mood: [] },
+    "2026-09-10": { symptoms: ["Headache"], mood: ["Irritable"] },
+    "2026-09-12": { symptoms: ["Bloating", "Tender breasts"], mood: [] },
+    "2026-09-13": { symptoms: [], mood: ["Calm"], note: "Long walk by the river. Felt good." },
+  };
+  const PREDICTED = new Set([...run("2026-09-25", 6), ...run("2026-10-24", 6)]);
+  const FERTILE = new Set([...run("2026-09-07", 7), ...run("2026-10-06", 7)]);
+  const FLOWS = ["none", "spotting", "light", "medium", "heavy"];
+  const FLOW_LABEL = { none: "None", spotting: "Spotting", light: "Light", medium: "Medium", heavy: "Heavy" };
+  const FILL = { spotting: 15, light: 28, medium: 42, heavy: 58 };
+  const DROP_LEVEL = { none: 0, spotting: 0.2, light: 0.42, medium: 0.66, heavy: 1 };
+  const SYMPTOMS = ["Cramps", "Headache", "Bloating", "Tender breasts", "Tired", "Backache", "Acne", "Nausea"];
+  const MOODS = ["Calm", "Happy", "Energetic", "Low", "Irritable", "Anxious"];
+  const DROP = "M12 3C12 3 4 13.5 4 20.5a8 8 0 0 0 16 0C20 13.5 12 3 12 3Z";
+  const flowWords = (f) => (f === "spotting" ? "Spotting" : `${FLOW_LABEL[f]} flow`);
+
+  // ── Cycle shapes ────────────────────────────────────────────────────────
+  const P = (r, a) => { const t = ((a - 90) * Math.PI) / 180; return [120 + r * Math.cos(t), 120 + r * Math.sin(t)]; };
+  const f2 = (n) => n.toFixed(2);
+  const arc = (r, a0, a1) => {
+    const [x0, y0] = P(r, a0), [x1, y1] = P(r, a1);
+    return `M${f2(x0)} ${f2(y0)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${f2(x1)} ${f2(y1)}`;
+  };
+
+  function ringA() {
+    const step = 360 / ABOUT, g = 1.2, r = 96;
+    const days = (a, b) => arc(r, (a - 1) * step + g, b * step - g);
+    const todayAngle = (CYCLE_DAY - 0.5) * step;
+    const [tx, ty] = P(r, todayAngle);
+    const len = (2 * Math.PI * r * todayAngle) / 360;
+    return `<div class="ring"><svg viewBox="0 0 240 240" aria-hidden="true">
+      <circle class="a-track" cx="120" cy="120" r="${r}"/>
+      <path class="a-elapsed" d="${arc(r, 0.01, todayAngle)}" style="--len:${len.toFixed(1)}"/>
+      <path class="a-period" d="${days(1, 5)}"/>
+      <path class="a-fertile" d="${days(11, 17)}"/>
+      <path class="a-predicted" d="${arc(r + 16, 28 * step, 31 * step)}"/>
+      <circle class="a-today" cx="${f2(tx)}" cy="${f2(ty)}" r="11"/>
+    </svg><div class="center"><span class="c-num disp">Day ${CYCLE_DAY}</span><span class="c-of">of about ${ABOUT}</span></div></div>`;
+  }
+
+  function ringB() {
+    const step = 360 / ABOUT, r = 88;
+    let dots = `<circle class="b-hair" cx="120" cy="120" r="70"/>`;
+    for (let d = 1; d <= ABOUT; d++) {
+      const [x, y] = P(r, (d - 1) * step).map(f2);
+      if (d === CYCLE_DAY) dots += `<circle class="b-today-ring" cx="${x}" cy="${y}" r="10"/><circle class="b-today" cx="${x}" cy="${y}" r="4.5"/>`;
+      else if (d <= 5) dots += `<circle class="b-period" cx="${x}" cy="${y}" r="6"/>`;
+      else if (d >= 11 && d <= 17) dots += `<circle class="b-fertile" cx="${x}" cy="${y}" r="4.6"/>`;
+      else if (d >= 28) dots += `<circle class="b-predicted" cx="${x}" cy="${y}" r="6"/>`;
+      else if (d < CYCLE_DAY) dots += `<circle class="b-past" cx="${x}" cy="${y}" r="2.4"/>`;
+      else dots += `<circle class="b-future" cx="${x}" cy="${y}" r="2.4"/>`;
+    }
+    for (const d of [1, 8, 15, 22]) {
+      const [x, y] = P(r + 22, (d - 1) * step).map(f2);
+      dots += `<text class="b-lbl" x="${x}" y="${y}">${d}</text>`;
+    }
+    return `<div class="ring"><svg viewBox="0 0 240 240" aria-hidden="true">${dots}</svg>
+      <div class="center"><span class="c-k">Day</span><span class="c-num disp">${CYCLE_DAY}</span><span class="c-of">of about ${ABOUT}</span></div></div>`;
+  }
+
+  function pebblesC() {
+    let items = "";
+    for (let d = 1; d <= 31; d++) {
+      const cls = d === CYCLE_DAY ? "is-today" : d <= 5 ? "period" : d >= 11 && d <= 17 ? "fertile" : d >= 29 ? "likely" : d < CYCLE_DAY ? "past" : "future";
+      const y = (Math.sin(((d - 1) / 31) * Math.PI * 2) * 8).toFixed(1);
+      items += `<li class="pebble ${cls}" style="--y:${y}px">${d === CYCLE_DAY ? '<span class="today-tag">Today</span>' : ""}<span class="pb"></span><span class="num">${d}</span></li>`;
+    }
+    return `<ol class="pebbles" aria-label="This cycle, day 1 to 31. Today is day ${CYCLE_DAY}. Days 1 to 5 were your period, 11 to 17 the fertile window (estimate), and your next period is likely on day 29, 30 or 31.">${items}</ol>`;
+  }
+
+  // ── Views ───────────────────────────────────────────────────────────────
+  function describe(p, date) {
+    const parts = [];
+    const f = p.flow[date];
+    if (f) parts.push(flowWords(f));
+    const l = p.logs[date];
+    if (l) { parts.push(...(l.symptoms || []), ...(l.mood || [])); if (l.note) parts.push("Note"); }
+    return parts.length > 4 ? `${parts.slice(0, 3).join(" · ")} · ${parts.length - 3} more` : parts.join(" · ");
+  }
+
+  function todayView(p) {
+    const s = describe(p, TODAY);
+    const likely = `<p class="likely">Period likely between <b>Sep 25</b> and <b>Sep 27</b></p><p class="soft">In 11–13 days</p>`;
+    const top = p.dir === "c"
+      ? `<div class="c-hero"><h2 class="disp">Day ${CYCLE_DAY}</h2><p class="c-of">of about ${ABOUT}</p></div>${pebblesC()}<div class="c-card">${likely}</div>`
+      : `${p.dir === "a" ? ringA() : ringB()}${likely}`;
+    return `<div class="today">${top}${s ? `<div class="logged"><span class="label">Today</span><span>${esc(s)}</span></div>` : ""}<button type="button" class="primary" data-action="log" data-date="${TODAY}">${s ? "Edit today" : "Log today"}</button></div>`;
+  }
+
+  function calendarView(p) {
+    const { y, m } = p.month;
+    const lead = (new Date(y, m, 1).getDay() + 6) % 7;
+    const n = new Date(y, m + 1, 0).getDate();
+    let cells = '<span class="day blank" aria-hidden="true"></span>'.repeat(lead);
+    for (let d = 1; d <= n; d++) {
+      const s = iso(new Date(y, m, d));
+      const f = p.flow[s], l = p.logs[s];
+      const logged = l && ((l.symptoms || []).length || (l.mood || []).length || l.note);
+      const cls = ["day", PREDICTED.has(s) && "predicted", FERTILE.has(s) && "fertile", logged && "logged", s === TODAY && "is-today"].filter(Boolean).join(" ");
+      const label = [long(s), f && flowWords(f).toLowerCase(), PREDICTED.has(s) && "period likely", FERTILE.has(s) && "fertile window, estimate", logged && "has a log", s === TODAY && "today"].filter(Boolean).join(", ");
+      cells += `<button type="button" class="${cls}" data-day="${s}" aria-pressed="${s === p.selected}" aria-label="${label}"${f ? ` style="--fill:${FILL[f]}%"` : ""}>${f ? '<span class="fill"></span>' : ""}<span class="n">${d}</span></button>`;
+    }
+    return `<div class="cal">
+      <div class="cal-head"><button type="button" class="nav-btn" data-month="-1" aria-label="Previous month"${m <= 4 ? " disabled" : ""}>‹</button><h2 class="disp">${MONTHS[m]} ${y}</h2><button type="button" class="nav-btn" data-month="1" aria-label="Next month"${m >= 9 ? " disabled" : ""}>›</button></div>
+      <div class="wk" aria-hidden="true"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+      <div class="cal-grid">${cells}</div>
+      <div class="legend"><span><i class="lg p"></i>Period</span><span><i class="lg pr"></i>Likely</span><span><i class="lg f"></i>Fertile window (estimate)</span><span><i class="lg l"></i>Logged</span></div>
+      ${detail(p)}</div>`;
+  }
+
+  function detail(p) {
+    const s = p.selected, f = p.flow[s], l = p.logs[s] || {};
+    const items = [];
+    if (f) items.push(`Period · ${flowWords(f).toLowerCase()}`);
+    if (PREDICTED.has(s)) items.push("Your period is likely around here");
+    if (FERTILE.has(s)) items.push("Fertile window (estimate)");
+    if ((l.symptoms || []).length) items.push(esc(l.symptoms.join(", ")));
+    if ((l.mood || []).length) items.push(`Mood: ${esc(l.mood.join(", "))}`);
+    if (l.note) items.push(`“${esc(l.note)}”`);
+    const has = f || (l.symptoms || []).length || (l.mood || []).length || l.note;
+    const button = s <= TODAY ? `<button type="button" class="ghost" data-action="log" data-date="${s}">${has ? "Edit this day" : "Log this day"}</button>` : "";
+    return `<div class="detail"><h3>${s === TODAY ? "Today" : long(s)}</h3>${items.length ? `<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul>` : '<p class="soft">Nothing logged.</p>'}${button}</div>`;
+  }
+
+  function insightsView(p) {
+    const cycles = STARTS.slice(0, -1).map((s, i) => ({ from: s, to: add(STARTS[i + 1], -1), len: Math.round((D(STARTS[i + 1]) - D(s)) / 864e5) })).reverse();
+    const counts = {};
+    Object.values(p.logs).forEach((l) => (l.symptoms || []).forEach((x) => (counts[x] = (counts[x] || 0) + 1)));
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
+    return `<div class="ins"><h2 class="disp">Your rhythm</h2><p class="soft">Your last ${cycles.length} cycles</p>
+      <ul class="bars">${cycles.map((c) => `<li><span>${short(c.from)} – ${short(c.to)}</span><span class="v">${c.len} days</span><span class="track"><span class="bar" style="--len:${c.len}"></span></span></li>`).join("")}</ul>
+      <div class="scale" aria-hidden="true">${[0, 7, 14, 21, 28, 35].map((v) => `<span style="left:${(v / 35) * 100}%">${v}</span>`).join("")}</div>
+      <div class="facts">
+        <div class="fact"><span class="soft">Your cycle is usually</span><b class="disp">28–29 days</b></div>
+        <div class="fact"><span class="soft">Your period usually lasts</span><b class="disp">5 days</b></div>
+        <div class="fact"><span class="soft">Logged most often</span><b class="disp">${esc(top.join(", ") || "Nothing yet")}</b></div>
+      </div>
+      <p class="quiet-note">Worked out on this phone. Nothing here is sent anywhere.</p></div>`;
+  }
+
+  // ── Log sheet ───────────────────────────────────────────────────────────
+  function drop(id, level) {
+    const top = 3 + 26 * (1 - level);
+    return `<svg viewBox="0 0 24 32" aria-hidden="true"><defs><clipPath id="${id}"><rect x="0" y="${top.toFixed(1)}" width="24" height="32"/></clipPath></defs><path class="drop-fill" d="${DROP}" clip-path="url(#${id})"/><path class="drop-line" d="${DROP}"/></svg>`;
+  }
+
+  function sheetHTML(p, date) {
+    const l = p.logs[date] || {};
+    const flow = p.flow[date] || "none";
+    const chip = (kind, v, on) => `<button type="button" class="chip" data-chip="${kind}" data-value="${esc(v)}" aria-pressed="${on}">${esc(v)}</button>`;
+    return `<div class="grab" aria-hidden="true"></div>
+      <div class="sheet-head"><h3 class="disp" id="sheet-title-${p.dir}">${date === TODAY ? "Today" : long(date)}</h3><button type="button" class="close" data-action="close" aria-label="Close">×</button></div>
+      <fieldset><legend>Flow</legend><div class="flows">${FLOWS.map((f) => `<button type="button" class="flow-opt" data-flow="${f}" aria-pressed="${f === flow}">${drop(`drop-${p.dir}-${f}`, DROP_LEVEL[f])}<span>${FLOW_LABEL[f]}</span></button>`).join("")}</div></fieldset>
+      <fieldset><legend>Symptoms</legend><div class="chips">${SYMPTOMS.map((v) => chip("s", v, (l.symptoms || []).includes(v))).join("")}</div></fieldset>
+      <fieldset><legend>Mood</legend><div class="chips">${MOODS.map((v) => chip("m", v, (l.mood || []).includes(v))).join("")}</div></fieldset>
+      <label class="note-label" for="note-${p.dir}">Note</label>
+      <textarea id="note-${p.dir}" rows="2" placeholder="Only you can see this">${esc(l.note || "")}</textarea>
+      <button type="button" class="primary" data-action="save">Save</button>`;
+  }
+
+  // ── Phones ──────────────────────────────────────────────────────────────
+  const tryoutBox = document.getElementById("tryout");
+  const phones = {};
+
+  function shell(dir) {
+    return `<div class="screen">
+      <div class="tryout"><strong>You're trying almanac.</strong> Nothing you enter here is saved. To track your cycle privately, open almanac in the Polkadot app.</div>
+      <div class="top"><span class="wordmark disp">almanac</span><span class="preview">Preview</span></div>
+      <div class="views" data-views data-tab="today"></div>
+      <nav class="tabs" aria-label="almanac">
+        <button type="button" data-tab="today" aria-current="page">Today</button>
+        <button type="button" data-tab="calendar">Calendar</button>
+        <button type="button" data-tab="insights">Insights</button>
+      </nav>
+      <div class="scrim" data-action="close"></div>
+      <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title-${dir}" aria-hidden="true" data-sheet></section>
+      <div class="toast" role="status" aria-live="polite" data-toast></div>
+    </div>`;
+  }
+
+  function centerPebbles(p) {
+    const strip = p.el.querySelector(".pebbles");
+    const t = strip && strip.querySelector(".is-today");
+    if (t && strip.clientWidth) strip.scrollLeft = t.offsetLeft - strip.clientWidth / 2 + t.offsetWidth / 2;
+  }
+
+  function renderView(p) {
+    const views = p.el.querySelector("[data-views]");
+    views.dataset.tab = p.tab;
+    views.innerHTML = p.tab === "today" ? todayView(p) : p.tab === "calendar" ? calendarView(p) : insightsView(p);
+    p.el.querySelectorAll(".tabs button").forEach((b) => (b.dataset.tab === p.tab ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
+    if (p.dir === "c" && p.tab === "today") centerPebbles(p);
+  }
+
+  function setInert(p, on) {
+    p.el.querySelector("[data-views]").inert = on;
+    p.el.querySelector(".tabs").inert = on;
+  }
+
+  function openSheet(p, date) {
+    p.editing = date;
+    const sheet = p.el.querySelector("[data-sheet]");
+    sheet.innerHTML = sheetHTML(p, date);
+    sheet.scrollTop = 0;
+    sheet.removeAttribute("aria-hidden");
+    p.el.classList.add("sheet-open");
+    setInert(p, true);
+    requestAnimationFrame(() => sheet.querySelector('[data-flow][aria-pressed="true"]').focus());
+  }
+
+  function closeSheet(p, date) {
+    const sheet = p.el.querySelector("[data-sheet]");
+    p.el.classList.remove("sheet-open");
+    sheet.setAttribute("aria-hidden", "true");
+    setInert(p, false);
+    const back = p.tab === "calendar" ? p.el.querySelector(`[data-day="${date || p.editing}"]`) : p.el.querySelector(".primary");
+    if (back) back.focus();
+  }
+
+  function save(p) {
+    const sheet = p.el.querySelector("[data-sheet]");
+    const date = p.editing;
+    const f = sheet.querySelector('[data-flow][aria-pressed="true"]').dataset.flow;
+    if (f === "none") delete p.flow[date]; else p.flow[date] = f;
+    const picked = (kind) => [...sheet.querySelectorAll(`[data-chip="${kind}"][aria-pressed="true"]`)].map((b) => b.dataset.value);
+    const symptoms = picked("s"), mood = picked("m");
+    const note = sheet.querySelector("textarea").value.trim();
+    if (symptoms.length || mood.length || note) p.logs[date] = { symptoms, mood, note }; else delete p.logs[date];
+    if (p.tab === "calendar") p.selected = date;
+    renderView(p);
+    closeSheet(p, date);
+    toast(p, tryoutBox.checked ? "Kept until you close this page" : "Saved");
+  }
+
+  function toast(p, msg) {
+    const el = p.el.querySelector("[data-toast]");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(p.toastTimer);
+    p.toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
+  }
+
+  function onClick(p, e) {
+    const t = e.target.closest("button, .scrim");
+    if (!t || !p.el.contains(t)) return;
+    if (t.dataset.tab) { p.tab = t.dataset.tab; renderView(p); return; }
+    if (t.dataset.month) {
+      const dir = t.dataset.month;
+      p.month.m += Number(dir);
+      renderView(p);
+      const again = p.el.querySelector(`[data-month="${dir}"]`);
+      (again && !again.disabled ? again : p.el.querySelector(".nav-btn:not(:disabled)")).focus();
+      return;
+    }
+    if (t.dataset.day) { p.selected = t.dataset.day; renderView(p); p.el.querySelector(`[data-day="${p.selected}"]`).focus(); return; }
+    if (t.dataset.flow) { t.parentElement.querySelectorAll("[data-flow]").forEach((b) => b.setAttribute("aria-pressed", String(b === t))); return; }
+    if (t.dataset.chip) { t.setAttribute("aria-pressed", String(t.getAttribute("aria-pressed") !== "true")); return; }
+    const a = t.dataset.action;
+    if (a === "log") openSheet(p, t.dataset.date);
+    else if (a === "close") closeSheet(p);
+    else if (a === "save") save(p);
+  }
+
+  for (const dir of ["a", "b", "c"]) {
+    const el = document.querySelector(`.phone[data-dir="${dir}"]`);
+    const p = (phones[dir] = { dir, el, tab: "today", month: { y: 2026, m: 8 }, selected: TODAY, editing: null, flow: { ...SAMPLE_FLOW }, logs: JSON.parse(JSON.stringify(SAMPLE_LOGS)) });
+    el.innerHTML = shell(dir);
+    el.addEventListener("click", (e) => onClick(p, e));
+    el.addEventListener("keydown", (e) => { if (e.key === "Escape" && el.classList.contains("sheet-open")) closeSheet(p); });
+    renderView(p);
+  }
+
+  // ── Swatches ────────────────────────────────────────────────────────────
+  const SWATCHES = [["--bg", "Ground"], ["--ink", "Text"], ["--accent", "Accent"], ["--period", "Period"], ["--sage", "Fertile"]];
+  document.querySelectorAll(".tokens .swatches").forEach((box) => {
+    box.innerHTML = SWATCHES.map(([v, name]) => `<div class="sw" data-var="${v}" style="--sw: var(${v})"><span class="chip-c"></span><span>${name}</span><code></code></div>`).join("");
+  });
+  function updateSwatches() {
+    document.querySelectorAll(".sw").forEach((sw) => {
+      sw.querySelector("code").textContent = getComputedStyle(sw).getPropertyValue(sw.dataset.var).trim().toUpperCase();
+    });
+  }
+
+  // ── Theme for the phones ────────────────────────────────────────────────
+  let modePref = "match";
+  const dark = matchMedia("(prefers-color-scheme: dark)");
+  const effective = () => (modePref !== "match" ? modePref : document.documentElement.dataset.theme || (dark.matches ? "dark" : "light"));
+  function applyMode() {
+    const m = effective();
+    document.querySelectorAll(".phone, .tokens").forEach((el) => (el.dataset.mode = m));
+    updateSwatches();
+  }
+  document.querySelectorAll("[data-mode-pref]").forEach((b) =>
+    b.addEventListener("click", () => {
+      modePref = b.dataset.modePref;
+      document.querySelectorAll("[data-mode-pref]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      applyMode();
+    }),
+  );
+  dark.addEventListener("change", applyMode);
+  new MutationObserver(applyMode).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  applyMode();
+
+  // ── Tryout banner and the direction switch ──────────────────────────────
+  tryoutBox.addEventListener("change", () => document.querySelectorAll(".phone").forEach((el) => el.classList.toggle("is-tryout", tryoutBox.checked)));
+  document.querySelectorAll("[data-show]").forEach((b) =>
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".direction").forEach((s) => s.classList.toggle("is-shown", s.id === `dir-${b.dataset.show}`));
+      document.querySelectorAll("[data-show]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      if (b.dataset.show === "c" && phones.c.tab === "today") centerPebbles(phones.c);
+    }),
+  );
+  addEventListener("resize", () => phones.c.tab === "today" && centerPebbles(phones.c));
+  document.fonts && document.fonts.ready.then(() => centerPebbles(phones.c));
+})();
+</script>

@@ -30,11 +30,15 @@ Tryout banner, always visible:
 
 ## 3. Experience
 
-**Onboarding — three screens at most.** When did your last period start? (a date, or *Not sure*).
-How long is your cycle usually? (a number, or *Not sure*). What would you like almanac to help with?
-(periods, fertility window, trying to conceive — only the first is on). No backup code on day one:
-it is offered after the first week, or the first time backups or sharing are turned on, and a gentle
-reminder stays in the Privacy screen until it is saved.
+**Onboarding — four screens at most.** First, how almanac looks: three live previews (§4), with
+Hearth already selected so continuing is one tap. The rest of onboarding appears in the chosen look.
+Then: When did your last period start? (a date, or *Not sure*). How long is your cycle usually? (a
+number, or *Not sure*). What would you like almanac to help with? (periods, fertility window, trying
+to conceive — only the first is on). No backup code on day one: it is offered once three days have
+been logged, or the first time backups or sharing are turned on, and a gentle reminder stays in the
+Privacy screen until it is saved. *Changed 2026-09-14: the look picker is new, making four screens.
+The backup code moved from after the first week to after three logged days: while Bulletin backups
+are blocked (P6) the copied backup is the only backup, and the devnet has already reset once.*
 
 **Home.** One cycle ring and one button.
 
@@ -67,6 +71,9 @@ on) marked with a pattern as well as a colour.
 **Modes.** Fertility window (off), trying to conceive (off), pregnancy (off — pauses predictions,
 counts weeks, handles loss with care and without prompts).
 
+**Settings.** The look, which changes live so it can be seen before leaving the screen; the modes;
+reminders.
+
 **Privacy screen.** Lock and duress PIN, backups, shares, export, erase — each in one sentence of
 plain language.
 
@@ -88,24 +95,42 @@ code there is full of words like "transaction" and "sign" that almanac never sho
 
 ## 4. Look — soft, warm, minimal
 
-Starting tokens. Every text pair is checked to WCAG AA in Phase 2 before it ships.
+**Three looks, chosen on the first screen and changeable in Settings.** *Decided 2026-09-14, from the
+design canvas ([`design/looks.html`](design/looks.html)): the first was to be one look, Hearth; all
+three mock-ups are kept instead.* The looks share every layout, word and flow. They differ only in
+colours, fonts, corners and the cycle graphic:
 
-| Token | Light | Dark | Use |
+| | Hearth (default) | Moonpaper | Pebble |
 |---|---|---|---|
-| `--bg` | `#FBF6F0` cream | `#1F1A17` | Page |
-| `--surface` | `#FFFBF7` | `#29221E` | Cards, sheets |
-| `--ink` | `#3B2F2A` | `#F3EAE2` | Text |
-| `--ink-soft` | `#6E5E55` | `#BFAFA4` | Secondary text |
-| `--accent` | `#A9533A` terracotta | `#E08C6D` | Buttons, links |
-| `--period` | `#C96F5A` | `#D9826C` | Period days |
-| `--blush` | `#F2D9CF` | `#4A3029` | Predicted days, soft fills |
-| `--sage` | `#7A8B6C` | `#9DB08D` | Fertile-window estimate |
-| `--line` | `#EADFD2` | `#3A312C` | Hairlines |
+| Feel | Warm and familiar | Calm, a printed almanac | Brighter and friendlier |
+| Cycle graphic | A ring that fills through the cycle | A dial of dots, one per day | A path of pebbles, scrolled to today |
+| Headings, numbers | Fraunces, at its softest | Instrument Serif | Bricolage Grotesque |
+| Text | DM Sans | Instrument Sans | Atkinson Hyperlegible Next, made for low vision |
+| Corners | 18 px | 10 px, round calendar days | 24 px, pill buttons |
 
-- **Type.** Fraunces (a soft serif) for the big numbers and headings; DM Sans for everything else.
-  Both are OFL-licensed and **bundled as woff2** — no font CDN, since a CDN request reveals who is
-  opening the app.
-- **Shape.** 16–20 px radii, generous space, one accent, hairline dividers.
+Colours. Every text pair, in all six palettes, is checked to WCAG AA in Phase 2 before it ships.
+`--sage` was renamed `--fertile`, because Moonpaper's is blue.
+
+| Token | Use | Hearth light | Hearth dark | Moonpaper light | Moonpaper dark | Pebble light | Pebble dark |
+|---|---|---|---|---|---|---|---|
+| `--bg` | Page | `#FBF6F0` | `#1F1A17` | `#EFEBF1` | `#1B1930` | `#FCEBE1` | `#231920` |
+| `--surface` | Cards, sheets | `#FFFBF7` | `#29221E` | `#F9F7FA` | `#24213F` | `#FFF8F4` | `#33242D` |
+| `--ink` | Text | `#3B2F2A` | `#F3EAE2` | `#2B2745` | `#EDE8F3` | `#3A2230` | `#FBEDE9` |
+| `--ink-soft` | Secondary text | `#6E5E55` | `#BFAFA4` | `#5F5A78` | `#B2ABC8` | `#775766` | `#D0B4BD` |
+| `--accent` | Buttons, links | `#A9533A` | `#E08C6D` | `#B0456A` | `#F08EA8` | `#8E2F5A` | `#F29BBE` |
+| `--on-accent` | Text on buttons | `#FFFFFF` | `#1F1A17` | `#FFFFFF` | `#1B1930` | `#FFFFFF` | `#231920` |
+| `--period` | Period days | `#C96F5A` | `#D9826C` | `#C4566F` | `#E8839C` | `#CF5479` | `#EB7E9C` |
+| `--blush` | Predicted days, soft fills | `#F2D9CF` | `#4A3029` | `#EAD2DC` | `#472D48` | `#F6CFD2` | `#5A3342` |
+| `--fertile` | Fertile-window estimate | `#7A8B6C` | `#9DB08D` | `#4F7891` | `#8FB6CC` | `#5E8F70` | `#93C3A2` |
+| `--line` | Hairlines | `#EADFD2` | `#3A312C` | `#D9D3DF` | `#36325A` | `#EFCFC3` | `#48333E` |
+
+- **The look belongs to the phone, not to a vault.** It is sealed under KN (§6), so the lock screen
+  shows it before any PIN, and the real and decoy vaults share it: a decoy that opened in a different
+  look would give itself away.
+- **Type.** All six families are OFL-licensed and **bundled as woff2** — no font CDN, since a CDN
+  request reveals who is opening the app. Latin only, they come to 357 KiB, so fonts have their own
+  400 KiB budget, apart from the code's 512 KiB. A phone loads only the fonts of the look in use.
+- **Shape.** Generous space, one accent, hairline dividers; radii as in the table.
 - **Meaning is never colour alone.** Flow shows as fill level and a label; predictions use an
   outline; the fertile window uses a pattern.
 - **Motion.** 150–250 ms ease-out; the ring fills gently. `prefers-reduced-motion` is honoured.
@@ -153,6 +178,7 @@ interface Settings {
 | `a/v1/meta` | Format version, scrypt salt and parameters — plaintext, and the same with or without a PIN |
 | `a/v1/slots` | Two wrapped keys of identical shape, in random order |
 | `a/v1/names` | The list of record names, encrypted under KN — shared by both vaults, so erase can find every record |
+| `a/v1/look` | The chosen look (§4), encrypted under KN — readable before unlock, shared by both vaults, removed by erase |
 | `a/v1/r/0/<id>`, `a/v1/r/1/<id>` | Encrypted, padded records, one set per slot. `<id>` is derived from the record name under KE, so the store does not list months in the clear |
 
 Records are named `settings`, `m/2026-09`, and so on. One record per month means logging a day
@@ -177,7 +203,7 @@ deriveEntropy("almanac/v1/device") ──HKDF──►  KE   device key, never s
 PIN        ──scrypt──►  P′ ;   KP = HKDF(KE ‖ P′)    PIN key — needs the device AND the PIN
 duress PIN ──scrypt──►  D′ ;   KD = HKDF(KE ‖ D′)
 backup code (12 words, 132 bits) ──HKDF──►  KB (backup key),  TB (backup topic)
-KE ──HKDF──►  KN    seals the list of record names; also derives each record's storage id
+KE ──HKDF──►  KN    seals the list of record names and the chosen look; also derives each record's storage id
 
 DK  random 32 bytes per vault; encrypts that vault's records (XChaCha20-Poly1305)
     stored wrapped under:  KE (no PIN)  or  KP (PIN on)

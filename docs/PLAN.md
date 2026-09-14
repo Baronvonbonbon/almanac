@@ -41,7 +41,7 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Backups | Encrypted Bulletin backups + a backup code + an encrypted export file |
 | Sharing | Selective by category and date range. Every share expires — default 7 days, maximum 90. Revocable |
 | Web gateway | Tryout mode: sample data, nothing saved, a clear "use the Polkadot app" banner |
-| Look | Soft, warm, minimal |
+| Look | Soft, warm, minimal — in three looks, picked on the first screen and changeable in Settings: Hearth (the default), Moonpaper, Pebble ([DESIGN §4](DESIGN.md#4-look--soft-warm-minimal)) |
 | License · language | GPL-3.0-or-later · English, with every string externalised from day one |
 
 ## Constraints already known
@@ -145,19 +145,28 @@ by it).
 ## Phase 2 — Core experience ⬜
 
 Starts with a design canvas: two or three soft, warm, minimal explorations of onboarding, home, the
-log sheet and the calendar. One is chosen before any screen is built.
+log sheet and the calendar. One is chosen before any screen is built. *Done 2026-09-14: three were
+mocked up ([`design/looks.html`](design/looks.html)), and all three are kept as looks the user picks.*
+
+*Decided 2026-09-14 — the first prototype:* this phase, plus from Phase 3 the PIN, the duress PIN
+and the copied backup with its backup code, offered after three logged days. While P6 blocks Bulletin the copied backup is the only
+backup, and the devnet has already reset once. The web tryout is included. The probe's remaining
+checks move to a hidden screen in the app, because one name serves one bundle; to stay within the
+bundle budget that screen uses `product-sdk-host` directly, not `createApp` and its chain metadata.
 
 **Produces**
-- [ ] Onboarding (three screens at most), home (cycle ring + **Log today**), log sheet (three taps at
-      most), calendar, history, settings with the mode toggles
-- [ ] Web tryout mode
-- [ ] Light and dark, following the host theme
+- [ ] Onboarding (four screens at most, the first choosing the look), home (cycle graphic + **Log
+      today**), log sheet (three taps at most), calendar, history, settings with the look and the
+      mode toggles
+- [ ] Web tryout mode, with the same look picker
+- [ ] Hearth, Moonpaper and Pebble, each light and dark, following the host theme; their fonts
+      bundled, within a 400 KiB font budget separate from the code's
 
 **Gate**
 - [ ] Published to `almanacapp.dot` and used daily for a week on a real device
 - [ ] Three to five people outside the project log a day without help, and none of them meets a word
       from the banned list
-- [ ] WCAG 2.2 AA contrast, a screen-reader pass, reduced motion honoured
+- [ ] WCAG 2.2 AA contrast in all six palettes, a screen-reader pass, reduced motion honoured
 - [ ] Tryout mode on `almanacapp.dev-dot.li` stores nothing — verified empty after a reload
 
 ## Phase 3 — Protection ⬜

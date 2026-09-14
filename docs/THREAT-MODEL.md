@@ -48,6 +48,9 @@ decoy should probably back up on the same schedule. See [PLAN open questions](PL
 Storage can give it away too, to someone who copies it at two different times: between the copies,
 only the slot in use changes. If they later watch the duress PIN open a slot that never changed,
 they can tell it is the decoy. One copy alone shows nothing (DESIGN §5).
+Appearance can give it away as well. The look the user picked therefore belongs to the phone, not to
+a vault: both vaults open in the same look (DESIGN §4, decided 2026-09-14). Other settings, such as
+the modes, are per vault, so the decoy should be set up like the real one.
 
 **R4 — Short PINs are guessable.** A 6-digit PIN has a million possibilities. Inside the app,
 guesses are slowed by growing delays. Outside it, the PIN key also needs the device key, which only
