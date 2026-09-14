@@ -186,6 +186,11 @@ export class Vault {
     return vault ? { state: "open", vault } : { state: "locked" };
   }
 
+  /** Whether the host holds a vault, found without opening it or asking the host for entropy. */
+  static async exists(host: Host): Promise<boolean> {
+    return (await host.storage.read(META)) !== undefined;
+  }
+
   /** Opens whichever vault the PIN unwraps — the real one or the decoy — or returns `null`. */
   static async unlock(host: Host, pin: string): Promise<Vault | null> {
     const meta = await readMeta(host);

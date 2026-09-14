@@ -22,8 +22,8 @@ export const AUTO_LOCK_MS = 60_000;
 
 /**
  * Where almanac opens: onboarding on the first launch, the lock screen when a PIN is set, home
- * otherwise. Outside the Polkadot app — the web tryout — the same flow runs on a host that keeps
- * everything in memory, so nothing is saved.
+ * otherwise. Outside the Polkadot app, or on a host almanac can't use (startup.ts) — the tryout — the
+ * same flow runs on a host that keeps everything in memory, so nothing is saved.
  */
 async function start(hostReady: Promise<Host | null>): Promise<Started> {
   const inApp = await hostReady;

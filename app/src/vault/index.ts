@@ -1,5 +1,5 @@
 export { RecordError } from "./codec";
-export { DEFAULT_KDF, type KdfParams } from "./keys";
+export { DEFAULT_KDF, deviceKey, type KdfParams } from "./keys";
 export {
   readLook,
   readTries,

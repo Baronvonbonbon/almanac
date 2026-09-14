@@ -40,7 +40,7 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Protection | Optional PIN. Optional duress PIN that opens a decoy; "also erase the real data" is a separate, informed opt-in |
 | Backups | Encrypted Bulletin backups + a backup code (28 letters and digits) + the same encrypted backup copied as text, since no file can leave the app (P4) |
 | Sharing | Selective by category and date range. Every share expires — default 7 days, maximum 90. Revocable |
-| Web gateway | Tryout mode: example months on request, nothing saved, a clear "use the Polkadot app" banner |
+| Web gateway | Tryout mode: example months on request, nothing saved, a clear "use the Polkadot app" banner. Opened as a fallback when the host can't be used ([DESIGN §2](DESIGN.md#2-surfaces)) |
 | Look | Soft, warm, minimal — in three looks, picked on the first screen and changeable in Settings: Hearth (the default), Moonpaper, Pebble ([DESIGN §4](DESIGN.md#4-look--soft-warm-minimal)) |
 | License · language | GPL-3.0-or-later · English, with every string externalised from day one |
 
@@ -52,7 +52,7 @@ re-checks the ones marked with a check ID.
 | Fact | Source | Consequence |
 |---|---|---|
 | Every host-routed signature needs a tap — `AutoSigning` is `NotAvailable` on Android and iOS | broadside Phase 1, device-measured | No chain writes in the daily flow |
-| `createLocalKvStore` throws outside a host container | broadside Phase 3, `local-storage` 0.3.9 | An in-memory host for dev and tests; the web gateway can only be a tryout |
+| `createLocalKvStore` throws outside a host container | broadside Phase 3, `local-storage` 0.3.9 | An in-memory host for dev and tests; the web gateway can only be a tryout. *Changed 2026-09-14:* dev-dot.li now frames products in a host of its own, whose `deriveEntropy` fails with *Not connected*; almanac falls back to the tryout when a host never answers or can't derive its key before a vault exists |
 | `deriveEntropy` is deterministic across a full app restart and scoped per product | broadside Phase 1, device-measured | The device key regenerates from nothing (**P2** checks reinstall and a second device) |
 | `getUserId` returns a global username every Product can read | broadside Phase 1 | Never called |
 | Bulletin reads are public by CID; retention measured at ~2 weeks, while Parity's docs say content persists | sonde, broadside, le1zuxt9l `DEPLOY.md`; docs.polkadotcommunity.foundation | Everything uploaded is encrypted and padded. Ciphertext is treated as possibly permanent, and backups as possibly expiring (**P7**) |

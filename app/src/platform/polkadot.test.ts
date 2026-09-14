@@ -1,5 +1,6 @@
 import { createFakeHost } from "@parity/product-sdk-host/testing";
 import { describe, expect, it } from "vitest";
+import { chooseHost } from "../startup";
 import { Vault } from "../vault";
 import { detectHost, memoryHost } from ".";
 import { polkadotHost } from "./polkadot";
@@ -10,6 +11,12 @@ describe("the Polkadot app's host, against the SDK's fake", () => {
   it("is found inside the app", async () => {
     createFakeHost();
     expect((await detectHost())?.kind).toBe("polkadot");
+  });
+
+  it("gives way to the tryout when it can't derive almanac's key and nothing is saved yet", async () => {
+    // The fake has no entropy, like the dev-dot.li web host.
+    createFakeHost();
+    expect(await chooseHost(detectHost(), 1000)).toBeNull();
   });
 
   it("reads back what it wrote, and nothing once removed", async () => {

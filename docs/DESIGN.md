@@ -20,8 +20,17 @@ here with its date. Open items that depend on the probe name their check ID (P1�
 | Surface | What it is |
 |---|---|
 | **The Polkadot app** (`almanac.dot`) | The full app |
-| **Web gateway** (`almanac.dev-dot.li`) | Tryout mode: the same onboarding and app, kept in memory and gone on reload. Home offers example months — five cycles before the first period logged — so the calendar and insights can be seen filled in; they are added only when asked for, and never in the Polkadot app. The host API does not exist here (`createLocalKvStore` throws), so this is a constraint, not a choice |
+| **Web gateway** (`almanac.dev-dot.li`) | Tryout mode: the same onboarding and app, kept in memory and gone on reload. Home offers example months — five cycles before the first period logged — so the calendar and insights can be seen filled in; they are added only when asked for, and never in the Polkadot app. The gateway cannot keep almanac's data, so this is a constraint, not a choice (below) |
 | **Web viewer** (same gateway, opened from a timed link) | Read-only view of one share, if P10 shows the gateway can reach Bulletin and the statement store |
+
+*Changed 2026-09-14.* The gateway now runs products on a host of its own, in a frame, but that host
+fails every `deriveEntropy` with *Not connected*, so almanac could not make its key there. The
+tryout is therefore a fallback (`app/src/startup.ts`): almanac opens it when no host is found, when
+the host never answers, or when it can't derive almanac's key before a vault exists. Once a vault
+exists the host is kept whatever happens — a tryout over someone's data would look as if it had gone —
+and a failure to open it is reported. The gateway sizes its frame to `100vh` in a page that can't
+scroll, so on a phone the frame's bottom is off the screen; almanac lifts its bottom edge by what is
+hidden (`app/src/ui/hiddenBottom.ts`).
 
 Tryout banner, always visible:
 
