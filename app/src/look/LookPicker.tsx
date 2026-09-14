@@ -2,7 +2,8 @@ import { useEffect, useRef, type CSSProperties, type KeyboardEvent } from "react
 import { CycleGraphic } from "../cycle-graphic/CycleGraphic";
 import type { CycleShape } from "../cycle-graphic/shape";
 import { t } from "../i18n";
-import { cssVariables, LOOK_IDS, previewFonts, useLook, type LookId } from "../look";
+import { cssVariables, LOOK_IDS, previewFonts, useLook, type LookId } from ".";
+import "./look-picker.css";
 
 /** The cycle every preview draws — an example, and the screen says so. */
 const EXAMPLE: CycleShape = { day: 12, length: 28, periodDays: 5, fertile: [10, 16], likely: [28, 30] };
@@ -53,7 +54,7 @@ export function LookPicker({ value, onChange, labelledBy }: { value: LookId; onC
           </span>
           {id === value && (
             <span className="look-chosen" aria-hidden="true">
-              ✓ {t("onboarding.look.chosen")}
+              ✓ {t("looks.chosen")}
             </span>
           )}
         </button>

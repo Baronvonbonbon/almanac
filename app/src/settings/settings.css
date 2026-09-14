@@ -1,0 +1,90 @@
+.settings {
+  display: grid;
+  gap: 1.75rem;
+  padding-top: 0.5rem;
+}
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.settings-head h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+.settings-head h1:focus {
+  outline: none;
+}
+.settings-head .link-button {
+  font-weight: 700;
+}
+.settings-error {
+  margin: 0;
+}
+.settings-group {
+  display: grid;
+  gap: 0.6rem;
+}
+.settings-group h2 {
+  margin: 0;
+  font: 700 0.78rem var(--body);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.settings-note {
+  margin: -0.2rem 0 0.2rem;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+/* A usual length: name and value on the left, − and + on the right, a note and "not sure" below. */
+.set-length {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.15rem 1rem;
+  padding: 0.9rem 1rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.set-length-label {
+  grid-area: 1 / 1;
+  font-weight: 700;
+}
+.set-length-value {
+  grid-area: 2 / 1;
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  font-size: 1.6rem;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.set-length-steps {
+  grid-area: 1 / 2 / 3 / 3;
+  display: flex;
+  gap: 0.5rem;
+}
+.set-length-note {
+  grid-column: 1 / -1;
+  margin-top: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+.set-length-clear {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 0;
+}
+.set-length-clear[aria-pressed="true"] {
+  color: var(--ink-soft);
+  text-decoration: none;
+  cursor: default;
+}

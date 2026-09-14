@@ -1,4 +1,4 @@
-import { addDays, daysBetween, type DayEntry, type ISODate, type Prediction } from "../cycle";
+import { addDays, COUNTED_LENGTHS, daysBetween, type DayEntry, type ISODate, type Prediction } from "../cycle";
 
 /**
  * What a cycle graphic draws (docs/DESIGN.md §4), in cycle days: day 1 is the first day of the latest
@@ -15,10 +15,13 @@ export interface CycleShape {
   likely?: [number, number];
 }
 
-/** `null` until almanac knows when the latest period started. */
+/**
+ * `null` until almanac knows when the latest period started — and after months without one, after a
+ * pregnancy or a gap in logging, when a cycle drawn hundreds of days long would only alarm.
+ */
 export function cycleShape(prediction: Prediction, entries: DayEntry[], today: ISODate): CycleShape | null {
   const { cycleDay, cycleLength, fertile, next } = prediction;
-  if (!cycleDay || !cycleLength) return null;
+  if (!cycleDay || !cycleLength || cycleDay > COUNTED_LENGTHS.max) return null;
   const start = addDays(today, 1 - cycleDay);
   const at = (date: ISODate) => daysBetween(start, date) + 1;
   const flow = new Set(entries.filter((e) => e.flow).map((e) => e.date));

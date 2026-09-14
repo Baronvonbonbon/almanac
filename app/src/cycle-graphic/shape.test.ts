@@ -39,4 +39,9 @@ describe("cycle shape", () => {
   it("draws nothing before a period is known", () => {
     expect(cycleShape(predict([], { today: TODAY }), [], TODAY)).toBeNull();
   });
+
+  it("draws nothing after months without a period, rather than a cycle hundreds of days long", () => {
+    const entries: DayEntry[] = [{ date: "2026-03-01", periodStart: true, updatedAt: 1 }];
+    expect(cycleShape(predict(entries, { today: TODAY }), entries, TODAY)).toBeNull();
+  });
 });

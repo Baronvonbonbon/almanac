@@ -31,11 +31,13 @@ export interface Prediction {
   fertile?: { start: ISODate; end: ISODate; ovulation: ISODate };
   /** Cycle lengths left out of predictions because they were under 15 or over 90 days. */
   setAside: number[];
+  /** In pregnancy mode: the first day of the last period, which the weeks are counted from. */
+  since?: ISODate;
 }
 
 export function predict(entries: DayEntry[], options: PredictOptions): Prediction {
-  if (options.pregnancy) return { status: "paused", setAside: [] };
   const starts = periodStarts(entries.filter((e) => e.date <= options.today));
+  if (options.pregnancy) return starts.length ? { status: "paused", since: starts[starts.length - 1], setAside: [] } : { status: "paused", setAside: [] };
   if (!starts.length) return { status: "none", setAside: [] };
 
   const all = cycles(starts);

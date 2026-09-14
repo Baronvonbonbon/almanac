@@ -112,8 +112,10 @@ describe("predictions — fixtures", () => {
     expect(predict([], { today: FIRST })).toEqual({ status: "none", setAside: [] });
   });
 
-  it("pregnancy mode pauses predictions", () => {
-    expect(predict(history([28, 28, 28]), { today: FIRST, pregnancy: true }).status).toBe("paused");
+  it("pregnancy mode pauses predictions, keeping the last period's start to count weeks from", () => {
+    const lengths = [28, 28, 28];
+    expect(predict(history(lengths), { today: addDays(lastStart(lengths), 60), pregnancy: true })).toEqual({ status: "paused", since: lastStart(lengths), setAside: [] });
+    expect(predict([], { today: FIRST, pregnancy: true })).toEqual({ status: "paused", setAside: [] });
   });
 
   it("says how late, once today is past the range", () => {

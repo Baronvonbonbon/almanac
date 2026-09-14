@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { addDays, localToday, type ISODate } from "../cycle";
+import { TYPICAL_CYCLE as CYCLE } from "../data";
 import { t } from "../i18n";
 import { setLook, useLook } from "../look";
+import { LookPicker } from "../look/LookPicker";
 import type { Host } from "../platform";
 import { DatePicker } from "../ui/DatePicker";
+import { Toggle } from "../ui/Toggle";
 import type { Vault } from "../vault";
 import { finishOnboarding } from "./finish";
-import { LookPicker } from "./LookPicker";
 import "./onboarding.css";
 
 /** docs/DESIGN.md §3: four screens at most, the look first. */
 const STEPS = ["look", "lastPeriod", "cycle", "help"] as const;
-const CYCLE = { min: 15, max: 60, start: 28 };
 
 export function Onboarding({ host, onDone }: { host: Host; onDone(vault: Vault): void }) {
   const today = localToday();
@@ -161,21 +162,5 @@ export function Onboarding({ host, onDone }: { host: Host; onDone(vault: Vault):
         )}
       </div>
     </main>
-  );
-}
-
-function Toggle({ id, label, note, checked, onChange, disabled }: { id: string; label: string; note: string; checked: boolean; onChange?(on: boolean): void; disabled?: boolean }) {
-  return (
-    <div className="toggle-row">
-      <div className="toggle-text">
-        <label className="toggle-label" htmlFor={id}>
-          {label}
-        </label>
-        <span className="toggle-note" id={`${id}-note`}>
-          {note}
-        </span>
-      </div>
-      <button id={id} type="button" role="switch" className="switch" aria-checked={checked} aria-describedby={`${id}-note`} disabled={disabled} onClick={() => onChange?.(!checked)} />
-    </div>
   );
 }

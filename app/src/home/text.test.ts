@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Prediction } from "../cycle";
-import { homeText } from "./text";
+import { homeText, weeksAndDays } from "./text";
 
 const TODAY = "2026-09-14";
 const ready: Prediction = {
@@ -48,5 +48,24 @@ describe("what home says", () => {
   it("explains an empty or paused home", () => {
     expect(homeText({ status: "none", setAside: [] }, TODAY).primary).toMatch(/When your period starts/);
     expect(homeText({ status: "paused", setAside: [] }, TODAY).primary).toMatch(/paused while pregnancy mode is on/);
+  });
+
+  it("counts the weeks in pregnancy mode, from the last period's first day", () => {
+    expect(homeText({ status: "paused", since: "2026-07-12", setAside: [] }, TODAY)).toEqual({
+      primary: "9 weeks, 1 day",
+      secondary: "Counted from the first day of your last period.",
+      notes: ["Predictions are paused while pregnancy mode is on."],
+    });
+    expect([0, 1, 6, 7, 15].map(weeksAndDays)).toEqual(["0 days", "1 day", "6 days", "1 week", "2 weeks, 1 day"]);
+    // Past 44 weeks almanac doesn't guess: that start is not what the weeks count from.
+    expect(homeText({ status: "paused", since: "2025-09-01", setAside: [] }, TODAY).primary).toMatch(/paused while pregnancy mode is on/);
+  });
+
+  it("after months without a period, says so gently rather than counting the days late", () => {
+    expect(homeText({ ...ready, cycleDay: 200, late: 170 }, TODAY)).toEqual({
+      primary: "It's been a while since your last logged period.",
+      secondary: "When your next one starts, log it and almanac will pick up from there.",
+      notes: [],
+    });
   });
 });

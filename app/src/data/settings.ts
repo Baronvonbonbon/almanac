@@ -21,6 +21,10 @@ export const DEFAULT_SETTINGS: Settings = {
   reminders: { enabled: false, wording: "discreet" },
 };
 
+/** The usual lengths someone can give, in days, and where a stepper starts before they give one. */
+export const TYPICAL_CYCLE = { min: 15, max: 60, start: 28 };
+export const TYPICAL_PERIOD = { min: 1, max: 14, start: 5 };
+
 export type Stored = { schema: number } & Record<string, unknown>;
 type Migration = (old: Stored) => Stored;
 
@@ -57,3 +61,15 @@ export async function loadSettings(vault: Vault): Promise<Settings> {
 }
 
 export const saveSettings = (vault: Vault, settings: Settings): Promise<void> => vault.writeJSON("settings", settings);
+
+/** A usual length set, or with `undefined` forgotten — "Not sure". */
+export function withLength(settings: Settings, key: "typicalCycle" | "typicalPeriod", days: number | undefined): Settings {
+  const next = { ...settings };
+  if (days === undefined) delete next[key];
+  else next[key] = days;
+  return next;
+}
+
+/** Reads, changes and saves the settings as one step, so changes made in quick succession are all kept. */
+export const updateSettings = (vault: Vault, change: (settings: Settings) => Settings): Promise<void> =>
+  vault.updateJSON<Stored>("settings", (stored) => change(stored ? migrate(stored) : structuredClone(DEFAULT_SETTINGS)) as unknown as Stored);

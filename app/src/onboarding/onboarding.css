@@ -82,64 +82,6 @@
   margin: 0;
 }
 
-/* The look picker: each card is drawn in its own look. */
-.looks {
-  display: grid;
-  gap: 0.75rem;
-}
-.look-card {
-  position: relative;
-  display: grid;
-  grid-template-columns: 6.5rem minmax(0, 1fr);
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-  padding: 0.9rem 1rem 0.9rem 0.9rem;
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--bg);
-  color: var(--ink);
-  font: 400 1rem/1.4 var(--body);
-  text-align: left;
-  cursor: pointer;
-}
-.look-card[aria-checked="true"] {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1.5px var(--accent);
-}
-.look-text {
-  display: grid;
-  justify-items: start;
-  gap: 0.15rem;
-}
-.look-name {
-  font-family: var(--display);
-  font-variation-settings: var(--display-variation);
-  font-weight: var(--display-weight);
-  font-size: 1.45rem;
-  line-height: 1.1;
-}
-.look-about {
-  color: var(--ink-soft);
-  font-size: 0.92rem;
-}
-.look-sample.button {
-  width: auto;
-  min-height: calc(var(--button-height) * 0.62);
-  margin-top: 0.45rem;
-  padding: 0 0.9rem;
-  font-size: calc(var(--button-size) * 0.8);
-  pointer-events: none;
-}
-.look-chosen {
-  position: absolute;
-  top: 0.6rem;
-  right: 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
 .stepper {
   display: flex;
   align-items: center;
@@ -167,31 +109,4 @@
 }
 .stepper-unit {
   color: var(--ink-soft);
-}
-
-.toggles {
-  display: grid;
-  gap: 0.6rem;
-}
-.toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-.toggle-text {
-  display: grid;
-  gap: 0.15rem;
-}
-.toggle-label {
-  font-weight: 700;
-  cursor: pointer;
-}
-.toggle-note {
-  color: var(--ink-soft);
-  font-size: 0.88rem;
 }

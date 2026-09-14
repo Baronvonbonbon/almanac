@@ -20,7 +20,7 @@ here with its date. Open items that depend on the probe name their check ID (P1�
 | Surface | What it is |
 |---|---|
 | **The Polkadot app** (`almanac.dot`) | The full app |
-| **Web gateway** (`almanac.dev-dot.li`) | Tryout mode: sample data, nothing saved. The host API does not exist here (`createLocalKvStore` throws), so this is a constraint, not a choice |
+| **Web gateway** (`almanac.dev-dot.li`) | Tryout mode: the same onboarding and app, kept in memory and gone on reload. Home offers example months — five cycles before the first period logged — so the calendar and insights can be seen filled in; they are added only when asked for, and never in the Polkadot app. The host API does not exist here (`createLocalKvStore` throws), so this is a constraint, not a choice |
 | **Web viewer** (same gateway, opened from a timed link) | Read-only view of one share, if P10 shows the gateway can reach Bulletin and the statement store |
 
 Tryout banner, always visible:
@@ -79,10 +79,15 @@ labelled), how long cycles and periods usually last, and the symptoms logged mos
 out on the phone.
 
 **Modes.** Fertility window (off), trying to conceive (off), pregnancy (off — pauses predictions,
-counts weeks, handles loss with care and without prompts).
+counts weeks, handles loss with care and without prompts). Weeks are counted from the last period's
+first day, as midwives and doctors count them, up to 44 weeks. Turning pregnancy off asks nothing.
+After more than 90 days without a period — after a pregnancy, or a gap in logging — home says *It's
+been a while since your last logged period* instead of counting the days late, and draws no cycle.
 
-**Settings.** The look, which changes live so it can be seen before leaving the screen; the modes;
-reminders.
+**Settings.** Opened from the top bar. The look, which changes live so it can be seen before leaving
+the screen; the modes; the usual cycle and period lengths, each with *Not sure*, and a line saying
+whether almanac still uses them or now goes by what was logged. Every change is saved as it is
+made. Reminders join in Phase 6, and the Privacy screen (Phase 3) is reached from here.
 
 **Privacy screen.** Lock and duress PIN, backups, shares, export, erase — each in one sentence of
 plain language.
