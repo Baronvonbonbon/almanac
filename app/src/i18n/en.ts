@@ -17,6 +17,8 @@ export const en = {
   },
   app: {
     starting: "Getting things ready…",
+    stillStarting: "Still connecting to the Polkadot app…",
+    slowStart: "This is taking longer than usual. If almanac can't connect, it opens so you can try it, and nothing you enter will be saved.",
     locked: "almanac is locked.",
     failed: "Something went wrong: {message}",
   },

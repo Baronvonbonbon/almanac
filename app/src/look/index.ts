@@ -44,6 +44,15 @@ export async function startLook(h: Host | null): Promise<void> {
   await loadFonts(state.look);
 }
 
+/**
+ * The first paint, before the host is known: the default look in the phone's light or dark, for the
+ * starting screen. startLook replaces it with the saved look before the first real screen.
+ */
+export function showStartingLook(): void {
+  update({ look: DEFAULT_LOOK, variant: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" });
+  registerFonts(DEFAULT_LOOK);
+}
+
 /** Follows the host's light or dark while almanac runs. Resolves on the first value, or after a moment. */
 function followVariant(h: Host | null): Promise<void> {
   if (h?.subscribeVariant) {

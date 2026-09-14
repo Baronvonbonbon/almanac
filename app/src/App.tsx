@@ -5,6 +5,7 @@ import { Onboarding } from "./onboarding/Onboarding";
 import { memoryHost, type Host } from "./platform";
 import { LockScreen } from "./protect/LockScreen";
 import { Shell } from "./shell/Shell";
+import { Starting } from "./ui/Starting";
 import { Vault } from "./vault";
 import "./ui/ui.css";
 
@@ -23,12 +24,14 @@ export const AUTO_LOCK_MS = 60_000;
 /**
  * Where almanac opens: onboarding on the first launch, the lock screen when a PIN is set, home
  * otherwise. Outside the Polkadot app, or on a host almanac can't use (startup.ts) — the tryout — the
- * same flow runs on a host that keeps everything in memory, so nothing is saved.
+ * same flow runs on a host that keeps everything in memory, so nothing is saved. The first screen
+ * waits for the saved look, so it already appears in it.
  */
-async function start(hostReady: Promise<Host | null>): Promise<Started> {
+async function start(hostReady: Promise<Host | null>, lookReady: Promise<void>): Promise<Started> {
   const inApp = await hostReady;
   const host = inApp ?? memoryHost(crypto.randomUUID());
   const opened = await Vault.open(host);
+  await lookReady;
   const screen: Screen =
     opened.state === "new" ? { kind: "onboarding", host } : opened.state === "open" ? { kind: "home", vault: opened.vault, host } : { kind: "locked", host };
   return { screen, tryout: !inApp };
@@ -38,11 +41,11 @@ async function start(hostReady: Promise<Host | null>): Promise<Started> {
 // would each create a vault.
 let started: Promise<Started> | null = null;
 
-export function App({ host }: { host: Promise<Host | null> }) {
+export function App({ host, lookReady }: { host: Promise<Host | null>; lookReady: Promise<void> }) {
   const [screen, setScreen] = useState<Screen>({ kind: "starting" });
   const [tryout, setTryout] = useState(false);
   useEffect(() => {
-    started ??= start(host).catch((e: unknown): Started => ({
+    started ??= start(host, lookReady).catch((e: unknown): Started => ({
       screen: { kind: "failed", message: e instanceof Error ? e.message : String(e) },
       tryout: false,
     }));
@@ -50,7 +53,7 @@ export function App({ host }: { host: Promise<Host | null> }) {
       setScreen(r.screen);
       setTryout(r.tryout);
     });
-  }, [host]);
+  }, [host, lookReady]);
 
   // Auto-lock: checked when almanac comes back, since nothing runs while it is out of sight. Whether a
   // PIN is set is read then too, so a PIN turned on a moment ago counts.
@@ -82,11 +85,7 @@ export function App({ host }: { host: Promise<Host | null> }) {
         <Shell vault={screen.vault} host={screen.host} tryout={tryout} onLock={() => setScreen({ kind: "locked", host: screen.host })} onErased={() => erased(screen.host)} />
       )}
       {screen.kind === "locked" && <LockScreen host={screen.host} onOpen={(vault) => setScreen({ kind: "home", vault, host: screen.host })} onErased={() => erased(screen.host)} />}
-      {screen.kind === "starting" && (
-        <main>
-          <p>{t("app.starting")}</p>
-        </main>
-      )}
+      {screen.kind === "starting" && <Starting />}
       {screen.kind === "failed" && (
         <main>
           <p role="alert">{t("app.failed", { message: screen.message })}</p>

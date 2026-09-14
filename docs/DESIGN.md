@@ -28,7 +28,10 @@ fails every `deriveEntropy` with *Not connected*, so almanac could not make its 
 tryout is therefore a fallback (`app/src/startup.ts`): almanac opens it when no host is found, when
 the host never answers, or when it can't derive almanac's key before a vault exists. Once a vault
 exists the host is kept whatever happens — a tryout over someone's data would look as if it had gone —
-and a failure to open it is reported. The gateway sizes its frame to `100vh` in a page that can't
+and a failure to open it is reported. While it waits, almanac shows its starting screen at once: a
+lit day going round a ring of 28, and words that say what is happening and, after a few seconds,
+what happens if it can't connect. It fades in after a moment, so a quick start on a phone shows
+nothing. The gateway sizes its frame to `100vh` in a page that can't
 scroll, so on a phone the frame's bottom is off the screen; almanac lifts its bottom edge by what is
 hidden (`app/src/ui/hiddenBottom.ts`).
 

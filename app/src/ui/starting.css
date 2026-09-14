@@ -1,0 +1,56 @@
+/* The starting screen (ui/Starting.tsx): a ring of 28 days with a lit day going round, the
+   wordmark, and a line that says what is happening — centred in the part of the screen that shows
+   (src/ui/hiddenBottom.ts). With reduced motion the ring stands still. */
+.starting {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.1rem;
+  min-height: calc(100dvh - var(--hidden-bottom, 0px));
+  text-align: center;
+  animation: starting-in 0.4s ease-out 0.35s both;
+}
+@keyframes starting-in {
+  from {
+    opacity: 0;
+  }
+}
+.starting .wordmark {
+  margin: 0;
+}
+.starting-text {
+  min-height: 4.5em;
+  max-width: 30ch;
+  margin: 0;
+  color: var(--ink-soft);
+  text-wrap: balance;
+}
+
+.starting-ring {
+  width: 7.5rem;
+  height: 7.5rem;
+  margin-bottom: 0.4rem;
+  overflow: visible;
+}
+/* Each day lights in turn, 0.1 s apart, and fades back over the next few: one cycle every 2.8 s. The
+   delays start in the past, so the ring is already going when it appears. */
+.starting-ring circle {
+  fill: var(--ink-soft);
+  opacity: 0.3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: starting-day 2.8s linear infinite;
+  animation-delay: calc(var(--i) * 0.1s - 2.8s);
+}
+@keyframes starting-day {
+  0% {
+    fill: var(--period);
+    opacity: 1;
+    transform: scale(1.45);
+  }
+  25% {
+    fill: var(--ink-soft);
+    opacity: 0.3;
+    transform: scale(1);
+  }
+}
