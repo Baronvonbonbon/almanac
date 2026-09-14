@@ -1,11 +1,18 @@
-import { deriveEntropy, formatHostError, getHostLocalStorage } from "@parity/product-sdk-host";
+import { deriveEntropy, formatHostError, getHostLocalStorage, getThemeProvider } from "@parity/product-sdk-host";
 import type { Host } from "./host";
 
 /** The Polkadot app's host, or `null` when its local storage is not available. */
 export async function polkadotHost(): Promise<Host | null> {
   const store = await getHostLocalStorage();
   if (!store) return null;
+  const themes = await getThemeProvider();
   return {
+    subscribeVariant: themes
+      ? (callback) => {
+          const sub = themes.subscribeTheme((theme) => callback(theme.variant === "Dark" ? "dark" : "light"));
+          return () => sub.unsubscribe();
+        }
+      : undefined,
     kind: "polkadot",
     storage: {
       // Nothing almanac writes is empty, so an empty read is treated as absent too.

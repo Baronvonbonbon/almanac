@@ -9,9 +9,12 @@ import { join, relative, resolve } from "node:path";
 
 const DIST = resolve(import.meta.dirname, "../dist");
 
-// The first Phase 1 build was 355 KiB. Phase 2's bundled fonts will need a deliberate raise — never an
-// accidental one.
-const BUDGET_BYTES = 512 * 1024;
+// Code and fonts have separate budgets (docs/DESIGN.md §4). Code runs on every open; each font file is
+// fetched only by a phone showing the look that uses it. The first Phase 1 build was 355 KiB of code,
+// and the three looks' fonts are about 242 KiB. Raising either is deliberate — never accidental.
+const CODE_BUDGET = 512 * 1024;
+const FONT_BUDGET = 400 * 1024;
+const isFont = (file) => /\.(woff2?|ttf|otf)$/.test(file);
 
 // Strings that look like URLs but are never requested.
 const ALLOWED = [
@@ -42,9 +45,10 @@ try {
 }
 
 const found = new Map();
-let total = 0;
+const size = { code: 0, fonts: 0 };
+const fontFiles = all.filter(isFont).length;
 for (const file of all) {
-  total += statSync(file).size;
+  size[isFont(file) ? "fonts" : "code"] += statSync(file).size;
   if (!/\.(js|mjs|html|css)$/.test(file)) continue;
   for (const [url] of readFileSync(file, "utf8").matchAll(/\b(?:https?|wss?):\/\/[^\s"'`)<>\\]+/g)) {
     if (!ALLOWED.some((re) => re.test(url))) found.set(url, relative(DIST, file));
@@ -57,9 +61,14 @@ if (found.size) {
   console.error("guard: external URLs in dist/:");
   for (const [url, file] of found) console.error(`  ${url}  (${file})`);
 }
-console.log(`guard: dist/ is ${(total / 1024).toFixed(1)} KiB in ${all.length} files`);
-if (BUDGET_BYTES && total > BUDGET_BYTES) {
-  failed = true;
-  console.error(`guard: over the ${(BUDGET_BYTES / 1024).toFixed(0)} KiB budget`);
+const kib = (bytes) => (bytes / 1024).toFixed(1);
+console.log(
+  `guard: dist/ is ${kib(size.code)} KiB of code in ${all.length - fontFiles} files, ${kib(size.fonts)} KiB of fonts in ${fontFiles}`,
+);
+for (const [kind, budget] of [["code", CODE_BUDGET], ["fonts", FONT_BUDGET]]) {
+  if (size[kind] > budget) {
+    failed = true;
+    console.error(`guard: ${kind} over the ${budget / 1024} KiB budget`);
+  }
 }
 process.exit(failed ? 1 : 0);

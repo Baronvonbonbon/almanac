@@ -19,12 +19,14 @@ import { DEFAULT_KDF, deviceKey, namesKey, noPinKey, pinKey, recordKeyName, type
  *   a/v1/meta          plaintext: format version, scrypt salt and parameters — the same with or without a PIN
  *   a/v1/slots         two wrapped keys, 72 bytes each
  *   a/v1/names         every record name, sealed under a device-level key both vaults share
+ *   a/v1/look          the chosen look, sealed under the same key
  *   a/v1/r/<s>/<id>    records: slot s, opaque id derived from the record name
  */
 
 const META = "a/v1/meta";
 const SLOTS = "a/v1/slots";
 const NAMES = "a/v1/names";
+const LOOK = "a/v1/look";
 /** The vault's own state: the names it has written, and the duress erase flag. */
 const STATE = "_vault";
 
@@ -79,6 +81,22 @@ const slotBytes = (slots: Uint8Array, s: Slot) => slots.subarray(s * WRAPPED_KEY
 async function readNames(host: Host, device: Uint8Array): Promise<string[]> {
   const sealed = await host.storage.read(NAMES);
   return sealed ? (JSON.parse(text(open(namesKey(device), "names", sealed))) as string[]) : [];
+}
+
+/**
+ * The look the user picked (docs/DESIGN.md §4). It belongs to the phone, not to a vault: it opens with
+ * the device key alone, so the lock screen can show it before any PIN, and the real and decoy vaults
+ * share it — a decoy that opened in a different look would give itself away. `null` if never chosen.
+ * The value is not checked here; the caller falls back to the default look for anything it does not
+ * know.
+ */
+export async function readLook(host: Host): Promise<string | null> {
+  const sealed = await host.storage.read(LOOK);
+  return sealed ? text(open(namesKey(await deviceKey(host)), "look", sealed)) : null;
+}
+
+export async function writeLook(host: Host, look: string): Promise<void> {
+  await host.storage.write(LOOK, seal(namesKey(await deviceKey(host)), "look", utf8(look)));
 }
 
 export class Vault {
@@ -136,7 +154,8 @@ export class Vault {
    * can be opened, whatever happens to the removals that follow.
    */
   static async erase(host: Host): Promise<void> {
-    if (!(await host.storage.read(META))) return;
+    // The look can be chosen before a vault exists: onboarding asks for it first.
+    if (!(await host.storage.read(META))) return host.storage.remove(LOOK);
     await host.storage.write(SLOTS, randomBytes(2 * WRAPPED_KEY_BYTES));
     const device = await deviceKey(host);
     let names: string[] = [];
@@ -146,7 +165,7 @@ export class Vault {
       // A damaged name list leaves some records behind, unopenable; nothing else to do.
     }
     for (const name of names) for (const s of SLOT_IDS) await host.storage.remove(recordKey(device, s, name));
-    for (const key of [NAMES, SLOTS, META]) await host.storage.remove(key);
+    for (const key of [LOOK, NAMES, SLOTS, META]) await host.storage.remove(key);
   }
 
   private static async withKey(host: Host, device: Uint8Array, meta: Meta, wrapping: Uint8Array, lock: "none" | "pin") {

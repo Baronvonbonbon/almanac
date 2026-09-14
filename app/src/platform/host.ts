@@ -18,4 +18,9 @@ export interface Host {
   readonly storage: Storage;
   /** Deterministic for a given product and input: the root of almanac's device key. */
   deriveEntropy(input: Uint8Array): Promise<Uint8Array>;
+  /**
+   * Light or dark, from the host's theme — which can differ from the phone's own setting (P12). Absent
+   * when the host has no theme to report. Returns a function that stops following it.
+   */
+  subscribeVariant?(callback: (variant: "light" | "dark") => void): () => void;
 }

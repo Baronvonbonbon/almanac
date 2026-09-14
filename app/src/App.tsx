@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { DOT_NAME } from "../../product.mjs";
 import { t } from "./i18n";
-import { detectHost } from "./platform";
+import type { Host } from "./platform";
 import { Vault } from "./vault";
 
 type Status =
@@ -15,8 +15,8 @@ type Status =
  * The foundations check: open or create the vault through the real host, and read back a record
  * written just now. The screens themselves come with Phase 2.
  */
-async function start(): Promise<Status> {
-  const host = await detectHost();
+async function start(hostReady: Promise<Host | null>): Promise<Status> {
+  const host = await hostReady;
   if (!host) return { kind: "tryout" };
   const opened = await Vault.open(host);
   if (opened.state === "locked") return { kind: "locked" };
@@ -31,12 +31,12 @@ async function start(): Promise<Status> {
 // would each create a vault.
 let started: Promise<Status> | null = null;
 
-export function App() {
+export function App({ host }: { host: Promise<Host | null> }) {
   const [status, setStatus] = useState<Status>({ kind: "checking" });
   useEffect(() => {
-    started ??= start().catch((e: unknown) => ({ kind: "failed", message: e instanceof Error ? e.message : String(e) }));
+    started ??= start(host).catch((e: unknown) => ({ kind: "failed", message: e instanceof Error ? e.message : String(e) }));
     void started.then(setStatus);
-  }, []);
+  }, [host]);
 
   return (
     <main>

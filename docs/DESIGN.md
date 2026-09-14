@@ -128,8 +128,10 @@ Colours. Every text pair, in all six palettes, is checked to WCAG AA in Phase 2 
   shows it before any PIN, and the real and decoy vaults share it: a decoy that opened in a different
   look would give itself away.
 - **Type.** All six families are OFL-licensed and **bundled as woff2** — no font CDN, since a CDN
-  request reveals who is opening the app. Latin only, they come to 357 KiB, so fonts have their own
-  400 KiB budget, apart from the code's 512 KiB. A phone loads only the fonts of the look in use.
+  request reveals who is opening the app. Latin only, from Fontsource: Fraunces with its weight and
+  softness axes, the others with their weight axis only — 242 KiB in seven files (the full families
+  would be 357 KiB). Fonts have their own 400 KiB budget, apart from the code's 512 KiB, and a phone
+  loads only the fonts of the look in use.
 - **Shape.** Generous space, one accent, hairline dividers; radii as in the table.
 - **Meaning is never colour alone.** Flow shows as fill level and a label; predictions use an
   outline; the fertile window uses a pattern.
