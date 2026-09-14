@@ -1,9 +1,10 @@
-/* The log sheet: a native modal dialog, drawn as a sheet rising from the bottom of the screen. */
+/* The log sheet: a native modal dialog, drawn as a sheet rising from the bottom of the screen — above
+   any part of the frame that is off it (src/ui/hiddenBottom.ts). */
 dialog.sheet {
   width: 100%;
   max-width: 32rem;
-  max-height: 92dvh;
-  margin: auto auto 0;
+  max-height: calc(92dvh - var(--hidden-bottom, 0px));
+  margin: auto auto var(--hidden-bottom, 0px);
   padding: 0;
   border: 0;
   border-radius: calc(var(--radius) + 8px) calc(var(--radius) + 8px) 0 0;

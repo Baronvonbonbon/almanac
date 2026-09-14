@@ -5,7 +5,8 @@
   gap: 1.25rem;
   max-width: 32rem;
   margin: 0 auto;
-  padding: max(1rem, env(safe-area-inset-top)) 1.25rem 0;
+  /* Room below the page for a frame whose bottom is off the screen (src/ui/hiddenBottom.ts). */
+  padding: max(1rem, env(safe-area-inset-top)) 1.25rem var(--hidden-bottom, 0px);
 }
 .onb-top {
   display: flex;
@@ -70,7 +71,7 @@
 /* Pinned to the bottom of the screen, so Continue is always in reach however long the step is. */
 .onb-actions {
   position: sticky;
-  bottom: 0;
+  bottom: var(--hidden-bottom, 0px);
   z-index: 1;
   display: grid;
   gap: 0.6rem;

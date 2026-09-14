@@ -4,6 +4,8 @@
   flex-direction: column;
   max-width: 32rem;
   margin: 0 auto;
+  /* Room below the tabs for a frame whose bottom is off the screen (src/ui/hiddenBottom.ts). */
+  padding-bottom: var(--hidden-bottom, 0px);
 }
 .shell-top {
   padding: max(1rem, env(safe-area-inset-top)) 1.25rem 0;
@@ -29,7 +31,7 @@ main.shell-main {
 /* The tabs, pinned to the bottom of the screen; each look draws them its own way. */
 .tabs {
   position: sticky;
-  bottom: 0;
+  bottom: var(--hidden-bottom, 0px);
   display: flex;
   gap: 4px;
   padding: 0.5rem 0.75rem max(0.75rem, env(safe-area-inset-bottom));

@@ -81,7 +81,7 @@
   min-height: 100dvh;
   max-width: 32rem;
   margin: 0 auto;
-  padding: max(1.5rem, env(safe-area-inset-top)) 1.25rem max(1.5rem, env(safe-area-inset-bottom));
+  padding: max(1.5rem, env(safe-area-inset-top)) 1.25rem calc(max(1.5rem, env(safe-area-inset-bottom)) + var(--hidden-bottom, 0px));
 }
 .lock .wordmark {
   margin-bottom: 1rem;
