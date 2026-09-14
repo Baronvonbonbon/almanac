@@ -33,6 +33,13 @@ export async function saveDay(vault: Vault, entry: DayEntry): Promise<void> {
   });
 }
 
+/** Days as the month records the vault keeps them in — for a vault that starts with them. */
+export function monthRecords(entries: DayEntry[]): Record<string, Month> {
+  const out: Record<string, Month> = {};
+  for (const e of entries) (out[`${PREFIX}${e.date.slice(0, 7)}`] ??= {})[e.date] = e;
+  return out;
+}
+
 /** One month's days, in date order. `month` is "YYYY-MM". */
 export async function readMonth(vault: Vault, month: string): Promise<DayEntry[]> {
   if (!MONTH.test(month)) throw new RangeError(`not a month: "${month}"`);

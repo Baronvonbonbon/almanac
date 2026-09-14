@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { readBackup, type BackupRecord } from "../backup/record";
 import { localToday, predict, type DayEntry, type ISODate, type Prediction } from "../cycle";
 import { cycleShape, type CycleShape } from "../cycle-graphic/shape";
 import { allDays, loadSettings, type Settings } from "../data";
+import { readProtection } from "../protect/protection";
 import type { Vault } from "../vault";
 
 /** Everything the tabs show, read from the vault in one go. */
@@ -13,17 +15,26 @@ export interface CycleData {
   days: Map<ISODate, DayEntry>;
   prediction: Prediction;
   shape: CycleShape | null;
+  privacy: { pin: boolean; duress: boolean; backup: BackupRecord | null };
 }
 
 export async function loadCycle(vault: Vault, today = localToday()): Promise<CycleData> {
-  const [settings, entries] = await Promise.all([loadSettings(vault), allDays(vault)]);
+  const [settings, entries, protection, backup] = await Promise.all([loadSettings(vault), allDays(vault), readProtection(vault), readBackup(vault)]);
   const prediction = predict(entries, {
     today,
     typicalCycle: settings.typicalCycle,
     fertility: settings.modes.fertility,
     pregnancy: settings.modes.pregnancy,
   });
-  return { today, settings, entries, days: new Map(entries.map((e) => [e.date, e])), prediction, shape: cycleShape(prediction, entries, today) };
+  return {
+    today,
+    settings,
+    entries,
+    days: new Map(entries.map((e) => [e.date, e])),
+    prediction,
+    shape: cycleShape(prediction, entries, today),
+    privacy: { pin: vault.locked, duress: vault.locked && protection.duress, backup },
+  };
 }
 
 /**

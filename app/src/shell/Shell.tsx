@@ -6,6 +6,8 @@ import { Home } from "../home/Home";
 import { t } from "../i18n";
 import { InsightsView } from "../insights/InsightsView";
 import { LogSheet } from "../log/LogSheet";
+import type { Host } from "../platform";
+import type { PrivacyFlow } from "../protect/PrivacySection";
 import { SettingsView } from "../settings/SettingsView";
 import { exampleDays } from "../tryout/examples";
 import { Toast } from "../ui/Toast";
@@ -16,12 +18,15 @@ import "./shell.css";
 const TABS = ["today", "calendar", "insights"] as const;
 type Tab = (typeof TABS)[number];
 
+/** docs/DESIGN.md §3: the backup code is offered once this many days have been logged. */
+const BACKUP_AFTER_DAYS = 3;
+
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-/** The app once set up: the top bar, the section on screen or Settings, the tabs, and the log sheet over them. */
-export function Shell({ vault, tryout }: { vault: Vault; tryout: boolean }) {
+/** The app once open: the top bar, the section on screen or Settings, the tabs, and the log sheet over them. */
+export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault; host: Host; tryout: boolean; onLock(): void; onErased(): void }) {
   const [tab, setTab] = useState<Tab>("today");
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settings, setSettings] = useState<false | "list" | PrivacyFlow>(false);
   const [editing, setEditing] = useState<ISODate | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -30,6 +35,7 @@ export function Shell({ vault, tryout }: { vault: Vault; tryout: boolean }) {
   const cycle = useCycle(vault);
   const clearToast = useCallback(() => setToast(null), []);
   const data = cycle.data;
+  const settingsOpen = settings !== false;
 
   async function save(entry: DayEntry) {
     await saveDay(vault, entry);
@@ -43,7 +49,7 @@ export function Shell({ vault, tryout }: { vault: Vault; tryout: boolean }) {
   }
 
   function closeSettings() {
-    setSettingsOpen(false);
+    setSettings(false);
     settingsButton.current?.focus();
   }
 
@@ -63,6 +69,7 @@ export function Shell({ vault, tryout }: { vault: Vault; tryout: boolean }) {
     cycle.reload();
   }
   const offerExamples = tryout && examples !== "added" && data?.prediction.status !== "ready" && !data?.settings.modes.pregnancy;
+  const offerBackup = !!data && data.entries.length >= BACKUP_AFTER_DAYS && !data.privacy.backup?.copiedAt;
 
   return (
     <div className="shell">
@@ -70,7 +77,7 @@ export function Shell({ vault, tryout }: { vault: Vault; tryout: boolean }) {
         <span className="wordmark">{t("appName")}</span>
         <span className="shell-top-end">
           <span className="pill">{t("preview")}</span>
-          <button ref={settingsButton} type="button" className="icon-button" aria-label={t("settings.open")} aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettingsOpen(true))}>
+          <button ref={settingsButton} type="button" className="icon-button" aria-label={t("settings.open")} aria-pressed={settingsOpen} onClick={() => (settingsOpen ? closeSettings() : setSettings("list"))}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
               <path d="M4 7h9M19 7h1M4 17h3M13 17h7" />
               <circle cx="16" cy="7" r="2.6" />
@@ -84,9 +91,28 @@ export function Shell({ vault, tryout }: { vault: Vault; tryout: boolean }) {
         {cycle.error && <p role="alert">{t("app.failed", { message: cycle.error })}</p>}
         {failure && <p role="alert">{t("app.failed", { message: failure })}</p>}
         {!data && !cycle.error && <p className="shell-soon">{t("app.starting")}</p>}
-        {data && settingsOpen && <SettingsView data={data} onChange={changeSettings} onDone={closeSettings} />}
+        {data && settingsOpen && (
+          <SettingsView
+            key={String(settings)}
+            data={data}
+            vault={vault}
+            host={host}
+            flow={settings === "list" ? null : settings}
+            onChange={changeSettings}
+            onChanged={cycle.reload}
+            onNotice={setToast}
+            onDone={closeSettings}
+            onLock={onLock}
+            onErased={onErased}
+          />
+        )}
         {data && !settingsOpen && tab === "today" && (
-          <Home data={data} onLog={setEditing} examples={offerExamples ? { busy: examples === "adding", onAdd: () => void addExamples() } : null} />
+          <Home
+            data={data}
+            onLog={setEditing}
+            onBackup={offerBackup ? () => setSettings("backup") : null}
+            examples={offerExamples ? { busy: examples === "adding", onAdd: () => void addExamples() } : null}
+          />
         )}
         {data && !settingsOpen && tab === "calendar" && <CalendarView data={data} onLog={setEditing} onSave={save} />}
         {data && !settingsOpen && tab === "insights" && <InsightsView data={data} />}
@@ -100,7 +126,7 @@ export function Shell({ vault, tryout }: { vault: Vault; tryout: boolean }) {
             aria-current={!settingsOpen && tab === id ? "page" : undefined}
             onClick={() => {
               setTab(id);
-              setSettingsOpen(false);
+              setSettings(false);
             }}
           >
             {t(`shell.${id}`)}

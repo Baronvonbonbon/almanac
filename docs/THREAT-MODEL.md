@@ -50,10 +50,17 @@ only the slot in use changes. If they later watch the duress PIN open a slot tha
 they can tell it is the decoy. One copy alone shows nothing (DESIGN §5).
 Appearance can give it away as well. The look the user picked therefore belongs to the phone, not to
 a vault: both vaults open in the same look (DESIGN §4, decided 2026-09-14). Other settings, such as
-the modes, are per vault, so the decoy should be set up like the real one.
+the modes, are per vault, so the decoy starts with a copy of the real one's settings and, if the
+user agrees, example months (decided 2026-09-14).
+Actions can give it away too, in the other direction: **inside the decoy, turning off the PIN or
+setting up a duress PIN overwrites the real vault**, as it would in a real vault that had a decoy. The
+decoy cannot refuse without revealing itself. The duress screen says so before it is set up.
 
 **R4 — Short PINs are guessable.** A 6-digit PIN has a million possibilities. Inside the app,
-guesses are slowed by growing delays. Outside it, the PIN key also needs the device key, which only
+guesses are slowed by growing delays: five tries, then 30 seconds, a minute, 5 minutes, 15 minutes,
+and an hour each after that — about 24 guesses a day once the waits reach an hour. The count lives in
+the host's storage, so someone who can rewrite that storage, or sets the phone's clock forward, can
+skip a wait; they still face the next point. Outside it, the PIN key also needs the device key, which only
 the host can produce for this product — so copying the raw storage off the phone is not enough.
 
 **R5 — We trust the host.** The Polkadot app provides almanac's storage and entropy. A compromised

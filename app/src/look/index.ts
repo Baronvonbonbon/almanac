@@ -74,6 +74,12 @@ export async function setLook(look: LookId): Promise<void> {
   if (host) await writeLook(host, look);
 }
 
+/** Back to the default look after erase, which removed the saved one — without saving it again. */
+export function resetLook(): void {
+  update({ look: DEFAULT_LOOK });
+  void loadFonts(DEFAULT_LOOK);
+}
+
 /** Makes every look's fonts available, for previews that show all three at once. */
 export function previewFonts(): void {
   for (const id of LOOK_IDS) registerFonts(id);

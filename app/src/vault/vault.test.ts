@@ -211,4 +211,51 @@ describe("vault", () => {
     await Promise.all(Array.from({ length: 12 }, (_, i) => vault.writeJSON(`m/2026-${String(i + 1).padStart(2, "0")}`, { i })));
     for (let i = 0; i < 12; i++) expect(await vault.readJSON(`m/2026-${String(i + 1).padStart(2, "0")}`)).toEqual({ i });
   });
+
+  it("knows its own PIN, and not the duress PIN", async () => {
+    const { vault } = await fresh();
+    expect(await vault.isPin("482913")).toBe(false);
+    await vault.setPin("482913");
+    await vault.setDuressPin("135790");
+    expect(await vault.isPin("482913")).toBe(true);
+    expect(await vault.isPin("135790")).toBe(false);
+  });
+
+  it("removes the duress PIN and keeps the PIN", async () => {
+    const { host, vault } = await fresh();
+    await vault.setPin("482913");
+    await vault.setDuressPin("135790");
+    await vault.removeDuressPin();
+    expect(await Vault.unlock(host, "135790")).toBeNull();
+    expect(await Vault.unlock(host, "482913")).not.toBeNull();
+  });
+
+  it("starts the decoy with records of its own, which the real vault never sees", async () => {
+    const { host, vault } = await fresh();
+    await vault.writeJSON("settings", { from: "real" });
+    await vault.setPin("482913");
+    await vault.setDuressPin("135790", { records: { settings: { from: "decoy" }, "m/2026-08": { a: 1 } } });
+    const decoy = (await Vault.unlock(host, "135790"))!;
+    expect(await decoy.readJSON("settings")).toEqual({ from: "decoy" });
+    expect(await decoy.list()).toEqual(["m/2026-08", "settings"]);
+    expect(await vault.readJSON("settings")).toEqual({ from: "real" });
+    expect(await vault.read("m/2026-08")).toBeNull();
+  });
+
+  it("can start with records, as a restored backup does", async () => {
+    const host = memoryHost();
+    const vault = await Vault.create(host, FAST, { settings: { a: 1 } });
+    expect(await vault.list()).toEqual(["settings"]);
+    expect(await (await openNoPin(host)).readJSON("settings")).toEqual({ a: 1 });
+  });
+
+  it("looks the same in storage with and without a PIN", async () => {
+    const build = async (pin: boolean) => {
+      const { host, vault } = await fresh("same-account");
+      if (pin) await vault.setPin("482913");
+      await vault.writeJSON("m/2026-09", { a: 1 });
+      return host.storage.shape();
+    };
+    expect(await build(true)).toEqual(await build(false));
+  });
 });

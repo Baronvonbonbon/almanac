@@ -20,6 +20,8 @@ import { DEFAULT_KDF, deviceKey, namesKey, noPinKey, pinKey, recordKeyName, type
  *   a/v1/slots         two wrapped keys, 72 bytes each
  *   a/v1/names         every record name, sealed under a device-level key both vaults share
  *   a/v1/look          the chosen look, sealed under the same key
+ *   a/v1/tries         wrong PINs in a row, sealed under the same key — written from the first launch,
+ *                      so its presence says nothing about whether a PIN is set
  *   a/v1/r/<s>/<id>    records: slot s, opaque id derived from the record name
  */
 
@@ -27,6 +29,7 @@ const META = "a/v1/meta";
 const SLOTS = "a/v1/slots";
 const NAMES = "a/v1/names";
 const LOOK = "a/v1/look";
+const TRIES = "a/v1/tries";
 /** The vault's own state: the names it has written, and the duress erase flag. */
 const STATE = "_vault";
 
@@ -99,6 +102,49 @@ export async function writeLook(host: Host, look: string): Promise<void> {
   await host.storage.write(LOOK, seal(namesKey(await deviceKey(host)), "look", utf8(look)));
 }
 
+/** Wrong PINs in a row — one count for both slots — and when the next try is allowed (ms since 1970). */
+export interface Tries {
+  n: number;
+  until: number;
+}
+
+const NO_TRIES: Tries = { n: 0, until: 0 };
+
+/**
+ * docs/DESIGN.md §6: five tries, then waits that grow — 30 seconds, a minute, 5 minutes, 15 minutes,
+ * then an hour each time. Nothing is ever wiped. `n` is the number of wrong PINs so far.
+ */
+export function waitAfter(n: number): number {
+  const seconds = [0, 0, 0, 0, 0, 30, 60, 300, 900];
+  return (n < seconds.length ? seconds[n] : 3600) * 1000;
+}
+
+export async function readTries(host: Host): Promise<Tries> {
+  const sealed = await host.storage.read(TRIES);
+  if (!sealed) return NO_TRIES;
+  try {
+    return JSON.parse(text(open(namesKey(await deviceKey(host)), "tries", sealed))) as Tries;
+  } catch {
+    // Unreadable is treated as none. The count only slows guessing inside the app; outside it the PIN
+    // is no use without the device key (docs/THREAT-MODEL.md R4).
+    return NO_TRIES;
+  }
+}
+
+async function writeTries(host: Host, tries: Tries): Promise<void> {
+  await host.storage.write(TRIES, seal(namesKey(await deviceKey(host)), "tries", utf8(JSON.stringify(tries))));
+}
+
+/** Counts a wrong PIN, and returns the new count and wait. */
+export async function wrongPin(host: Host, now = Date.now()): Promise<Tries> {
+  const n = (await readTries(host)).n + 1;
+  const tries = { n, until: now + waitAfter(n) };
+  await writeTries(host, tries);
+  return tries;
+}
+
+export const rightPin = (host: Host): Promise<void> => writeTries(host, NO_TRIES);
+
 export class Vault {
   #queue: Promise<unknown> = Promise.resolve();
   #state: VaultState | null = null;
@@ -112,8 +158,8 @@ export class Vault {
     private lock: "none" | "pin",
   ) {}
 
-  /** First launch: two slots, no PIN. */
-  static async create(host: Host, kdf: KdfParams = DEFAULT_KDF): Promise<Vault> {
+  /** First launch: two slots, no PIN. `records` start it off — a restored backup — before it counts as existing. */
+  static async create(host: Host, kdf: KdfParams = DEFAULT_KDF, records: Record<string, unknown> = {}): Promise<Vault> {
     if (await host.storage.read(META)) throw new VaultError("exists", "a vault already exists");
     const device = await deviceKey(host);
     const meta: Meta = { v: 1, salt: hex(randomBytes(16)), kdf };
@@ -124,6 +170,8 @@ export class Vault {
     await host.storage.write(SLOTS, slots);
     const vault = new Vault(host, device, meta, slot, key, "none");
     await vault.saveState({ names: [] });
+    await vault.putRecords(records);
+    await writeTries(host, NO_TRIES);
     // Written last: its presence is what says a vault exists.
     await host.storage.write(META, utf8(JSON.stringify(meta)));
     return vault;
@@ -155,7 +203,10 @@ export class Vault {
    */
   static async erase(host: Host): Promise<void> {
     // The look can be chosen before a vault exists: onboarding asks for it first.
-    if (!(await host.storage.read(META))) return host.storage.remove(LOOK);
+    if (!(await host.storage.read(META))) {
+      for (const key of [LOOK, TRIES]) await host.storage.remove(key);
+      return;
+    }
     await host.storage.write(SLOTS, randomBytes(2 * WRAPPED_KEY_BYTES));
     const device = await deviceKey(host);
     let names: string[] = [];
@@ -165,7 +216,7 @@ export class Vault {
       // A damaged name list leaves some records behind, unopenable; nothing else to do.
     }
     for (const name of names) for (const s of SLOT_IDS) await host.storage.remove(recordKey(device, s, name));
-    for (const key of [LOOK, NAMES, SLOTS, META]) await host.storage.remove(key);
+    for (const key of [LOOK, TRIES, NAMES, SLOTS, META]) await host.storage.remove(key);
   }
 
   private static async withKey(host: Host, device: Uint8Array, meta: Meta, wrapping: Uint8Array, lock: "none" | "pin") {
@@ -234,20 +285,39 @@ export class Vault {
     });
   }
 
+  /** Whether `pin` is this vault's own PIN — asked before any protection changes. */
+  isPin(pin: string): Promise<boolean> {
+    return this.run(async () => this.lock === "pin" && unwrapKey(await this.pinKey(pin), slotBytes(await readSlots(this.host), this.slot)) !== null);
+  }
+
   /**
-   * Set up a duress PIN, which opens a separate, empty vault. Replaces any earlier decoy. With
-   * `eraseRealOnUse`, opening the decoy also destroys this vault — irreversibly.
+   * Set up a duress PIN, which opens a separate vault, starting with `records` — so it need not look
+   * new. Replaces any earlier decoy. With `eraseRealOnUse`, opening the decoy also destroys this vault —
+   * irreversibly.
+   *
+   * Called from inside a decoy, this replaces the vault it hides — as it must, or the decoy would give
+   * itself away (docs/THREAT-MODEL.md R3).
    */
-  setDuressPin(pin: string, options: { eraseRealOnUse?: boolean } = {}): Promise<void> {
+  setDuressPin(pin: string, options: { eraseRealOnUse?: boolean; records?: Record<string, unknown> } = {}): Promise<void> {
     return this.run(async () => {
       if (this.lock !== "pin") throw new VaultError("pin-required", "a duress PIN needs a PIN");
       const wrapping = await this.pinKey(pin);
       const slots = await readSlots(this.host);
       if (unwrapKey(wrapping, slotBytes(slots, this.slot))) throw new VaultError("pin-in-use", "that PIN is already the PIN");
       const decoy = new Vault(this.host, this.device, this.meta, otherSlot(this.slot), randomBytes(32), "pin");
-      // The decoy's state first: a crash between the two writes then breaks only the decoy being replaced.
+      // The decoy's records first: a crash before the slot write then breaks only the decoy being replaced.
       await decoy.saveState(options.eraseRealOnUse ? { names: [], eraseOtherOnOpen: true } : { names: [] });
+      await decoy.putRecords(options.records ?? {});
       slots.set(wrapKey(wrapping, decoy.key), decoy.slot * WRAPPED_KEY_BYTES);
+      await this.host.storage.write(SLOTS, slots);
+    });
+  }
+
+  /** Removes the duress PIN, and with it the way into the decoy. Like setDuressPin, it acts on the other slot. */
+  removeDuressPin(): Promise<void> {
+    return this.run(async () => {
+      const slots = await readSlots(this.host);
+      slots.set(randomBytes(WRAPPED_KEY_BYTES), otherSlot(this.slot) * WRAPPED_KEY_BYTES);
       await this.host.storage.write(SLOTS, slots);
     });
   }
@@ -292,6 +362,13 @@ export class Vault {
       if (!state.names.includes(name)) await this.saveState({ ...state, names: [...state.names, name] });
     }
     await this.addName(name);
+  }
+
+  private async putRecords(records: Record<string, unknown>): Promise<void> {
+    for (const [name, value] of Object.entries(records)) {
+      assertPublic(name);
+      await this.putRecord(name, utf8(JSON.stringify(value)));
+    }
   }
 
   private async loadState(): Promise<VaultState> {

@@ -1,0 +1,17 @@
+{
+  "note": "Computed independently of backup/code.ts, with Node's own HKDF and a bit-string base32 (scratchpad vectors-backup.mjs, 2026-09-14). If a test against these fails, existing backups no longer open.",
+  "codes": [
+    {
+      "entropy": "000102030405060708090a0b0c0d0e0f",
+      "code": "000G40R40M30E209185GR38E1W9T",
+      "key": "8433d351e225d8acf0bc7d5fc024329362f26cf0effa0db7701a025849bc21ff",
+      "topic": "23a8693f48802a752abff1d2c0318edd12ee801c2ecd8ac87646a6dd06a287d1"
+    },
+    {
+      "entropy": "ffffffffffffffffffffffffffffffff",
+      "code": "ZZZZZZZZZZZZZZZZZZZZZZZZZXVF",
+      "key": "ff2d3e025b2d6ec7c5f1a846f1f5ce1ecd3eb89676ed423b642e2f9e0bbe068c",
+      "topic": "2d3bbc9e7955d5b25a27f61384c3f634e2c97e110b42e46612b8ff654c6f70b4"
+    }
+  ]
+}

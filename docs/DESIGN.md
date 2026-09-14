@@ -41,7 +41,7 @@ The backup code moved from after the first week to after three logged days: whil
 are blocked (P6) the copied backup is the only backup, and the devnet has already reset once.*
 The last period's start is tapped on a month of days rather than in the phone's own date picker,
 which has not been checked inside the Polkadot app. Nothing is stored until the last screen, apart
-from the look.
+from the look. Below *Continue*, the first screen offers *Restore from a backup* (§8).
 
 **Home.** One cycle ring and one button.
 
@@ -201,6 +201,7 @@ trying-to-conceive details are hidden, not erased, while that mode is off.
 | `a/v1/slots` | Two wrapped keys of identical shape, in random order |
 | `a/v1/names` | The list of record names, encrypted under KN — shared by both vaults, so erase can find every record |
 | `a/v1/look` | The chosen look (§4), encrypted under KN — readable before unlock, shared by both vaults, removed by erase |
+| `a/v1/tries` | Wrong PINs in a row and when the next try is allowed (§6), encrypted under KN — written at the first launch, so its presence says nothing about whether a PIN is set |
 | `a/v1/r/0/<id>`, `a/v1/r/1/<id>` | Encrypted, padded records, one set per slot. `<id>` is derived from the record name under KE, so the store does not list months in the clear |
 
 Records are named `settings`, `m/2026-09`, and so on. One record per month means logging a day
@@ -224,12 +225,12 @@ records, so the store would have shown which slot held data, and when a decoy wa
 deriveEntropy("almanac/v1/device") ──HKDF──►  KE   device key, never stored
 PIN        ──scrypt──►  P′ ;   KP = HKDF(KE ‖ P′)    PIN key — needs the device AND the PIN
 duress PIN ──scrypt──►  D′ ;   KD = HKDF(KE ‖ D′)
-backup code (12 words, 132 bits) ──HKDF──►  KB (backup key),  TB (backup topic)
+backup code (128 bits + 12-bit check) ──HKDF──►  KB (backup key),  TB (backup topic)
 KE ──HKDF──►  KN    seals the list of record names and the chosen look; also derives each record's storage id
 
 DK  random 32 bytes per vault; encrypts that vault's records (XChaCha20-Poly1305)
-    stored wrapped under:  KE (no PIN)  or  KP (PIN on)
-    and inside every backup, wrapped under KB
+    stored wrapped under:  KE (no PIN)  or  KP (PIN on); never leaves the phone
+BK  random 32 bytes per backup; seals that backup's snapshot, and travels inside it wrapped under KB
 ```
 
 - **Two vaults from the first launch**, always. Slot order is random. With no duress PIN set, the
@@ -237,11 +238,24 @@ DK  random 32 bytes per vault; encrypts that vault's records (XChaCha20-Poly1305
   So the store never reveals whether a decoy exists.
 - **Unlocking** tries the entered PIN against both slots; whichever unwraps is the vault that opens.
   Which slot is "real" is recorded nowhere.
-- **Wrong guesses** share one counter across both slots, with growing delays. No automatic wipe.
+- **The PIN** is 6 digits, entered on a keypad. **Wrong guesses** share one counter across both
+  slots (`a/v1/tries`), kept across launches: five tries, then waits of 30 seconds, a minute, 5
+  minutes, 15 minutes, and an hour each after that. No automatic wipe. Changing the PIN, turning it
+  off, setting up a duress PIN and showing the backup code all ask for the current PIN first, and
+  those guesses count too. *Forgot your PIN?* on the lock screen explains that nobody can open
+  almanac without it and offers *Erase everything and start again*.
+- **Auto-lock:** with a PIN set, almanac locks once it has been out of sight for a minute, so
+  pasting a backup into Notes does not mean entering the PIN again. *Lock now* is in Privacy.
+  *Decided 2026-09-14.*
 - **Duress PIN** needs a PIN to be set. By default it opens the decoy vault, which should look
-  lived-in. **"Also erase the real data"** is a separate opt-in: it overwrites the real slot with
-  random bytes, which cannot be undone. In some places destroying data under pressure carries legal
-  risk, and the setting says so in plain words.
+  lived-in: it starts with a copy of the real vault's settings and, unless the user says no, example
+  months near their usual cycle length (the tryout's, §2). *Decided 2026-09-14.* **"Also erase the
+  real data"** is a separate opt-in: it overwrites the real slot with random bytes, which cannot be
+  undone. In some places destroying data under pressure carries legal risk, and the setting says so
+  in plain words. Whether a duress PIN is set is recorded only in the vault that set it (a
+  `protection` record, left out of backups), so the decoy shows none. **Inside the decoy, turning off
+  the PIN or setting up a duress PIN overwrites the real vault** — refusing would give the decoy away
+  — and the duress screen says so before it is set up.
 - **Erase everything** overwrites both wrapped keys with random bytes first — from then on no record
   can be opened, whatever happens next — and then removes every record.
 - **Because KP includes KE,** someone who copies the raw storage off the phone cannot brute-force
@@ -280,8 +294,20 @@ backup.*
 **Format** — the same for Bulletin backups and the export file:
 
 ```
-"ALM1" | version | scrypt/HKDF params | DK wrapped under KB | XChaCha20-Poly1305(DK, padded snapshot)
+"ALM1" | version | key source (1: HKDF from the backup code) | BK wrapped under KB | XChaCha20-Poly1305(BK, padded snapshot)
 ```
+
+- **The backup code** is 28 letters and digits in seven groups of four — `K7Q2 9XMA 3JDE W4PN RT6H
+  B8CZ 51VF` — 128 random bits and a 12-bit check that catches a mistyped character. Crockford's
+  alphabet: no I, L, O or U, and reading it ignores case, spaces and dashes. It needs no stretching,
+  being random. *Changed 2026-09-14: it was to be 12 words from a 2048-word list — the same list
+  and length as a wallet's recovery phrase, which could teach people that typing 12 words into an
+  app is normal.* It is made the first time a backup is set up, shown, checked by typing it back, and
+  kept in the vault so later backups use the same one and it can be shown again (after the PIN).
+- **Each backup has its own key, BK,** so the vault's key never leaves the phone. *Corrected
+  2026-09-14: the first format carried DK itself.*
+- **The snapshot** is every record of the vault except `protection`: a restored almanac starts
+  without a PIN or duress PIN, which are set per phone.
 
 - **Padding buckets:** 16 KiB, 64 KiB, 256 KiB, 1 MiB — the smallest that fits. Final sizes come from
   P6.
@@ -299,7 +325,11 @@ backup.*
   password manager — and restored with the same backup code, by pasting it or by choosing a file
   that holds it. *Corrected 2026-09-14 (P4, Android): no file can leave the app — a download, sharing
   a file, Web Share and print all do nothing — but copying text works, and so does reading a file the
-  user picks.* A 16 KiB backup is about 22 KB of text.
+  user picks.* A 16 KiB backup is about 22 KB of text: a line saying what it is, then `almanac1:`,
+  the backup in base64url, and a full stop — which marks the end, since words pasted after it are
+  made of the same letters. Line breaks and spaces a note or an email adds in between are ignored.
+  If copying fails, the text is shown to copy by hand. Privacy shows when a backup was last copied,
+  and says when something has been logged since.
 - **Status line:** *Backed up 3 days ago.* If retention is about two weeks (P7): *Backups stay
   available while you open almanac at least once a week.*
 

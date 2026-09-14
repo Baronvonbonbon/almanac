@@ -1,4 +1,4 @@
-export { allDays, isEmpty, readMonth, saveDay } from "./days";
+export { allDays, isEmpty, monthRecords, readMonth, saveDay } from "./days";
 export {
   DEFAULT_SETTINGS,
   loadSettings,

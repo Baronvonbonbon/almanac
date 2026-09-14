@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { BackupFlow } from "../backup/BackupFlow";
 import { cycles, periodLengths, periodStarts } from "../cycle";
 import { TYPICAL_CYCLE, TYPICAL_PERIOD, withLength, type Settings } from "../data";
 import { t } from "../i18n";
 import { setLook, useLook } from "../look";
 import { LookPicker } from "../look/LookPicker";
+import type { Host } from "../platform";
+import { DuressFlow } from "../protect/DuressFlow";
+import { EraseConfirm } from "../protect/EraseConfirm";
+import { PinFlow } from "../protect/PinFlow";
+import { PrivacySection, type PrivacyFlow } from "../protect/PrivacySection";
 import type { CycleData } from "../shell/useCycle";
 import { Toggle } from "../ui/Toggle";
+import type { Vault } from "../vault";
 import "./settings.css";
 
 type Change = (settings: Settings) => Settings;
@@ -13,15 +20,49 @@ const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /**
  * docs/DESIGN.md §3: the look, which changes live; what almanac helps with; the usual lengths it
- * starts from. Every change is saved as it is made — there is nothing to confirm.
+ * starts from; and Privacy, whose rows open screens of their own. Every change is saved as it is made.
  */
-export function SettingsView({ data, onChange, onDone }: { data: CycleData; onChange(change: Change): Promise<void>; onDone(): void }) {
+export function SettingsView({
+  data,
+  vault,
+  host,
+  flow: opened,
+  onChange,
+  onChanged,
+  onNotice,
+  onDone,
+  onLock,
+  onErased,
+}: {
+  data: CycleData;
+  vault: Vault;
+  host: Host;
+  /** Open straight into one of Privacy's screens — from home's backup offer. */
+  flow: PrivacyFlow | null;
+  onChange(change: Change): Promise<void>;
+  onChanged(): void;
+  onNotice(message: string): void;
+  onDone(): void;
+  onLock(): void;
+  onErased(): void;
+}) {
   const { look } = useLook();
   // Shown from here while the screen is open, so quick taps never wait on a save.
   const [settings, setSettings] = useState(data.settings);
+  const [flow, setFlow] = useState<PrivacyFlow | null>(opened);
   const [error, setError] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => heading.current?.focus(), []);
+  useEffect(() => {
+    if (!flow) heading.current?.focus();
+  }, [flow]);
+
+  // Opened straight into a screen, leaving it closes Settings too.
+  const leave = opened ? onDone : () => setFlow(null);
+  const finish = (notice: string) => {
+    onChanged();
+    onNotice(notice);
+    leave();
+  };
 
   function change(fn: Change) {
     setSettings(fn);
@@ -29,6 +70,11 @@ export function SettingsView({ data, onChange, onDone }: { data: CycleData; onCh
     onChange(fn).catch((e: unknown) => setError(message(e)));
   }
   const mode = (key: keyof Settings["modes"]) => (on: boolean) => change((s) => ({ ...s, modes: { ...s.modes, [key]: on } }));
+
+  if (flow === "pin") return <PinFlow vault={vault} host={host} hasPin={data.privacy.pin} onFinish={finish} onBack={leave} />;
+  if (flow === "duress") return <DuressFlow vault={vault} host={host} data={data} onFinish={finish} onBack={leave} onPin={() => setFlow("pin")} />;
+  if (flow === "backup") return <BackupFlow vault={vault} host={host} data={data} onBack={leave} onChanged={onChanged} onNotice={onNotice} />;
+  if (flow === "erase") return <EraseConfirm host={host} onErased={onErased} onCancel={leave} />;
 
   // Once almanac has these from what was logged, the usual lengths no longer change its guesses — and it says so.
   const cycleLearned = cycles(periodStarts(data.entries)).filter((c) => c.counted).length >= 2;
@@ -89,6 +135,8 @@ export function SettingsView({ data, onChange, onDone }: { data: CycleData; onCh
           onSet={(days) => change((s) => withLength(s, "typicalPeriod", days))}
         />
       </section>
+
+      <PrivacySection data={data} onOpen={setFlow} onLock={onLock} />
     </section>
   );
 }

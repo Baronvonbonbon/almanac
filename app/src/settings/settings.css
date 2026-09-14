@@ -43,6 +43,48 @@
   color: var(--ink-soft);
 }
 
+/* Privacy's rows: each opens its own screen. */
+.rows {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.row:first-child {
+  border-top: 0;
+}
+.row-text {
+  flex: 1;
+  display: grid;
+  gap: 0.1rem;
+}
+.row-label {
+  font-weight: 700;
+}
+.row-value {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+.row-chevron {
+  font-size: 1.4rem;
+  color: var(--ink-soft);
+}
+
 /* A usual length: name and value on the left, − and + on the right, a note and "not sure" below. */
 .set-length {
   display: grid;

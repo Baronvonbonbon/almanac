@@ -54,23 +54,29 @@
 .home-log {
   margin-top: 1.25rem;
 }
-/* The tryout's offer of example months: dashed, as something outside the app itself. */
-.home-examples {
+/* An offer below the button: a backup, or in the tryout example months. */
+.home-card {
   display: grid;
   gap: 0.5rem;
   width: 100%;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   padding: 1rem;
-  border: 1.5px dashed var(--line);
+  border: 1.5px solid var(--line);
   border-radius: var(--radius);
+  background: var(--surface);
   text-align: left;
 }
-.home-examples h2 {
+.home-card h2 {
   margin: 0;
   font: 700 1rem var(--body);
 }
-.home-examples p {
+.home-card p {
   margin: 0 0 0.25rem;
   font-size: 0.92rem;
   color: var(--ink-soft);
+}
+/* Dashed, and without a ground: something outside the app itself. */
+.home-examples {
+  border-style: dashed;
+  background: none;
 }

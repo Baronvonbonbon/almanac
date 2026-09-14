@@ -13,6 +13,10 @@ export const shortDate = (date: ISODate): string => format({ month: "short", day
 export const longDate = (date: ISODate): string =>
   format({ weekday: "long", month: "long", day: "numeric" }).format(atNoonUtc(date));
 
+/** A moment as a date on this phone's calendar: "Sep 14", or "Sep 14, 2026". */
+export const dateOf = (ms: number, withYear = false): string =>
+  new Intl.DateTimeFormat(LOCALE, { month: "short", day: "numeric", ...(withYear ? { year: "numeric" } : {}) }).format(new Date(ms));
+
 /** "September 2026"; `month` counts from 0. */
 export const monthTitle = (year: number, month: number): string =>
   format({ month: "long", year: "numeric" }).format(new Date(Date.UTC(year, month, 15)));

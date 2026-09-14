@@ -8,10 +8,21 @@ import { homeText } from "./text";
 import "./home.css";
 
 /**
- * docs/DESIGN.md §3: one cycle graphic and one button. In the web tryout, until a few cycles are
- * logged, an offer of example months below it.
+ * docs/DESIGN.md §3: one cycle graphic and one button. Below it, once three days are logged and until
+ * a backup is copied, the offer of one — and in the web tryout, until a few cycles are logged, an
+ * offer of example months.
  */
-export function Home({ data, onLog, examples }: { data: CycleData; onLog(date: ISODate): void; examples?: { busy: boolean; onAdd(): void } | null }) {
+export function Home({
+  data,
+  onLog,
+  onBackup,
+  examples,
+}: {
+  data: CycleData;
+  onLog(date: ISODate): void;
+  onBackup?: (() => void) | null;
+  examples?: { busy: boolean; onAdd(): void } | null;
+}) {
   const { look } = useLook();
   const { prediction, shape, today } = data;
   const text = homeText(prediction, today);
@@ -38,8 +49,17 @@ export function Home({ data, onLog, examples }: { data: CycleData; onLog(date: I
       <button type="button" className="button home-log" onClick={() => onLog(today)}>
         {logged ? t("home.editToday") : t("home.logToday")}
       </button>
+      {onBackup && (
+        <aside className="home-card" aria-labelledby="home-backup-title">
+          <h2 id="home-backup-title">{t("backup.offerTitle")}</h2>
+          <p>{t("backup.offerBody")}</p>
+          <button type="button" className="button secondary" onClick={onBackup}>
+            {t("backup.offerButton")}
+          </button>
+        </aside>
+      )}
       {examples && (
-        <aside className="home-examples" aria-labelledby="home-examples-title">
+        <aside className="home-card home-examples" aria-labelledby="home-examples-title">
           <h2 id="home-examples-title">{t("tryout.examplesTitle")}</h2>
           <p>{t("tryout.examplesBody")}</p>
           <button type="button" className="button secondary" disabled={examples.busy} onClick={examples.onAdd}>

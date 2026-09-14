@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { RestoreView } from "../backup/RestoreView";
 import { addDays, localToday, type ISODate } from "../cycle";
 import { TYPICAL_CYCLE as CYCLE } from "../data";
 import { t } from "../i18n";
@@ -25,6 +26,7 @@ export function Onboarding({ host, onDone }: { host: Host; onDone(vault: Vault):
   const [ttc, setTtc] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const opened = useRef(false);
 
@@ -32,7 +34,9 @@ export function Onboarding({ host, onDone }: { host: Host; onDone(vault: Vault):
   useEffect(() => {
     if (opened.current) heading.current?.focus();
     opened.current = true;
-  }, [step]);
+  }, [step, restoring]);
+
+  if (restoring) return <RestoreView host={host} onDone={onDone} onBack={() => setRestoring(false)} />;
 
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
 
@@ -110,9 +114,14 @@ export function Onboarding({ host, onDone }: { host: Host; onDone(vault: Vault):
           </p>
         )}
         {id === "look" && (
-          <button type="button" className="button" onClick={next}>
-            {t("onboarding.next")}
-          </button>
+          <>
+            <button type="button" className="button" onClick={next}>
+              {t("onboarding.next")}
+            </button>
+            <button type="button" className="link-button" onClick={() => setRestoring(true)}>
+              {t("restore.link")}
+            </button>
+          </>
         )}
         {id === "lastPeriod" && (
           <>
