@@ -9,6 +9,7 @@
   "scripts": {
     "check": "npm run check -w app && npm run build -w probe && node tools/deploy-key.mjs --check",
     "whois": "node tools/whois.mjs",
+    "retention": "node tools/retention.mjs",
     "deploy-key": "node tools/deploy-key.mjs",
     "pad:login": "npx --yes @polkadot-community-foundation/polkadot-app-deploy@0.16.1 login --env devnet",
     "pad:logout": "npx --yes @polkadot-community-foundation/polkadot-app-deploy@0.16.1 logout --env devnet",

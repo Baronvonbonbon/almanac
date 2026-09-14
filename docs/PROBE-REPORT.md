@@ -59,10 +59,12 @@ The Phase 0 gate needs every check on at least one Android and one iOS phone.
       bytes stored the way the SDK uploads, 2026-09-14 13:56 UTC) and
       `bafkreif5zpe5s4ja4kk67benbljh4u5bwynkqfd66prm3p3prkhtuxt2na` (an 18 KB piece of the first
       probe build, 2026-09-13 15:11 UTC, readable through the gateway only). This is the retention
-      test until P6 works. The first check at 15 days or later falls on 2026-09-28 for the older one
+      test until P6 works. While the app holds `almanacapp.dot`, run it from a desktop with
+      `npm run retention` — the gateway half; the through-the-app half waits for the probe's next
+      deploy. The first check at 15 days or later falls on 2026-09-28 for the older one
       and 2026-09-29 for the newer
 - [ ] P9b and P9c on two phones
-- [ ] P10 in a phone browser, at `almanacapp.dev-dot.li`
+- [ ] P10 in a phone browser, at `almanacapp.dev-dot.li` — once the probe is published there again
 
 ## Notes on running the probe
 

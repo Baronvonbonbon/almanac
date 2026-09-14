@@ -5,10 +5,10 @@
 
 | Phase | | Status |
 |---|---|---|
-| 0 | Device probe — measure the platform before building on it | 🟡 run on one Android phone ([report](PROBE-REPORT.md)); iOS and two-phone checks to go; Bulletin uploads blocked |
+| 0 | Device probe — measure the platform before building on it | 🟡 run on one Android phone ([report](PROBE-REPORT.md)); iOS and two-phone checks wait for the probe's next deploy; P7 continues from a desktop; Bulletin uploads blocked |
 | 1 | Foundations — vault, data model, predictions | 🟡 built and tested; the on-device check waits on publishing |
-| 2 | Core experience — design, logging, calendar, tryout mode | ⬜ |
-| 3 | Protection — PIN, duress PIN, erase, export file, backup code | ⬜ |
+| 2 | Core experience — design, logging, calendar, tryout mode | 🟡 built, and walked through in a browser in all three looks; publishing next |
+| 3 | Protection — PIN, duress PIN, erase, export file, backup code | 🟡 built, and walked through in a browser; restore on a second phone to go |
 | 4 | Encrypted Bulletin backups | ⬜ |
 | 5 | Sharing — live share, timed link, printable report | ⬜ |
 | 6 | Reminders, insights, health nudges | ⬜ |
@@ -29,7 +29,7 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Decision | Choice |
 |---|---|
 | Name | **almanac** |
-| Labels | `almanacapp.dot` — prototype and probe, open to any account. `almanac.dot` — production, needs Full personhood. **Neither is registered yet** — registration is permanent. *Corrected 2026-09-11:* the prototype was `almanac01.dot` until `pad` refused it. `pad` requires Personhood Lite for a base of 6–8 letters with two trailing digits; only a base of 9+ letters (with or without two digits) is open to a NoStatus signer. The chain's own v2 check had said "Available to all" — `tools/whois.mjs` now prints `pad`'s rule first |
+| Labels | `almanacapp.dot` — prototype and probe, open to any account. `almanac.dot` — production, needs Full personhood. `almanacapp.dot` was registered on 2026-09-13 and is owned by the deploy key until it is transferred to the phone account; `almanac.dot` is not registered. Registration is permanent. *Corrected 2026-09-11:* the prototype was `almanac01.dot` until `pad` refused it. `pad` requires Personhood Lite for a base of 6–8 letters with two trailing digits; only a base of 9+ letters (with or without two digits) is open to a NoStatus signer. The chain's own v2 check had said "Available to all" — `tools/whois.mjs` now prints `pad`'s rule first |
 | Environment | Products Devnet, which since the 2026-09-08 update runs on Paseo system chains: Asset Hub 1000, People 1004, Bulletin 1010 (`pad` 0.16.1 `environments.json`) |
 | Build standard | Production quality from day one. Devnet is labelled as a preview in the app, because it resets |
 | Contracts | **None** |
@@ -38,9 +38,9 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Identity | `deriveEntropy` only. **`getUserId` is never called** — it is a global handle any Product can read. Enforced in CI |
 | Optional modes | Fertility window, trying to conceive, pregnancy — all off by default |
 | Protection | Optional PIN. Optional duress PIN that opens a decoy; "also erase the real data" is a separate, informed opt-in |
-| Backups | Encrypted Bulletin backups + a backup code + an encrypted export file |
+| Backups | Encrypted Bulletin backups + a backup code (28 letters and digits) + the same encrypted backup copied as text, since no file can leave the app (P4) |
 | Sharing | Selective by category and date range. Every share expires — default 7 days, maximum 90. Revocable |
-| Web gateway | Tryout mode: sample data, nothing saved, a clear "use the Polkadot app" banner |
+| Web gateway | Tryout mode: example months on request, nothing saved, a clear "use the Polkadot app" banner |
 | Look | Soft, warm, minimal — in three looks, picked on the first screen and changeable in Settings: Hearth (the default), Moonpaper, Pebble ([DESIGN §4](DESIGN.md#4-look--soft-warm-minimal)) |
 | License · language | GPL-3.0-or-later · English, with every string externalised from day one |
 
@@ -84,6 +84,14 @@ by it).
       it is transferred to the phone account
 - [ ] `docs/PROBE-REPORT.md` — the answers, with the raw JSON reports committed next to it. Started
       2026-09-14 with one Android phone
+- [x] `tools/retention.mjs` (`npm run retention`) — P7 from a desktop, through the devnet IPFS
+      gateway, each block checked against its CID's own hash
+
+*Decided 2026-09-14: the app replaces the probe at `almanacapp.dot` for the first prototype deploy.
+The probe goes back on in a later deploy of its own for the iOS, reinstall and two-phone checks, and
+P10 in a phone browser. Host storage belongs to the name, not the bundle, so the probe's journal on
+the phone survives the swap. P7 carries on from a desktop in the meantime; only its through-the-app
+half waits.*
 
 | ID | Question | How | Decides |
 |---|---|---|---|
@@ -142,7 +150,7 @@ by it).
       cycle, no cycles
 - [x] The `dist/` guard fails a build with a planted external URL — checked 2026-09-11
 
-## Phase 2 — Core experience ⬜
+## Phase 2 — Core experience 🟡
 
 Starts with a design canvas: two or three soft, warm, minimal explorations of onboarding, home, the
 log sheet and the calendar. One is chosen before any screen is built. *Done 2026-09-14: three were
@@ -150,17 +158,35 @@ mocked up ([`design/looks.html`](design/looks.html)), and all three are kept as 
 
 *Decided 2026-09-14 — the first prototype:* this phase, plus from Phase 3 the PIN, the duress PIN
 and the copied backup with its backup code, offered after three logged days. While P6 blocks Bulletin the copied backup is the only
-backup, and the devnet has already reset once. The web tryout is included. The probe's remaining
-checks move to a hidden screen in the app, because one name serves one bundle; to stay within the
-bundle budget that screen uses `product-sdk-host` directly, not `createApp` and its chain metadata.
+backup, and the devnet has already reset once. The web tryout is included. *Changed 2026-09-14:*
+the probe's remaining checks were to move to a hidden screen in the app, because one name serves one
+bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
 
 **Produces**
-- [ ] Onboarding (four screens at most, the first choosing the look), home (cycle graphic + **Log
-      today**), log sheet (three taps at most), calendar, history, settings with the look and the
-      mode toggles
-- [ ] Web tryout mode, with the same look picker
-- [ ] Hearth, Moonpaper and Pebble, each light and dark, following the host theme; their fonts
-      bundled, within a 400 KiB font budget separate from the code's
+- [x] Onboarding (four screens at most, the first choosing the look), home (cycle graphic + **Log
+      today**), log sheet (three taps at most), calendar, insights (the history of past cycles),
+      settings with the look, the mode toggles and the usual lengths
+- [x] Web tryout mode, with the same look picker, and example months on request
+- [x] Hearth, Moonpaper and Pebble, each light and dark, following the host theme; their fonts
+      bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and 449 KiB of code
+      of 512
+
+**First run on a phone** — after `npm run deploy -w app`, which replaces the probe
+- [ ] Close the Polkadot app fully, then open almanac, so the new build loads; *Preview* shows in
+      the top bar
+- [ ] Onboarding in each look, with its fonts; the look follows the app's light or dark, not the
+      phone's (P12)
+- [ ] Log a few days, close the Polkadot app, reopen: they are still there — the Phase 1 gate
+- [ ] Turn on a PIN: unlocking feels quick (scrypt N = 2¹⁶). Away under a minute stays open; over a
+      minute locks. Five wrong PINs bring a 30-second wait
+- [ ] The duress PIN opens the second almanac, with example months; the real PIN opens the real one,
+      untouched
+- [ ] *Copy backup* reaches the clipboard (P4) and pastes whole into Notes; restore by pasting it and
+      from a picked file — on a second phone with a different account if one is to hand (the Phase 3
+      gate)
+- [ ] Erase everything returns to the first screen
+- [ ] `almanacapp.dev-dot.li` in a phone browser shows the tryout, which keeps nothing after a reload
+      (the Phase 2 gate)
 
 **Gate**
 - [ ] Published to `almanacapp.dot` and used daily for a week on a real device
@@ -169,17 +195,21 @@ bundle budget that screen uses `product-sdk-host` directly, not `createApp` and 
 - [ ] WCAG 2.2 AA contrast in all six palettes, a screen-reader pass, reduced motion honoured
 - [ ] Tryout mode on `almanacapp.dev-dot.li` stores nothing — verified empty after a reload
 
-## Phase 3 — Protection ⬜
+## Phase 3 — Protection 🟡
 
 **Produces**
-- [ ] Optional PIN with growing lockout delays; auto-lock when the app goes to the background
-- [ ] Optional duress PIN → decoy vault; "also erase" as a separate opt-in
-- [ ] Erase everything
-- [ ] Backup code (12 words) and encrypted export file, with restore
+- [x] Optional PIN with growing lockout delays; auto-lock a minute after the app goes to the
+      background
+- [x] Optional duress PIN → decoy vault, starting with example months unless declined; "also erase"
+      as a separate opt-in
+- [x] Erase everything
+- [x] Backup code (28 letters and digits, not 12 words — DESIGN §8) and the encrypted backup copied
+      as text (P4: no file can leave the app), with restore by pasting or from a picked file
 
 **Gate**
-- [ ] Restore from export file + backup code on a second device with a **different** account
-- [ ] With no duress PIN set, the raw store has the same shape as with one — automated test
+- [ ] Restore from the copied backup + backup code on a second device with a **different** account.
+      In a browser, a fresh tryout page — a new account and new storage — restores it (2026-09-14)
+- [x] With no duress PIN set, the raw store has the same shape as with one — automated test
 - [ ] After erase, no record decrypts with any old key — automated test
 
 ## Phase 4 — Encrypted Bulletin backups ⬜
