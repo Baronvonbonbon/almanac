@@ -5,7 +5,7 @@
 
 | Phase | | Status |
 |---|---|---|
-| 0 | Device probe — measure the platform before building on it | 🟡 probe built, not yet run on a device |
+| 0 | Device probe — measure the platform before building on it | 🟡 run on one Android phone ([report](PROBE-REPORT.md)); iOS and two-phone checks to go; Bulletin uploads blocked |
 | 1 | Foundations — vault, data model, predictions | 🟡 built and tested; the on-device check waits on publishing |
 | 2 | Core experience — design, logging, calendar, tryout mode | ⬜ |
 | 3 | Protection — PIN, duress PIN, erase, export file, backup code | ⬜ |
@@ -64,6 +64,8 @@ re-checks the ones marked with a check ID.
 | `pad` registers any eligible name it is pointed at; republishing needs a phone signature in an interactive terminal | broadside `DEPLOY.md` | `tools/whois.mjs` for name checks; deploys run by hand |
 | `pad login` cannot pair with the current Polkadot app ("Mode BIGINT is not implemented"); with no session `pad` signs with its default key, the public dev phrase, which would keep the name | Our deploy attempts, 2026-09-11; [pad#231](https://github.com/paritytech/polkadot-app-deploy/issues/231) (pairing), [pad#234](https://github.com/paritytech/polkadot-app-deploy/issues/234) (fallback, filed by us) | Publish with a local deploy key (`tools/deploy-key.mjs`), then `pad transfer` the name to the phone account once pairing works. `deploy` refuses to run with no owner |
 | A deploy key is not authorized to store on devnet Bulletin, and devnet declares no authorizer to ask; `pad`'s CLI signs the upload with the owner key whenever one is set. Its shared upload pool (`//deploy/0…9` of the dev phrase) is authorized | Our first deploy, and a read-only `polkadot-app-bootstrap` status check, 2026-09-12 | `tools/deploy.mjs` calls `pad` as a library: the deploy key signs DotNS, a pool account signs the upload |
+| `BulletinAllowance` comes back `Allocated`, yet no account a Product can sign with holds a Bulletin authorization; the SDK's cloud storage signs with product account #0, and uploads fail `Invalid: Payment` | P6 on Android and an on-chain read with a positive control, 2026-09-14 | Backups (Phase 4) and sharing (Phase 5) blocked as designed; reported upstream |
+| Nothing leaves the app as a file — download, file share, Web Share and print do nothing; the clipboard and reading a picked file work | P4 on Android, 2026-09-13 | Backups, exports and the visit summary are copied as text (DESIGN §8, §9, §11) |
 
 ---
 
@@ -78,8 +80,10 @@ by it).
 - [x] `probe/` — a Product that runs each check, keeps a journal in host local storage across runs
       and app restarts, and exports a JSON report
 - [x] `tools/whois.mjs` — read-only DotNS lookup
-- [ ] `almanacapp.dot` registered and the probe published — by hand, needs a phone
-- [ ] `docs/PROBE-REPORT.md` — the answers, with the raw JSON reports committed next to it
+- [x] `almanacapp.dot` registered and the probe published, 2026-09-13 — owned by the deploy key until
+      it is transferred to the phone account
+- [ ] `docs/PROBE-REPORT.md` — the answers, with the raw JSON reports committed next to it. Started
+      2026-09-14 with one Android phone
 
 | ID | Question | How | Decides |
 |---|---|---|---|
@@ -113,8 +117,8 @@ by it).
       `./testing` fake models storage but not entropy, so it tests the real-host adapter rather than
       replacing the in-memory host
 - [x] `src/vault/` — key hierarchy, two-slot layout with mirrored records, duress decoy, erase
-      ([DESIGN §6](DESIGN.md#6-keys-and-vaults)). scrypt starts at N = 2¹⁵ until P11 measures phones;
-      the parameters are stored per vault, so they can change without a migration
+      ([DESIGN §6](DESIGN.md#6-keys-and-vaults)). scrypt N = 2¹⁶ from P11 (169 ms on a Pixel 10 Pro
+      XL); the parameters are stored per vault, so they can change without a migration
 - [x] `src/data/` — month records, settings, a data format version and a migration runner (no
       migrations yet: v1 is the first). Data from a newer almanac is refused, never rewritten
 - [x] `src/cycle/` — period detection, predictions, fertile-window estimate

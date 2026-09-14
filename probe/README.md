@@ -95,5 +95,7 @@ Reports go in `docs/probe-reports/`, and the answers in `docs/PROBE-REPORT.md`.
 ## What it spends
 
 P6 and P9 use the product's test-storage allowance. Every upload is random bytes encrypted under a
-key that is thrown away — nothing readable leaves the phone. P9 re-uses fixed channels, so re-running
-it replaces its earlier statements instead of piling them up.
+key that is thrown away — nothing readable leaves the phone. P9a leaves one small statement that
+lives about 90 days. It outlives whatever an earlier run left, so it pushes that out rather than
+piling up — a full account only takes a statement that outlives the shortest one it holds. The first
+version of P9a left two (30 and 90 days), which expire around 2026-10-13 and 2026-12-12.

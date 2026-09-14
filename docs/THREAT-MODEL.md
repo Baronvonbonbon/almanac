@@ -34,7 +34,10 @@ anyone who knows your main Polkadot account can compute your almanac accounts. I
 sign backups and share updates, an observer can learn *that you use almanac and when you back up* —
 never what is inside. Mitigations: scheduled, fixed-size uploads; a name that does not say "period
 tracker". P8 measures which account actually signs. If it is a product account, this risk is real
-and stays in the app's privacy explainer.
+and stays in the app's privacy explainer. *P8, 2026-09-13 (Android): uploads are signed by product
+account #0, so the risk is real for uploads, if they ever work (P6). Statements are signed by a
+different account, which is not product account #0, #1 or #2. Whether that one can be derived from
+the main account is still open: the app showed almanac no main account to test against.*
 
 **R2 — Recipients can keep what they see.** Screenshots, photos, copies. Stopping a share cannot
 reach into someone else's phone. The sharing screen says this before every share.

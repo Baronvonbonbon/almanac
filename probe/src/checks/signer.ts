@@ -31,10 +31,26 @@ export const signer: Check = {
       }
     }
 
+    const roleOfKey = (pub: string): string => {
+      const i = INDICES.find((n) => hostKeys[n] === pub.replace(/^0x/, ""));
+      return i !== undefined ? `product account #${i}` : "another account (the host's allowance account?)";
+    };
+    const role = (address: string | null): string => {
+      if (!address) return "unknown";
+      try {
+        return roleOfKey(hex(ss58PublicKey(address)));
+      } catch {
+        return "unreadable address";
+      }
+    };
+
+    // Only an account that is not one of almanac's own can stand in for "your main account".
+    const mainAccounts = accounts.filter((a) => !role(a.address).startsWith("product account"));
+
     // Recompute each product account from a main account's PUBLIC key alone. A match means anyone who
     // knows the main account can do the same.
     const matches: string[] = [];
-    for (const a of accounts) {
+    for (const a of mainAccounts) {
       let pub: Uint8Array;
       try {
         pub = ss58PublicKey(a.address);
@@ -53,43 +69,40 @@ export const signer: Check = {
       }
     }
 
-    const role = (address: string | null): string => {
-      if (!address) return "unknown";
-      let pub: string;
-      try {
-        pub = hex(ss58PublicKey(address));
-      } catch {
-        return "unreadable address";
-      }
-      const i = INDICES.find((n) => hostKeys[n] === pub);
-      if (i !== undefined) return `product account #${i}`;
-      if (accounts.some((a) => a.address === address)) return "a main account";
-      return "another account (a slot account?)";
-    };
     const uploadSigner = (journal.entries("P6").at(-1)?.data?.signer as string | undefined) ?? null;
     const statementSigner = (journal.entries("P9a").at(-1)?.data?.signer as string | undefined) ?? null;
 
     const data = {
-      accounts: accounts.map((a) => ({ address: a.address, source: a.source })),
+      accounts: accounts.map((a) => ({ address: a.address, source: a.source, role: role(a.address) })),
       selected: { address: selected, role: role(selected) },
       walletProductAccount: walletProduct,
       hostProductKeys: hostKeys,
       derivedFromPublicKey: matches,
       uploadSigner: { address: uploadSigner, role: role(uploadSigner) },
-      statementSigner,
+      statementSigner: { key: statementSigner, role: statementSigner ? roleOfKey(statementSigner) : "unknown" },
     };
+    const signers = `Uploads were signed by ${data.uploadSigner.role}; statements by ${data.statementSigner.role}.`;
     if (matches.length) {
       return {
         status: "fail",
-        summary: `Yes — almanac's accounts can be computed from your main account's public key (${matches[0]}). Uploads were signed by ${data.uploadSigner.role}.`,
+        summary: `Yes — almanac's accounts can be computed from your main account's public key (${matches[0]}). ${signers}`,
+        data,
+      };
+    }
+    if (!Object.keys(hostKeys).length) {
+      return { status: "info", summary: "The host did not return product accounts, so linkability could not be tested.", data };
+    }
+    if (!mainAccounts.length) {
+      // 2026-09-14: the Android app showed almanac only product account #0, and this reported a pass.
+      return {
+        status: "info",
+        summary: `Inconclusive — the app shows almanac only its own accounts, so there was no main account to test against. ${signers}`,
         data,
       };
     }
     return {
-      status: Object.keys(hostKeys).length ? "pass" : "info",
-      summary: Object.keys(hostKeys).length
-        ? `No product account could be computed from a main account's public key. Uploads were signed by ${data.uploadSigner.role}.`
-        : "The host did not return product accounts, so linkability could not be tested.",
+      status: "pass",
+      summary: `No product account could be computed from a main account's public key. ${signers}`,
       data,
     };
   },

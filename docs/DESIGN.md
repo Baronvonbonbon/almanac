@@ -109,7 +109,10 @@ Starting tokens. Every text pair is checked to WCAG AA in Phase 2 before it ship
 - **Meaning is never colour alone.** Flow shows as fill level and a label; predictions use an
   outline; the fertile window uses a pattern.
 - **Motion.** 150–250 ms ease-out; the ring fills gently. `prefers-reduced-motion` is honoured.
-- **Theme.** Follows the host theme subscription (P12), falling back to `prefers-color-scheme`.
+- **Theme.** Follows the host theme subscription (P12), falling back to `prefers-color-scheme` only
+  outside the app. *Corrected 2026-09-14 (P12, Android): the host was dark while the phone was set
+  to light, so inside the app `prefers-color-scheme` gives the wrong answer — the host's `variant`
+  decides.*
 
 ## 5. Data
 
@@ -196,7 +199,10 @@ DK  random 32 bytes per vault; encrypts that vault's records (XChaCha20-Poly1305
 - **Because KP includes KE,** someone who copies the raw storage off the phone cannot brute-force
   the PIN offline; they would also need the device key, which only the host can produce for this
   product.
-- **scrypt parameters** are set from P11 — the target is about 300 ms on a mid-range phone.
+- **scrypt parameters** are set from P11 — the target is about 300 ms on a mid-range phone. N = 2¹⁶,
+  r = 8, p = 1: 169 ms on a Pixel 10 Pro XL (2¹⁷ took 328 ms), so roughly 300–500 ms on a mid-range
+  phone. *Set 2026-09-14; to be checked on an iPhone and a mid-range Android.* The parameters are
+  stored per vault, so they can change later without a migration.
 
 ## 7. Predictions
 
@@ -218,6 +224,11 @@ Everything runs on the phone.
 
 ## 8. Backups
 
+*Blocked as of 2026-09-14 (P6): the Bulletin allowance comes back `Allocated`, but no account a
+Product can sign with is authorized to upload, so every upload is refused. Reported upstream
+([PROBE-REPORT](PROBE-REPORT.md#upstream)). Until it is fixed, the copied backup below is the only
+backup.*
+
 **Format** — the same for Bulletin backups and the export file:
 
 ```
@@ -233,8 +244,14 @@ Everything runs on the phone.
   time encrypted under a key derived from KB — well under 512 bytes. The longest TTL P9 allows.
 - **Restore:** enter the backup code → derive KB and TB → read the newest pointer on TB → fetch the
   CID → unwrap DK → decrypt. The backup code does not depend on the Polkadot account, so this works
-  after an account reset.
-- **Fallback:** the export file, restored with the same backup code.
+  after an account reset. *P7, 2026-09-14 (Android): the fetch works through the app itself, but
+  only for BLAKE2b-256 CIDs — the SDK's default, which almanac keeps for everything it uploads. The
+  host did not find a SHA-256 upload that the gateway served.*
+- **Fallback:** the same backup, copied as text — to paste into a note, an email to yourself, or a
+  password manager — and restored with the same backup code, by pasting it or by choosing a file
+  that holds it. *Corrected 2026-09-14 (P4, Android): no file can leave the app — a download, sharing
+  a file, Web Share and print all do nothing — but copying text works, and so does reading a file the
+  user picks.* A 16 KiB backup is about 22 KB of text.
 - **Status line:** *Backed up 3 days ago.* If retention is about two weeks (P7): *Backups stay
   available while you open almanac at least once a week.*
 
@@ -251,7 +268,7 @@ Once someone has seen your data, no technology can make them unsee it. So in alm
 |---|---|---|---|
 | **Live share** | Family or a partner with almanac | Pair by scanning their QR code. It carries their almanac sharing key (X25519, derived from their `deriveEntropy`) — not their Polkadot username. Updates when you open almanac | Anytime; future updates use a new key |
 | **Timed link** | A doctor or midwife, on the web | A link plus an access code given separately — in person or by phone. The link alone opens nothing | Works until they open it |
-| **Printable report** | A clinic visit | A clean summary, generated on the phone | Cannot be taken back — and the app says so before creating one |
+| **Visit summary** | A clinic visit | A clean summary on the phone's screen, to show, or copied as text. *Corrected 2026-09-14 (P4): the app cannot print or save a file, so it is no longer a printable file* | Cannot be taken back once copied — and the app says so first |
 
 **What you choose in every share:** categories, date range, end date.
 
@@ -274,11 +291,16 @@ Once someone has seen your data, no technology can make them unsee it. So in alm
   one entry per active share, each encrypted so only that share's recipient can read it, holding the
   data CID.
 - **Stop sharing** = upload a new index without that entry and replace the outbox statement on the
-  same channel (last-write-wins). Live shares also rotate `KS`.
+  same channel (last-write-wins). Live shares also rotate `KS`. *P9, 2026-09-14 (Android):
+  replacement works — after A, then B, on one channel, a fresh subscription saw only B.*
 - **Timed links:** the link carries `TO`, the entry's tag and half the entry key (in the URL
   fragment, which browsers never send to servers); the access code carries the other half.
-- **The budget:** an outbox pointer plus a backup pointer is two small statements — inside the
-  1024-byte-per-account limit, with room to spare, however many shares exist.
+- **The budget:** an outbox pointer plus a backup pointer is two small statements, however many
+  shares exist. *Corrected 2026-09-14 (P9): that is the whole budget, not a part of it. A full
+  account refuses a statement that expires sooner than the shortest one it holds. In the first run
+  one account held only two small statements; later runs held more — perhaps each allowance grant
+  adds room — but until that is settled, almanac plans for two. So both pointers use the longest
+  lifetime (90 days is accepted), and each is refreshed well before it lapses.*
 - **Keeping shares alive:** Bulletin retention (~2 weeks) and the statement TTL mean shares are
   refreshed when the sharer opens almanac. If they don't, shares stop working (fail closed). The app
   says: *Your shares stay up to date when you open almanac.*
@@ -293,11 +315,14 @@ expire-only), P12 (camera for QR pairing; otherwise pairing by a short code).
 
 `getNotificationManager().push({ text, scheduledAt })`. On each open, cancel and reschedule the next
 two reminders. **Discreet wording by default** — *Time to check in 🌸* — because lock screens are
-public. Plain wording (*Your period may start tomorrow*) is an opt-in. Depends on P3.
+public. Plain wording (*Your period may start tomorrow*) is an opt-in. *P3, 2026-09-13: a scheduled reminder
+arrived with the app closed on Android; iOS is still to check.*
 
 ## 11. Import and export
 
 - **Export:** the encrypted backup format above, plus a plain JSON and CSV export behind a clear
-  warning that the plain file is readable by anyone who gets it. The schema is documented.
+  warning that plain text is readable by anyone who gets it. The schema is documented. *Corrected
+  2026-09-14 (P4): each is copied as text, since the app cannot save a file.*
+- **Import** from a file works: the app can read a file the user picks (P4, Android).
 - **Import** (Phase 7): Clue, Flo, Drip, Apple Health. Leaving years of history behind is the most
   common reason not to switch.

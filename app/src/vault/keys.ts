@@ -14,8 +14,11 @@ export interface KdfParams {
   p: number;
 }
 
-/** A starting point until P11 measures real phones; the target is about 300 ms. Stored per vault. */
-export const DEFAULT_KDF: KdfParams = { N: 2 ** 15, r: 8, p: 1 };
+/**
+ * 169 ms on a Pixel 10 Pro XL (P11, 2026-09-13), so roughly 300–500 ms on a mid-range phone. Stored
+ * per vault, so a later change needs no migration.
+ */
+export const DEFAULT_KDF: KdfParams = { N: 2 ** 16, r: 8, p: 1 };
 
 const SALT = "almanac/v1";
 

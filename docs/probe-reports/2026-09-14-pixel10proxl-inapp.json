@@ -1,0 +1,820 @@
+{
+  "redacted": "Account addresses, public keys and statement topics are replaced with labels (2026-09-14).",
+  "notes": [
+    "Reassembled from two pastes of the 12:51 UTC export: one P4b:confirm entry was garbled in transit and is restored from its intact copy; one P7 input was pasted chat text rather than a CID and is replaced with a label.",
+    "P3:confirm at 11:53:18 UTC was tapped to acknowledge the earlier run; the person running the probe reports that the 11:55 reminder also arrived.",
+    "P7 and the last P10 used bafkreiflxd5ahjn3e5z75ji45ytoiiss756liu6unxkesrvftelg3r5wqa, a test file on a local IPFS node that is not on Bulletin."
+  ],
+  "probe": "0.1.0",
+  "build": "2026-09-14T11:38:52.305Z",
+  "sdk": {
+    "@noble/hashes": "1.8.0",
+    "@parity/product-sdk": "0.27.0",
+    "@parity/product-sdk-crypto": "0.1.1",
+    "@parity/product-sdk-host": "0.19.1",
+    "@parity/product-sdk-keys": "0.3.24",
+    "polkadot-api": "2.2.2"
+  },
+  "product": "almanacapp.dot",
+  "inApp": true,
+  "userAgent": "Mozilla/5.0 (Linux; Android 16; Pixel 10 Pro XL Build/CP1A.260505.005; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.87 Mobile Safari/537.36",
+  "exportedAt": "2026-09-14T12:51:00.415Z",
+  "journal": {
+    "version": 1,
+    "created": 1789326233052,
+    "entries": [
+      {
+        "id": "P1",
+        "status": "info",
+        "summary": "No earlier marker — created c174678f. If this phone ran the probe before, that data did not survive.",
+        "data": {
+          "marker": {
+            "id": "c174678f",
+            "firstSeen": 1789326240829,
+            "runs": [
+              {
+                "at": 1789326240829,
+                "build": "2026-09-13T15:10:59.255Z"
+              }
+            ]
+          }
+        },
+        "at": 1789326240840,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P1b",
+        "status": "pass",
+        "summary": "Stored and read back up to 4 MiB in one record.",
+        "data": {
+          "64 KiB": "ok in 134 ms",
+          "256 KiB": "ok in 182 ms",
+          "1 MiB": "ok in 439 ms",
+          "4 MiB": "ok in 1198 ms"
+        },
+        "at": 1789326249523,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P2",
+        "status": "info",
+        "summary": "ac70 0d8e 62d7 f9ba — write this down and compare after a reinstall and on another phone.",
+        "data": {
+          "fingerprint": "ac70 0d8e 62d7 f9ba",
+          "bytes": 32,
+          "earlier": []
+        },
+        "at": 1789326253363,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P3",
+        "status": "info",
+        "summary": "Scheduled for 2026-09-13 19:06 UTC. Close the Polkadot app now.",
+        "data": {
+          "id": "2372364198",
+          "fireAt": 1789326378391
+        },
+        "at": 1789326260775,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P1",
+        "status": "pass",
+        "summary": "Survived. Marker c174678f, first saved 2026-09-13 19:04, seen on 2 runs.",
+        "data": {
+          "marker": {
+            "id": "c174678f",
+            "firstSeen": 1789326240829,
+            "runs": [
+              {
+                "at": 1789326240829,
+                "build": "2026-09-13T15:10:59.255Z"
+              },
+              {
+                "at": 1789326356725,
+                "build": "2026-09-13T15:10:59.255Z"
+              }
+            ]
+          }
+        },
+        "at": 1789326356735,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P1b",
+        "status": "pass",
+        "summary": "Stored and read back up to 4 MiB in one record.",
+        "data": {
+          "64 KiB": "ok in 116 ms",
+          "256 KiB": "ok in 190 ms",
+          "1 MiB": "ok in 446 ms",
+          "4 MiB": "ok in 1330 ms"
+        },
+        "at": 1789326362713,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P2",
+        "status": "pass",
+        "summary": "ac70 0d8e 62d7 f9ba — the same as all 1 earlier runs on this install.",
+        "data": {
+          "fingerprint": "ac70 0d8e 62d7 f9ba",
+          "bytes": 32,
+          "earlier": [
+            "ac70 0d8e 62d7 f9ba"
+          ]
+        },
+        "at": 1789326364235,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P3",
+        "status": "info",
+        "summary": "Scheduled for 2026-09-13 19:08 UTC. Close the Polkadot app now.",
+        "data": {
+          "id": "2372473005",
+          "fireAt": 1789326490028
+        },
+        "at": 1789326370098,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P3",
+        "status": "info",
+        "summary": "Scheduled for 2026-09-13 19:08 UTC. Close the Polkadot app now.",
+        "data": {
+          "id": "2372482222",
+          "fireAt": 1789326499256
+        },
+        "at": 1789326379308,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4a",
+        "status": "info",
+        "summary": "Asked to save almanac-probe.alm. Did a file appear?",
+        "at": 1789326384297,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4a:confirm",
+        "status": "fail",
+        "summary": "Nothing happened",
+        "at": 1789326399966,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4b",
+        "status": "fail",
+        "summary": "Sharing files is not supported here.",
+        "at": 1789326404184,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4b:confirm",
+        "status": "fail",
+        "summary": "Nothing happened",
+        "at": 1789326408836,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4c",
+        "status": "fail",
+        "summary": "Web Share is not available here.",
+        "at": 1789326411795,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4c:confirm",
+        "status": "fail",
+        "summary": "Nothing happened",
+        "at": 1789326414002,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4d",
+        "status": "info",
+        "summary": "Copied. Paste somewhere to check.",
+        "at": 1789326416822,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4d:confirm",
+        "status": "pass",
+        "summary": "Pasting shows the text",
+        "at": 1789326436180,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4e",
+        "status": "info",
+        "summary": "Asked for the print dialog.",
+        "at": 1789326439090,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4e:confirm",
+        "status": "fail",
+        "summary": "Nothing happened",
+        "at": 1789326446626,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4f",
+        "status": "pass",
+        "summary": "Read 4508899 bytes from a chosen file.",
+        "data": {
+          "bytes": 4508899,
+          "type": "application/pdf"
+        },
+        "at": 1789326456561,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P6",
+        "status": "fail",
+        "summary": "Not even 1 KiB uploaded.",
+        "data": {
+          "allowance": "[\"Allocated\"]",
+          "signer": "<product account #0>",
+          "results": {
+            "1 KiB": "failed after 3432 ms — Chunk 0 processing failed: {\n  \"type\": \"Invalid\",\n  \"value\": {\n    \"type\": \"Payment\"\n  }\n}"
+          }
+        },
+        "at": 1789326587493,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P7",
+        "status": "skip",
+        "summary": "Nothing uploaded yet — run P6 first.",
+        "at": 1789326605308,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P9a",
+        "status": "info",
+        "summary": "Longest TTL accepted: 90 days. Replacement could not be observed. 0 × 400-byte statements fit.",
+        "data": {
+          "signer": "<statement signer>",
+          "topic": "<random topic>",
+          "results": {
+            "TTL 1 hour": "accepted",
+            "TTL 1 day": "accepted",
+            "TTL 7 days": "accepted",
+            "TTL 30 days": "accepted",
+            "TTL 90 days": "accepted",
+            "channel write A": "refused — statement submit failed: Error: Fatal statement store submission error: Rejected(AccountFull(submittedExpiry=7685114853953896448, minExpiry=7696231943007895552))",
+            "channel write B": "refused — statement submit failed: Error: Fatal statement store submission error: Rejected(AccountFull(submittedExpiry=7685114858248863744, minExpiry=7696231943007895552))",
+            "quota: statement 1": "refused — statement submit failed: Error: Fatal statement store submission error: Rejected(AccountFull(submittedExpiry=7685114866838798336, minExpiry=7696231943007895552))",
+            "quota: 400-byte statements accepted": "0",
+            "channel: values seen": "none delivered",
+            "statements delivered back": "5"
+          }
+        },
+        "at": 1789326650154,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P9b",
+        "status": "skip",
+        "summary": "Type a shared code first.",
+        "at": 1789326668019,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P8",
+        "status": "pass",
+        "summary": "No product account could be computed from a main account's public key. Uploads were signed by product account #0.",
+        "data": {
+          "accounts": [
+            {
+              "address": "<product account #0>",
+              "source": "host"
+            }
+          ],
+          "selected": {
+            "address": "<product account #0>",
+            "role": "product account #0"
+          },
+          "walletProductAccount": null,
+          "hostProductKeys": {
+            "0": "<public key of product account #0>",
+            "1": "<public key of product account #1>",
+            "2": "<public key of product account #2>"
+          },
+          "derivedFromPublicKey": [],
+          "uploadSigner": {
+            "address": "<product account #0>",
+            "role": "product account #0"
+          },
+          "statementSigner": "<statement signer>"
+        },
+        "at": 1789326688467,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P10",
+        "status": "info",
+        "summary": "In the app: IPFS gateway not reachable; statement store over RPC reachable (wss://people-paseo.rotko.net).",
+        "data": {
+          "IPFS gateway": "skipped — no CID (paste one from P6)",
+          "wss://people-paseo.rotko.net": "connected; 126 methods; statement_submit, statement_subscribeStatement, statement_unstable_add_filter, statement_unstable_remove_filter, statement_unstable_submit, statement_unstable_subscribe, statement_unstable_unsubscribe, statement_unsubscribeStatement",
+          "wss://rpc.interweb-it.com/people-paseo": "connected; 120 methods; statement_submit, statement_subscribeStatement, statement_unsubscribeStatement",
+          "wss://bulletin-paseo.tservices.es:8443": "connected; 121 methods; no statement_* methods",
+          "wss://bullet.sik.rocks": "connected; 111 methods; no statement_* methods",
+          "blocked by content policy": "nothing reported"
+        },
+        "at": 1789326698882,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P11",
+        "status": "info",
+        "summary": "scrypt N=2^16 took 169 ms.",
+        "data": {
+          "scrypt N=2^14, r=8": "118 ms",
+          "scrypt N=2^15, r=8": "101 ms",
+          "scrypt N=2^16, r=8": "169 ms",
+          "scrypt N=2^17, r=8": "328 ms",
+          "XChaCha20-Poly1305 encrypt, 1 MiB": "24 ms",
+          "XChaCha20-Poly1305 decrypt, 1 MiB": "8 ms",
+          "BLAKE2b-256, 1 MiB": "18 ms"
+        },
+        "at": 1789326704544,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P12a",
+        "status": "pass",
+        "summary": "Theme: {\"name\":{\"tag\":\"Custom\",\"value\":\"berlinNight\"},\"variant\":\"Dark\"} (phone says light).",
+        "data": {
+          "seen": [
+            {
+              "name": {
+                "tag": "Custom",
+                "value": "berlinNight"
+              },
+              "variant": "Dark"
+            }
+          ],
+          "system": "light"
+        },
+        "at": 1789326714390,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P12b",
+        "status": "pass",
+        "summary": "The camera opened. QR detection: built in.",
+        "data": {
+          "qr": "built in"
+        },
+        "at": 1789326726083,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P3",
+        "status": "info",
+        "summary": "Scheduled for 2026-09-13 19:14 UTC. Close the Polkadot app now.",
+        "data": {
+          "id": "2372850861",
+          "fireAt": 1789326867899
+        },
+        "at": 1789326747948,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P3:confirm",
+        "status": "pass",
+        "summary": "The reminder arrived",
+        "at": 1789326899976,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4a",
+        "status": "info",
+        "summary": "Asked to save almanac-probe.alm. Did a file appear?",
+        "at": 1789383543463,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4b",
+        "status": "fail",
+        "summary": "Sharing files is not supported here.",
+        "at": 1789383552610,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P4c",
+        "status": "fail",
+        "summary": "Web Share is not available here.",
+        "at": 1789383561277,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P6",
+        "status": "fail",
+        "summary": "Not even 1 KiB uploaded.",
+        "data": {
+          "allowance": "[\"Allocated\"]",
+          "signer": "<product account #0>",
+          "results": {
+            "1 KiB": "failed after 2331 ms — Chunk 0 processing failed: {\n  \"type\": \"Invalid\",\n  \"value\": {\n    \"type\": \"Payment\"\n  }\n}"
+          }
+        },
+        "at": 1789383620400,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P6",
+        "status": "fail",
+        "summary": "Not even 1 KiB uploaded.",
+        "data": {
+          "allowance": "[\"Allocated\"]",
+          "signer": "<product account #0>",
+          "results": {
+            "1 KiB": "failed after 3748 ms — Chunk 0 processing failed: {\n  \"type\": \"Invalid\",\n  \"value\": {\n    \"type\": \"Payment\"\n  }\n}"
+          }
+        },
+        "at": 1789386439072,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P9a",
+        "status": "info",
+        "summary": "Longest TTL accepted: 90 days. Replacement could not be observed. 0 × 400-byte statements fit.",
+        "data": {
+          "signer": "<statement signer>",
+          "topic": "<random topic, run 2>",
+          "results": {
+            "TTL 1 hour": "accepted",
+            "TTL 1 day": "accepted",
+            "TTL 7 days": "accepted",
+            "TTL 30 days": "accepted",
+            "TTL 90 days": "accepted",
+            "channel write A": "refused — statement submit failed: Error: Fatal statement store submission error: Rejected(AccountFull(submittedExpiry=7685371873386823680, minExpiry=7685727479499063296))",
+            "channel write B": "refused — statement submit failed: Error: Fatal statement store submission error: Rejected(AccountFull(submittedExpiry=7685371877681790976, minExpiry=7685727479499063296))",
+            "quota: statement 1": "refused — statement submit failed: Error: Fatal statement store submission error: Rejected(AccountFull(submittedExpiry=7685371881976758272, minExpiry=7685727479499063296))",
+            "quota: 400-byte statements accepted": "0",
+            "channel: values seen": "none delivered",
+            "statements delivered back": "5"
+          }
+        },
+        "at": 1789386492350,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P10",
+        "status": "info",
+        "summary": "In the app: IPFS gateway not reachable; statement store over RPC reachable (wss://people-paseo.rotko.net).",
+        "data": {
+          "IPFS gateway": "skipped — no CID (paste one from P6)",
+          "wss://people-paseo.rotko.net": "connected; 126 methods; statement_submit, statement_subscribeStatement, statement_unstable_add_filter, statement_unstable_remove_filter, statement_unstable_submit, statement_unstable_subscribe, statement_unstable_unsubscribe, statement_unsubscribeStatement",
+          "wss://rpc.interweb-it.com/people-paseo": "connected; 120 methods; statement_submit, statement_subscribeStatement, statement_unsubscribeStatement",
+          "wss://bulletin-paseo.tservices.es:8443": "connected; 121 methods; no statement_* methods",
+          "wss://bullet.sik.rocks": "connected; 111 methods; no statement_* methods",
+          "blocked by content policy": "nothing reported"
+        },
+        "at": 1789386495848,
+        "build": "2026-09-13T15:10:59.255Z"
+      },
+      {
+        "id": "P1",
+        "status": "pass",
+        "summary": "Survived. Marker c174678f, first saved 2026-09-13 19:04, seen on 3 runs.",
+        "data": {
+          "marker": {
+            "id": "c174678f",
+            "firstSeen": 1789326240829,
+            "runs": [
+              {
+                "at": 1789326240829,
+                "build": "2026-09-13T15:10:59.255Z"
+              },
+              {
+                "at": 1789326356725,
+                "build": "2026-09-13T15:10:59.255Z"
+              },
+              {
+                "at": 1789386789668,
+                "build": "2026-09-14T11:38:52.305Z"
+              }
+            ]
+          }
+        },
+        "at": 1789386789681,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P2",
+        "status": "pass",
+        "summary": "ac70 0d8e 62d7 f9ba — the same as all 2 earlier runs on this install.",
+        "data": {
+          "fingerprint": "ac70 0d8e 62d7 f9ba",
+          "bytes": 32,
+          "earlier": [
+            "ac70 0d8e 62d7 f9ba",
+            "ac70 0d8e 62d7 f9ba"
+          ]
+        },
+        "at": 1789386792383,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P1b",
+        "status": "pass",
+        "summary": "Stored and read back up to 4 MiB in one record.",
+        "data": {
+          "64 KiB": "ok in 75 ms",
+          "256 KiB": "ok in 151 ms",
+          "1 MiB": "ok in 383 ms",
+          "4 MiB": "ok in 1174 ms"
+        },
+        "at": 1789386792763,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P3",
+        "status": "info",
+        "summary": "Scheduled for 2026-09-14 11:55 UTC. Close the Polkadot app now.",
+        "data": {
+          "id": "2432897068",
+          "fireAt": 1789386914345
+        },
+        "at": 1789386794418,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P3:confirm",
+        "status": "pass",
+        "summary": "The reminder arrived",
+        "at": 1789386798265,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4a",
+        "status": "info",
+        "summary": "Asked to save almanac-probe.alm. Did a file appear?",
+        "at": 1789386800206,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4a:confirm",
+        "status": "fail",
+        "summary": "Nothing happened",
+        "at": 1789386804002,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4b",
+        "status": "fail",
+        "summary": "Sharing files is not supported here.",
+        "at": 1789386806063,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4b:confirm",
+        "status": "fail",
+        "summary": "Nothing happened",
+        "at": 1789386809082,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4c",
+        "status": "fail",
+        "summary": "Web Share is not available here.",
+        "at": 1789386811094,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4c:confirm",
+        "status": "fail",
+        "summary": "Nothing happened",
+        "at": 1789386813483,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4c:confirm",
+        "status": "fail",
+        "summary": "Nothing happened",
+        "at": 1789386817069,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4d",
+        "status": "info",
+        "summary": "Copied. Paste somewhere to check.",
+        "at": 1789386818997,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4d:confirm",
+        "status": "pass",
+        "summary": "Pasting shows the text",
+        "at": 1789386821427,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4e",
+        "status": "info",
+        "summary": "Asked for the print dialog.",
+        "at": 1789386828329,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4e:confirm",
+        "status": "fail",
+        "summary": "Nothing happened",
+        "at": 1789386830132,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P4f",
+        "status": "pass",
+        "summary": "Read 1462809 bytes from a chosen file.",
+        "data": {
+          "bytes": 1462809,
+          "type": "image/png"
+        },
+        "at": 1789386855028,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P6",
+        "status": "fail",
+        "summary": "Not even 1 KiB uploaded. The upload signer (<product account #0>) has no authorization.",
+        "data": {
+          "allowance": "[\"Allocated\"]",
+          "signer": "<product account #0>",
+          "results": {
+            "1 KiB": "failed after 1974 ms — Chunk 0 processing failed: {\n  \"type\": \"Invalid\",\n  \"value\": {\n    \"type\": \"Payment\"\n  }\n}"
+          },
+          "authorization": {
+            "upload signer": "no authorization",
+            "statement signer (P9a)": "no authorization"
+          }
+        },
+        "at": 1789386886004,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P7",
+        "status": "skip",
+        "summary": "Nothing uploaded yet — run P6 first.",
+        "at": 1789386892659,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P9b",
+        "status": "skip",
+        "summary": "Type a shared code first.",
+        "at": 1789386914795,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P9a",
+        "status": "info",
+        "summary": "Replacement worked (only B is left). 0 of 2 earlier statements were pushed out to make room, leaving 3 held.",
+        "data": {
+          "signer": "<statement signer>",
+          "topic": "<random topic, run 3>",
+          "previousTopic": "<random topic, run 2>",
+          "results": {
+            "earlier statements, before": "ttl 90 days, ttl 30 days",
+            "write A": "accepted",
+            "write B": "accepted",
+            "this run, read back": "lww B",
+            "earlier statements, after": "ttl 90 days, ttl 30 days"
+          }
+        },
+        "at": 1789386922398,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P8",
+        "status": "info",
+        "summary": "Inconclusive — the app shows almanac only its own accounts, so there was no main account to test against. Uploads were signed by product account #0; statements by another account (the host's allowance account?).",
+        "data": {
+          "accounts": [
+            {
+              "address": "<product account #0>",
+              "source": "host",
+              "role": "product account #0"
+            }
+          ],
+          "selected": {
+            "address": "<product account #0>",
+            "role": "product account #0"
+          },
+          "walletProductAccount": null,
+          "hostProductKeys": {
+            "0": "<public key of product account #0>",
+            "1": "<public key of product account #1>",
+            "2": "<public key of product account #2>"
+          },
+          "derivedFromPublicKey": [],
+          "uploadSigner": {
+            "address": "<product account #0>",
+            "role": "product account #0"
+          },
+          "statementSigner": {
+            "key": "<statement signer>",
+            "role": "another account (the host's allowance account?)"
+          }
+        },
+        "at": 1789386941329,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P10",
+        "status": "info",
+        "summary": "In the app: IPFS gateway not reachable; statement store over RPC reachable (wss://people-paseo.rotko.net).",
+        "data": {
+          "IPFS gateway": "skipped — no CID (paste one from P6)",
+          "wss://people-paseo.rotko.net": "connected; 126 methods; statement_submit, statement_subscribeStatement, statement_unstable_add_filter, statement_unstable_remove_filter, statement_unstable_submit, statement_unstable_subscribe, statement_unstable_unsubscribe, statement_unsubscribeStatement",
+          "wss://rpc.interweb-it.com/people-paseo": "connected; 120 methods; statement_submit, statement_subscribeStatement, statement_unsubscribeStatement",
+          "wss://bulletin-paseo.tservices.es:8443": "connected; 121 methods; no statement_* methods",
+          "wss://bullet.sik.rocks": "connected; 111 methods; no statement_* methods",
+          "blocked by content policy": "nothing reported"
+        },
+        "at": 1789386962934,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P7",
+        "status": "info",
+        "summary": "0 of 1 still available. Oldest still available: 0.0 days.",
+        "data": {
+          "<pasted text, not a CID>": "gone or unreachable — age unknown — Invalid CID: <pasted text>"
+        },
+        "at": 1789387681376,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P7",
+        "status": "info",
+        "summary": "0 of 1 still available. Oldest still available: 0.0 days.",
+        "data": {
+          "bafkreiflxd5ahjn3e5z75ji45ytoiiss756liu6unxkesrvftelg3r5wqa": "gone or unreachable — age unknown — Host preimage lookup timed out after 30000ms for CID: bafkreiflxd5ahjn3e5z75ji45ytoiiss756liu6unxkesrvftelg3r5wqa"
+        },
+        "at": 1789387746100,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P10",
+        "status": "info",
+        "summary": "In the app: IPFS gateway not reachable; statement store over RPC reachable (wss://people-paseo.rotko.net).",
+        "data": {
+          "IPFS gateway": "blocked or failed after 30003 ms — fetch: no answer in 30 s",
+          "wss://people-paseo.rotko.net": "connected; 126 methods; statement_submit, statement_subscribeStatement, statement_unstable_add_filter, statement_unstable_remove_filter, statement_unstable_submit, statement_unstable_subscribe, statement_unstable_unsubscribe, statement_unsubscribeStatement",
+          "wss://rpc.interweb-it.com/people-paseo": "connected; 120 methods; statement_submit, statement_subscribeStatement, statement_unsubscribeStatement",
+          "wss://bulletin-paseo.tservices.es:8443": "connected; 121 methods; no statement_* methods",
+          "wss://bullet.sik.rocks": "connected; 111 methods; no statement_* methods",
+          "blocked by content policy": "nothing reported"
+        },
+        "at": 1789387782783,
+        "build": "2026-09-14T11:38:52.305Z"
+      },
+      {
+        "id": "P7",
+        "status": "info",
+        "summary": "0 of 1 still available. Oldest still available: 0.0 days.",
+        "data": {
+          "bafkreiflxd5ahjn3e5z75ji45ytoiiss756liu6unxkesrvftelg3r5wqa": "gone or unreachable — age unknown — Host preimage lookup timed out after 30000ms for CID: bafkreiflxd5ahjn3e5z75ji45ytoiiss756liu6unxkesrvftelg3r5wqa"
+        },
+        "at": 1789387803029,
+        "build": "2026-09-14T11:38:52.305Z"
+      }
+    ],
+    "uploads": [],
+    "scheduled": [
+      {
+        "id": "2372364198",
+        "at": 1789326260766,
+        "fireAt": 1789326378391
+      },
+      {
+        "id": "2372473005",
+        "at": 1789326370085,
+        "fireAt": 1789326490028
+      },
+      {
+        "id": "2372482222",
+        "at": 1789326379300,
+        "fireAt": 1789326499256
+      },
+      {
+        "id": "2372850861",
+        "at": 1789326747936,
+        "fireAt": 1789326867899
+      },
+      {
+        "id": "2432897068",
+        "at": 1789386794403,
+        "fireAt": 1789386914345
+      }
+    ]
+  }
+}

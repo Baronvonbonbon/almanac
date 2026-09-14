@@ -14,15 +14,7 @@ import { errText, randomBytes, utf8, withTimeout } from "../util";
 type Statement = Parameters<typeof createProofAuthorized>[0];
 type Hex = Statement["topics"][number];
 
-const HOUR = 3600;
-const DAY = 24 * HOUR;
-const TTLS: [string, number][] = [
-  ["1 hour", HOUR],
-  ["1 day", DAY],
-  ["7 days", 7 * DAY],
-  ["30 days", 30 * DAY],
-  ["90 days", 90 * DAY],
-];
+const DAY = 24 * 3600;
 
 const hash = (s: string): Hex => toHex(blake2b256(utf8(s))) as Hex;
 
@@ -65,88 +57,89 @@ function watch(store: HostStatementStore, topic: Hex) {
   return { seen, stop: () => sub.unsubscribe() };
 }
 
+/** Everything a subscription delivers on `topic` within `ms` — including, if the store sends them, statements that already exist. */
+async function snapshot(store: HostStatementStore, topic: Hex, ms: number) {
+  const watcher = watch(store, topic);
+  await new Promise((r) => setTimeout(r, ms));
+  watcher.stop();
+  return watcher.seen;
+}
+
+const listed = (seen: { data?: string }[]) => (seen.length ? seen.map((s) => s.data ?? "?").join(", ") : "nothing delivered");
+
+// The first version of this check (2026-09-13) ran a TTL ladder first. It showed 90 days is accepted,
+// but its 30- and 90-day statements filled the account, and everything after them was refused as
+// AccountFull: a full account takes a new statement only if it outlives the shortest one it holds.
+// So this version writes only statements that outlive anything earlier runs left, and learns the
+// capacity by watching what gets pushed out.
 export const statementLimits: Check = {
   id: "P9a",
-  title: "How long can a statement live, can it be replaced, and how much can one account hold?",
-  decides:
-    "Whether stopping a share can work by replacing a statement, and whether the backup pointer can live long enough.",
+  title: "Can a statement be replaced, and what happens when an account is full?",
+  decides: "Whether stopping a share can work by replacing a statement, and how much one account can hold.",
   needsHost: true,
-  steps: ["Approve any request on your phone. This publishes a few small test statements."],
-  async run({ log }) {
+  steps: [
+    "Approve any request on your phone.",
+    "This leaves one small test statement that lives about 90 days, replacing the probe's earlier ones as room is needed.",
+  ],
+  async run({ journal, log }) {
     const store = await openStore(log);
     if (!store) return { status: "skip", summary: "The host offers no statement store to this product." };
+    const previous = journal
+      .entries("P9a")
+      .map((e) => e.data?.topic)
+      .filter((t): t is Hex => typeof t === "string" && t.startsWith("0x"))
+      .at(-1);
     const topic = toHex(randomBytes(32)) as Hex; // fresh per run, so earlier runs cannot be mistaken for this one
-    const watcher = watch(store, topic);
     const results: Record<string, string> = {};
-    let seq = 0;
     let signer: string | null = null;
 
-    try {
-      // 1. TTL ladder — small payloads, one channel per TTL so they do not replace each other.
-      let longest = "none";
-      for (const [label, ttl] of TTLS) {
-        try {
-          signer = await publish(store, {
-            topics: [topic],
-            channel: channel(`ttl/${ttl}`),
-            expiry: expiryIn(ttl, seq++),
-            data: toHex(utf8(`ttl ${label}`)) as Hex,
-          });
-          results[`TTL ${label}`] = "accepted";
-          longest = label;
-        } catch (e) {
-          results[`TTL ${label}`] = `refused — ${errText(e)}`;
-        }
-        log(`TTL ${label}: ${results[`TTL ${label}`]}`);
+    // 1. What earlier runs left on this account — if a subscription delivers statements that already exist.
+    const before = previous ? await snapshot(store, previous, 6_000) : [];
+    if (previous) results["earlier statements, before"] = listed(before);
+
+    // 2. A, then B, on one channel. Both outlive anything an earlier run left, so neither is refused
+    //    for being shorter-lived; B's sequence number is higher.
+    const expiry = (seq: number) => (BigInt(Math.floor(Date.now() / 1000) + 90 * DAY + 3600) << 32n) | BigInt(seq);
+    for (const [value, seq] of [["A", 1], ["B", 2]] as const) {
+      try {
+        signer = await publish(store, {
+          topics: [topic],
+          channel: channel("lww/v2"),
+          expiry: expiry(seq),
+          data: toHex(utf8(`lww ${value}`)) as Hex,
+        });
+        results[`write ${value}`] = "accepted";
+      } catch (e) {
+        results[`write ${value}`] = `refused — ${errText(e)}`;
       }
-
-      // 2. Last-write-wins: A then B on one channel. Only B should remain.
-      for (const value of ["A", "B"]) {
-        try {
-          await publish(store, {
-            topics: [topic],
-            channel: channel("lww"),
-            expiry: expiryIn(HOUR, seq++),
-            data: toHex(utf8(`lww ${value}`)) as Hex,
-          });
-          results[`channel write ${value}`] = "accepted";
-        } catch (e) {
-          results[`channel write ${value}`] = `refused — ${errText(e)}`;
-        }
-      }
-
-      // 3. Quota — 400-byte statements with a short TTL until the store refuses.
-      let accepted = 0;
-      for (let i = 0; i < 6; i++) {
-        try {
-          await publish(store, {
-            topics: [topic],
-            channel: channel(`quota/${i}`),
-            expiry: expiryIn(HOUR, seq++),
-            data: toHex(randomBytes(400)) as Hex,
-          });
-          accepted++;
-        } catch (e) {
-          results[`quota: statement ${i + 1}`] = `refused — ${errText(e)}`;
-          break;
-        }
-      }
-      results["quota: 400-byte statements accepted"] = String(accepted);
-
-      await new Promise((r) => setTimeout(r, 8_000));
-      const lww = watcher.seen.filter((s) => s.channel === channel("lww")).map((s) => s.data);
-      results["channel: values seen"] = lww.length ? lww.join(", ") : "none delivered";
-      results["statements delivered back"] = String(watcher.seen.length);
-
-      const replaced = lww.length > 0 && !lww.includes("lww A");
-      return {
-        status: "info",
-        summary: `Longest TTL accepted: ${longest}. Replacement ${replaced ? "worked (only B seen)" : lww.length ? "did not remove A" : "could not be observed"}. ${accepted} × 400-byte statements fit.`,
-        data: { signer, topic, results },
-      };
-    } finally {
-      watcher.stop();
+      log(`write ${value}: ${results[`write ${value}`]}`);
     }
+
+    // 3. A fresh subscription after both writes: only B should be left.
+    const now = await snapshot(store, topic, 8_000);
+    const values = now.map((s) => s.data);
+    results["this run, read back"] = listed(now);
+
+    // 4. Earlier statements that are gone now were pushed out to make room.
+    const after = previous ? await snapshot(store, previous, 6_000) : [];
+    if (previous) results["earlier statements, after"] = listed(after);
+
+    const replacement = values.includes("lww B")
+      ? values.includes("lww A")
+        ? "did not remove A"
+        : "worked (only B is left)"
+      : "could not be observed";
+    const pushedOut = before.length - after.length;
+    const room = previous
+      ? before.length
+        ? ` ${pushedOut} of ${before.length} earlier statements were pushed out to make room; ${after.length + (values.length ? 1 : 0)} were delivered back (what a subscription returns, which may be less than the account holds).`
+        : " A subscription delivered none of the earlier statements, so either none are left or subscriptions only deliver new ones."
+      : "";
+    return {
+      status: "info",
+      summary: `Replacement ${replacement}.${room}`,
+      data: { signer, topic, previousTopic: previous ?? null, results },
+    };
   },
 };
 
