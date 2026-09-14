@@ -69,7 +69,14 @@ chips, an optional note. Trying-to-conceive fields (ovulation tests, temperature
 intimacy) appear only when that mode is on.
 
 **Calendar.** A month view; period days filled, predicted days outlined, the fertile window (when
-on) marked with a pattern as well as a colour.
+on) marked with a pattern as well as a colour. Tapping a day shows what was logged, with a way to
+log or edit it; there a period start almanac read wrongly can be corrected, or a missed one marked.
+Likely periods are shown three cycles ahead, each as long as periods have been — and none while a
+period is late.
+
+**Insights.** The last six cycles as bars on one scale (those left out of guesses hatched, and
+labelled), how long cycles and periods usually last, and the symptoms logged most often. All worked
+out on the phone.
 
 **Modes.** Fertility window (off), trying to conceive (off), pregnancy (off — pauses predictions,
 counts weeks, handles loss with care and without prompts).

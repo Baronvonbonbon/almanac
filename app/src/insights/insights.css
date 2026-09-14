@@ -1,0 +1,105 @@
+.ins {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+.ins-title {
+  margin: 0;
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  font-size: 1.6rem;
+}
+:root[data-look="moonpaper"] .ins-title {
+  font-size: 2rem;
+}
+.ins-quiet {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* Cycle lengths as bars on one scale; a cycle left out of guesses is hatched and says so. */
+.ins-bars {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ins-bars li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.3rem 0.75rem;
+  font-size: 0.92rem;
+}
+.ins-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ins-track {
+  grid-column: 1 / -1;
+  height: 10px;
+  border-radius: 99px;
+  background: var(--line);
+}
+.ins-bar {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--period);
+}
+.ins-bars li[data-set-aside] .ins-bar {
+  background: repeating-linear-gradient(135deg, var(--period) 0 3px, transparent 3px 6px);
+  box-shadow: inset 0 0 0 1px var(--period);
+}
+.ins-aside {
+  grid-column: 1 / -1;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+.ins-scale {
+  position: relative;
+  height: 1rem;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.ins-scale span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+.ins-scale span:first-child {
+  transform: none;
+}
+.ins-scale span:last-child {
+  transform: translateX(-100%);
+}
+
+.ins-facts {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+.ins-fact {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.ins-fact b {
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+:root[data-look="moonpaper"] .ins-fact b {
+  font-size: 1.6rem;
+}
+.ins-note {
+  margin: 0.75rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}

@@ -1,4 +1,4 @@
-import { daysBetween, type ISODate } from "./dates";
+import { addDays, daysBetween, type ISODate } from "./dates";
 import type { DayEntry } from "./types";
 
 /** A period starts on the first flow day after at least this many days without flow. */
@@ -35,6 +35,21 @@ export function periodStarts(entries: DayEntry[]): ISODate[] {
     lastFlow = e.date;
   }
   return starts;
+}
+
+/**
+ * How long each period lasted: its first day and each day with flow after it, until a day without.
+ * A period whose first day has no flow logged — a start given at onboarding — is left out.
+ */
+export function periodLengths(entries: DayEntry[]): number[] {
+  const flowing = new Set(byDate(entries).filter(counts).map((e) => e.date));
+  return periodStarts(entries)
+    .filter((start) => flowing.has(start))
+    .map((start) => {
+      let days = 1;
+      while (flowing.has(addDays(start, days))) days++;
+      return days;
+    });
 }
 
 export interface Cycle {

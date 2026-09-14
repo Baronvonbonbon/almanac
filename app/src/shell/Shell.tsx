@@ -1,8 +1,10 @@
 import { useCallback, useState } from "react";
+import { CalendarView } from "../calendar/CalendarView";
 import type { DayEntry, ISODate } from "../cycle";
 import { saveDay } from "../data";
 import { Home } from "../home/Home";
 import { t } from "../i18n";
+import { InsightsView } from "../insights/InsightsView";
 import { LogSheet } from "../log/LogSheet";
 import { Toast } from "../ui/Toast";
 import type { Vault } from "../vault";
@@ -37,7 +39,8 @@ export function Shell({ vault, tryout }: { vault: Vault; tryout: boolean }) {
         {cycle.error && <p role="alert">{t("app.failed", { message: cycle.error })}</p>}
         {!cycle.data && !cycle.error && <p className="shell-soon">{t("app.starting")}</p>}
         {cycle.data && tab === "today" && <Home data={cycle.data} onLog={setEditing} />}
-        {cycle.data && tab !== "today" && <p className="shell-soon">{t("shell.soon")}</p>}
+        {cycle.data && tab === "calendar" && <CalendarView data={cycle.data} onLog={setEditing} onSave={save} />}
+        {cycle.data && tab === "insights" && <InsightsView data={cycle.data} />}
       </main>
 
       <nav className="tabs" aria-label={t("shell.sections")}>

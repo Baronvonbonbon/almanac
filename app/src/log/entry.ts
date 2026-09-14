@@ -79,6 +79,10 @@ export const plausible = (c: number): boolean => Number.isFinite(c) && c >= 34 &
 const isSymptom = (s: string): s is (typeof SYMPTOMS)[number] => (SYMPTOMS as readonly string[]).includes(s);
 const isMood = (s: string): s is (typeof MOODS)[number] => (MOODS as readonly string[]).includes(s);
 
+/** A symptom or mood in words; anything almanac does not know is shown as stored. */
+export const symptomName = (s: string): string => (isSymptom(s) ? t(`log.symptomNames.${s}`) : s);
+export const moodName = (m: string): string => (isMood(m) ? t(`log.moodNames.${m}`) : m);
+
 /**
  * A day in a few words — "Light flow · Cramps · Calm". Trying-to-conceive details show only as "More
  * details": home is often on screen where others can see it.
@@ -86,8 +90,8 @@ const isMood = (s: string): s is (typeof MOODS)[number] => (MOODS as readonly st
 export function summary(entry: DayEntry): string {
   const parts = [
     entry.flow && t(`log.flowSummary.${entry.flow}`),
-    ...(entry.symptoms ?? []).map((s) => (isSymptom(s) ? t(`log.symptomNames.${s}`) : s)),
-    ...(entry.mood ?? []).map((m) => (isMood(m) ? t(`log.moodNames.${m}`) : m)),
+    ...(entry.symptoms ?? []).map(symptomName),
+    ...(entry.mood ?? []).map(moodName),
     entry.note && t("log.hasNote"),
     (entry.fertility && Object.keys(entry.fertility).length) || entry.intimacy ? t("log.moreDetails") : "",
   ].filter((p): p is string => !!p);

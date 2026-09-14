@@ -8,6 +8,8 @@ import type { Vault } from "../vault";
 export interface CycleData {
   today: ISODate;
   settings: Settings;
+  /** Every logged day, in date order. */
+  entries: DayEntry[];
   days: Map<ISODate, DayEntry>;
   prediction: Prediction;
   shape: CycleShape | null;
@@ -21,7 +23,7 @@ export async function loadCycle(vault: Vault, today = localToday()): Promise<Cyc
     fertility: settings.modes.fertility,
     pregnancy: settings.modes.pregnancy,
   });
-  return { today, settings, days: new Map(entries.map((e) => [e.date, e])), prediction, shape: cycleShape(prediction, entries, today) };
+  return { today, settings, entries, days: new Map(entries.map((e) => [e.date, e])), prediction, shape: cycleShape(prediction, entries, today) };
 }
 
 /**

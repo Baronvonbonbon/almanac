@@ -1,0 +1,163 @@
+.cal {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cal-head h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  font-size: 1.4rem;
+}
+:root[data-look="moonpaper"] .cal-head h2 {
+  font-size: 1.7rem;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.cal-weekday {
+  padding-bottom: 2px;
+  font-size: 0.72rem;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+/* A day. Its period colour fills from the bottom to the flow's level. */
+.cal-day {
+  position: relative;
+  aspect-ratio: 1 / 1.12;
+  display: flex;
+  justify-content: center;
+  padding: 5px 0 0;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  border-radius: var(--cell-radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 0.92rem var(--body);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+:root[data-look="moonpaper"] .cal-day {
+  aspect-ratio: 1;
+}
+.cal-day.future {
+  color: var(--ink-soft);
+}
+.cal-fill {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--fill);
+  background: var(--period);
+}
+.cal-n {
+  position: relative;
+  z-index: 1;
+}
+.cal-day.fertile {
+  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--fertile) 50%, transparent) 0 2px, transparent 2px 6px);
+}
+.cal-day.predicted {
+  border: 1.5px dashed var(--period);
+}
+.cal-day.logged::after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  z-index: 1;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.cal-day.is-today {
+  box-shadow: inset 0 0 0 2px var(--ink);
+  font-weight: 700;
+}
+.cal-day[aria-pressed="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.cal-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.lg {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+:root[data-look="moonpaper"] .lg {
+  border-radius: 50%;
+}
+.lg-period {
+  background: linear-gradient(to top, var(--period) 55%, var(--surface) 55%);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.lg-likely {
+  border: 1.5px dashed var(--period);
+}
+.lg-fertile {
+  background: repeating-linear-gradient(135deg, var(--fertile) 0 2px, transparent 2px 5px);
+  box-shadow: inset 0 0 0 1px var(--fertile);
+}
+.lg-logged {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.cal-detail {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.cal-detail h3 {
+  margin: 0 0 0.4rem;
+  font: 700 1.02rem var(--body);
+}
+.cal-detail ul {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.95rem;
+}
+.cal-mark {
+  margin: 0 0 0.3rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+.cal-quiet {
+  margin: 0;
+  color: var(--ink-soft);
+}
+.cal-actions {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  margin-top: 0.9rem;
+}
