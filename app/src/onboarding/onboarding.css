@@ -1,0 +1,197 @@
+.onb {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: max(1rem, env(safe-area-inset-top)) 1.25rem 0;
+}
+.onb-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+}
+.onb-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0 auto;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.onb-dots {
+  display: flex;
+  gap: 5px;
+}
+.onb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.onb-dot[data-done] {
+  background: var(--accent);
+}
+.onb-body {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+}
+.onb-eyebrow {
+  margin: 0.5rem 0 -0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.onb-title {
+  margin: 0.25rem 0 0;
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  font-size: clamp(1.75rem, 7.5vw, 2.2rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.onb-title:focus {
+  outline: none;
+}
+.onb-lead {
+  margin: 0 0 0.5rem;
+  max-width: 60ch;
+  color: var(--ink-soft);
+}
+/* Pinned to the bottom of the screen, so Continue is always in reach however long the step is. */
+.onb-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 -1.25rem;
+  padding: 1rem 1.25rem max(1rem, env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, transparent, var(--bg) 1rem);
+}
+.onb-error {
+  margin: 0;
+}
+
+/* The look picker: each card is drawn in its own look. */
+.looks {
+  display: grid;
+  gap: 0.75rem;
+}
+.look-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.9rem 1rem 0.9rem 0.9rem;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 1rem/1.4 var(--body);
+  text-align: left;
+  cursor: pointer;
+}
+.look-card[aria-checked="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+.look-text {
+  display: grid;
+  justify-items: start;
+  gap: 0.15rem;
+}
+.look-name {
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+.look-about {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+.look-sample.button {
+  width: auto;
+  min-height: calc(var(--button-height) * 0.62);
+  margin-top: 0.45rem;
+  padding: 0 0.9rem;
+  font-size: calc(var(--button-size) * 0.8);
+  pointer-events: none;
+}
+.look-chosen {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.75rem;
+  padding: 2rem 0 1rem;
+}
+.stepper .icon-button {
+  width: 56px;
+  height: 56px;
+  font-size: 1.7rem;
+}
+.stepper-value {
+  display: grid;
+  justify-items: center;
+  min-width: 4ch;
+}
+.stepper-number {
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  font-size: 4.25rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.stepper-unit {
+  color: var(--ink-soft);
+}
+
+.toggles {
+  display: grid;
+  gap: 0.6rem;
+}
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.toggle-text {
+  display: grid;
+  gap: 0.15rem;
+}
+.toggle-label {
+  font-weight: 700;
+  cursor: pointer;
+}
+.toggle-note {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}

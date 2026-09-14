@@ -1,0 +1,254 @@
+/* The three cycle graphics (docs/DESIGN.md §4). Sizes inside a graphic follow its width (cqi), so
+   the same drawing works full size on home and small in the look picker. */
+.cg {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+}
+.cg-ring,
+.cg-dial {
+  aspect-ratio: 1;
+  max-width: 16rem;
+  margin-inline: auto;
+}
+.cg svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.cg-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.1em;
+  text-align: center;
+}
+.cg-num {
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.cg-of {
+  color: var(--ink-soft);
+}
+
+/* Hearth: a soft ring that fills through the cycle. */
+.cg-ring .cg-num {
+  font-size: 18cqi;
+}
+.cg-ring .cg-of {
+  font-size: 6.4cqi;
+}
+.cg-track {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 16;
+}
+.cg-elapsed {
+  fill: none;
+  stroke: color-mix(in srgb, var(--period) 32%, var(--bg));
+  stroke-width: 16;
+  stroke-dasharray: var(--len) 2000;
+  animation: cg-fill 0.7s ease-out both;
+}
+@keyframes cg-fill {
+  from {
+    stroke-dasharray: 0 2000;
+  }
+}
+.cg-period {
+  fill: none;
+  stroke: var(--period);
+  stroke-width: 16;
+}
+.cg-fertile {
+  fill: none;
+  stroke: var(--fertile);
+  stroke-width: 16;
+  stroke-dasharray: 3 3;
+}
+.cg-likely {
+  fill: none;
+  stroke: var(--period);
+  stroke-width: 2.5;
+  stroke-dasharray: 2 5;
+  stroke-linecap: round;
+}
+.cg-today {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+/* Moonpaper: a dial of days, like the day tables in a printed almanac. */
+.cg-dial .cg-kicker {
+  font-size: 4.4cqi;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.cg-dial .cg-num {
+  font-size: 36cqi;
+  line-height: 0.86;
+}
+.cg-dial .cg-of {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 7.6cqi;
+}
+.cg-dial.cg-dial .cg-center .cg-num:only-child {
+  font-size: 17cqi;
+}
+.cg-dial-hair {
+  fill: none;
+  stroke: var(--line);
+}
+.cg-dial-period {
+  fill: var(--period);
+}
+.cg-dial-fertile {
+  fill: none;
+  stroke: var(--fertile);
+  stroke-width: 1.6;
+}
+.cg-dial-likely {
+  fill: none;
+  stroke: var(--period);
+  stroke-width: 1.5;
+  stroke-dasharray: 2.2 2.2;
+}
+.cg-dial-past {
+  fill: var(--ink-soft);
+}
+.cg-dial-future {
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+}
+.cg-dial-today-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.cg-dial-today {
+  fill: var(--accent);
+}
+.cg-dial-label {
+  fill: var(--ink-soft);
+  font: 500 10px var(--body);
+  letter-spacing: 0.06em;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* Pebble: a path of days, today in the middle. */
+.cg-hero {
+  display: grid;
+  gap: 0.2em;
+}
+.cg-pebbles .cg-num {
+  font-size: clamp(2.5rem, 17cqi, 4rem);
+  letter-spacing: -0.03em;
+}
+.cg-pebbles .cg-of {
+  font-size: 1rem;
+}
+.cg-path {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 34px 0 26px;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cg-path::-webkit-scrollbar {
+  display: none;
+}
+.cg-pebble {
+  position: relative;
+  flex: none;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  transform: translateY(var(--y));
+}
+.cg-pb {
+  width: 26px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--blush);
+}
+.cg-pebble.future .cg-pb {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--ink-soft);
+  opacity: 0.55;
+}
+.cg-pebble.period .cg-pb {
+  background: var(--period);
+}
+.cg-pebble.fertile .cg-pb {
+  background: repeating-linear-gradient(135deg, var(--fertile) 0 3px, transparent 3px 7px);
+  box-shadow: inset 0 0 0 1.5px var(--fertile);
+}
+.cg-pebble.likely .cg-pb {
+  background: transparent;
+  border: 2px dashed var(--period);
+}
+.cg-pebble.is-today .cg-pb {
+  width: 36px;
+  height: 48px;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 4px var(--bg),
+    0 0 0 6px var(--accent);
+}
+.cg-n {
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.cg-pebble.is-today .cg-n {
+  color: var(--ink);
+  font-weight: 700;
+}
+.cg-tag {
+  position: absolute;
+  top: -26px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* The compact path: seven pebbles sized to the box. */
+.cg-pebbles.compact .cg-num {
+  font-size: 17cqi;
+}
+.cg-pebbles.compact .cg-path {
+  justify-content: center;
+  gap: 2.5cqi;
+  padding: 12cqi 0 6cqi;
+  overflow: visible;
+}
+.cg-pebbles.compact .cg-pebble {
+  transform: translateY(calc(var(--y) * 0.4));
+}
+.cg-pebbles.compact .cg-pb {
+  width: 10cqi;
+  height: 14cqi;
+}
+.cg-pebbles.compact .is-today .cg-pb {
+  width: 13cqi;
+  height: 18cqi;
+  box-shadow:
+    0 0 0 1.5cqi var(--bg),
+    0 0 0 2.4cqi var(--accent);
+}

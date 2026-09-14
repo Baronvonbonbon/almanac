@@ -1,57 +1,75 @@
 import { useEffect, useState } from "react";
-import { DOT_NAME } from "../../product.mjs";
+import { Home } from "./home/Home";
 import { t } from "./i18n";
-import type { Host } from "./platform";
+import { Onboarding } from "./onboarding/Onboarding";
+import { memoryHost, type Host } from "./platform";
 import { Vault } from "./vault";
+import "./ui/ui.css";
 
-type Status =
-  | { kind: "checking" }
-  | { kind: "tryout" }
-  | { kind: "ready" }
+type Screen =
+  | { kind: "starting" }
+  | { kind: "onboarding"; host: Host }
+  | { kind: "home"; vault: Vault }
   | { kind: "locked" }
   | { kind: "failed"; message: string };
 
+type Started = { screen: Screen; tryout: boolean };
+
 /**
- * The foundations check: open or create the vault through the real host, and read back a record
- * written just now. The screens themselves come with Phase 2.
+ * Where almanac opens: onboarding on the first launch, home after it. Outside the Polkadot app — the
+ * web tryout — the same flow runs on a host that keeps everything in memory, so nothing is saved.
  */
-async function start(hostReady: Promise<Host | null>): Promise<Status> {
-  const host = await hostReady;
-  if (!host) return { kind: "tryout" };
+async function start(hostReady: Promise<Host | null>): Promise<Started> {
+  const inApp = await hostReady;
+  const host = inApp ?? memoryHost(crypto.randomUUID());
   const opened = await Vault.open(host);
-  if (opened.state === "locked") return { kind: "locked" };
-  const vault = opened.state === "open" ? opened.vault : await Vault.create(host);
-  const stamp = new Date().toISOString();
-  await vault.writeJSON("selftest", { stamp });
-  if ((await vault.readJSON<{ stamp: string }>("selftest"))?.stamp !== stamp) throw new Error("a record did not read back");
-  return { kind: "ready" };
+  const screen: Screen =
+    opened.state === "new" ? { kind: "onboarding", host } : opened.state === "open" ? { kind: "home", vault: opened.vault } : { kind: "locked" };
+  return { screen, tryout: !inApp };
 }
 
 // Once per page, even when React runs effects twice in development: two concurrent first launches
 // would each create a vault.
-let started: Promise<Status> | null = null;
+let started: Promise<Started> | null = null;
 
 export function App({ host }: { host: Promise<Host | null> }) {
-  const [status, setStatus] = useState<Status>({ kind: "checking" });
+  const [screen, setScreen] = useState<Screen>({ kind: "starting" });
+  const [tryout, setTryout] = useState(false);
   useEffect(() => {
-    started ??= start(host).catch((e: unknown) => ({ kind: "failed", message: e instanceof Error ? e.message : String(e) }));
-    void started.then(setStatus);
+    started ??= start(host).catch((e: unknown): Started => ({
+      screen: { kind: "failed", message: e instanceof Error ? e.message : String(e) },
+      tryout: false,
+    }));
+    void started.then((r) => {
+      setScreen(r.screen);
+      setTryout(r.tryout);
+    });
   }, [host]);
 
   return (
-    <main>
-      <h1 className="wordmark">{t("appName")}</h1>
-      {status.kind === "tryout" && (
-        <section className="banner" role="note">
+    <>
+      {tryout && (
+        <aside className="banner tryout" role="note">
           <strong>{t("tryout.title")}</strong> {t("tryout.body")}
-        </section>
+        </aside>
       )}
-      {status.kind === "checking" && <p>{t("foundations.checking")}</p>}
-      {status.kind === "ready" && <p>{t("foundations.ready")}</p>}
-      {status.kind === "locked" && <p>{t("foundations.locked")}</p>}
-      {status.kind === "failed" && <p role="alert">{t("foundations.failed", { message: status.message })}</p>}
-      <p className="quiet">{t("foundations.early")}</p>
-      {status.kind !== "tryout" && <p className="quiet">{t("foundations.identity", { name: DOT_NAME })}</p>}
-    </main>
+      {screen.kind === "onboarding" && <Onboarding host={screen.host} onDone={(vault) => setScreen({ kind: "home", vault })} />}
+      {screen.kind === "home" && <Home vault={screen.vault} />}
+      {screen.kind === "starting" && (
+        <main>
+          <p>{t("app.starting")}</p>
+        </main>
+      )}
+      {screen.kind === "locked" && (
+        <main>
+          <p>{t("app.locked")}</p>
+        </main>
+      )}
+      {screen.kind === "failed" && (
+        <main>
+          <p role="alert">{t("app.failed", { message: screen.message })}</p>
+        </main>
+      )}
+    </>
   );
 }

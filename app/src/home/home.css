@@ -1,0 +1,23 @@
+.home {
+  display: grid;
+  gap: 1.5rem;
+}
+.home-cycle {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+:root[data-look="pebble"] .home-cycle {
+  justify-items: stretch;
+  text-align: left;
+}
+.home-likely {
+  margin: 0.75rem 0 0;
+  font-size: 1.05rem;
+  text-wrap: balance;
+}
+.home-quiet {
+  margin: 0;
+  color: var(--ink-soft);
+}

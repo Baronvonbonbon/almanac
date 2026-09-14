@@ -1,6 +1,7 @@
 /**
  * The three looks (docs/DESIGN.md §4). Colours live here rather than in CSS, so one list feeds the
- * page, the look picker's previews and the contrast test.
+ * page, the look picker's previews and the contrast test. Everything that differs between looks is
+ * a custom property, so a preview can show one look inside a page set in another.
  */
 
 export const LOOK_IDS = ["hearth", "moonpaper", "pebble"] as const;
@@ -34,6 +35,7 @@ export interface Look {
   displayWeight: number;
   radius: string;
   cellRadius: string;
+  button: { radius: string; height: string; size: string; transform: "none" | "uppercase"; tracking: string };
 }
 
 const SANS_FALLBACK = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
@@ -51,6 +53,7 @@ export const LOOKS: Record<LookId, Look> = {
     displayWeight: 600,
     radius: "18px",
     cellRadius: "10px",
+    button: { radius: "18px", height: "54px", size: "1.02rem", transform: "none", tracking: "0" },
   },
   moonpaper: {
     palettes: {
@@ -63,6 +66,7 @@ export const LOOKS: Record<LookId, Look> = {
     displayWeight: 400,
     radius: "10px",
     cellRadius: "50%",
+    button: { radius: "10px", height: "54px", size: "0.82rem", transform: "uppercase", tracking: "0.14em" },
   },
   pebble: {
     palettes: {
@@ -75,10 +79,11 @@ export const LOOKS: Record<LookId, Look> = {
     displayWeight: 750,
     radius: "24px",
     cellRadius: "14px",
+    button: { radius: "999px", height: "60px", size: "1.1rem", transform: "none", tracking: "0" },
   },
 };
 
-/** The CSS custom properties a look sets on the page, for one variant. */
+/** The CSS custom properties a look sets, for one variant — on <html>, or on a preview. */
 export function cssVariables(id: LookId, variant: Variant): Record<string, string> {
   const look = LOOKS[id];
   const p = look.palettes[variant];
@@ -99,5 +104,10 @@ export function cssVariables(id: LookId, variant: Variant): Record<string, strin
     "--body": look.body,
     "--radius": look.radius,
     "--cell-radius": look.cellRadius,
+    "--button-radius": look.button.radius,
+    "--button-height": look.button.height,
+    "--button-size": look.button.size,
+    "--button-transform": look.button.transform,
+    "--button-tracking": look.button.tracking,
   };
 }

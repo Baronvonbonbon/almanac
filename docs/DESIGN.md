@@ -39,6 +39,9 @@ been logged, or the first time backups or sharing are turned on, and a gentle re
 Privacy screen until it is saved. *Changed 2026-09-14: the look picker is new, making four screens.
 The backup code moved from after the first week to after three logged days: while Bulletin backups
 are blocked (P6) the copied backup is the only backup, and the devnet has already reset once.*
+The last period's start is tapped on a month of days rather than in the phone's own date picker,
+which has not been checked inside the Polkadot app. Nothing is stored until the last screen, apart
+from the look.
 
 **Home.** One cycle ring and one button.
 

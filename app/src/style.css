@@ -1,6 +1,7 @@
 /* Colours, fonts and shapes come from src/look/ — one of three looks, light or dark — as custom
    properties on <html>. The fallbacks here only cover the moment before they are set. Fonts are
-   bundled: never a font CDN, which would reveal who opens the app. */
+   bundled: never a font CDN, which would reveal who opens the app. Shared controls are in
+   src/ui/ui.css. */
 :root {
   color-scheme: light dark;
 }
@@ -19,16 +20,7 @@ body {
 main {
   max-width: 32rem;
   margin: 0 auto;
-  padding: max(2rem, env(safe-area-inset-top)) 1.25rem max(2rem, env(safe-area-inset-bottom));
-}
-
-.wordmark {
-  font-family: var(--display, ui-serif, Georgia, serif);
-  font-variation-settings: var(--display-variation, normal);
-  font-weight: var(--display-weight, 600);
-  font-size: 2.25rem;
-  letter-spacing: -0.01em;
-  margin: 0 0 1.5rem;
+  padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem max(2rem, env(safe-area-inset-bottom));
 }
 
 .banner {
@@ -36,12 +28,13 @@ main {
   border: 1px solid var(--line);
   border-radius: var(--radius, 18px);
   padding: 1rem 1.1rem;
-  margin-bottom: 1.25rem;
 }
 
-.quiet {
-  color: var(--ink-soft);
-  font-size: 0.9rem;
+.banner.tryout {
+  width: calc(100% - 2.5rem);
+  max-width: 29.5rem;
+  margin: max(0.75rem, env(safe-area-inset-top)) auto 0;
+  font-size: 0.92rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
