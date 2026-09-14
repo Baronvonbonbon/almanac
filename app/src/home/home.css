@@ -1,23 +1,56 @@
 .home {
   display: grid;
-  gap: 1.5rem;
-}
-.home-cycle {
-  display: grid;
   justify-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
+  padding-top: 0.5rem;
   text-align: center;
 }
-:root[data-look="pebble"] .home-cycle {
+:root[data-look="pebble"] .home {
   justify-items: stretch;
   text-align: left;
 }
-.home-likely {
-  margin: 0.75rem 0 0;
-  font-size: 1.05rem;
+/* Pebble's path runs to the screen's edges. */
+.home .cg-pebbles .cg-path {
+  margin-inline: -1.25rem;
+  padding-inline: 1.25rem;
+}
+.home-primary {
+  margin: 1rem 0 0;
+  font-size: 1.1rem;
+  font-weight: 600;
   text-wrap: balance;
 }
-.home-quiet {
+.home-secondary {
   margin: 0;
   color: var(--ink-soft);
+}
+.home-note {
+  margin: 0.2rem 0 0;
+  max-width: 34ch;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  text-wrap: balance;
+}
+:root[data-look="pebble"] .home-note {
+  max-width: none;
+}
+.home-logged {
+  width: 100%;
+  margin: 1rem 0 0;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 0.95rem;
+}
+.home-logged-label {
+  margin-right: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.home-log {
+  margin-top: 1.25rem;
 }

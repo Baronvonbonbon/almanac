@@ -1,0 +1,198 @@
+/* The log sheet: a native modal dialog, drawn as a sheet rising from the bottom of the screen. */
+dialog.sheet {
+  width: 100%;
+  max-width: 32rem;
+  max-height: 92dvh;
+  margin: auto auto 0;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--radius) + 8px) calc(var(--radius) + 8px) 0 0;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+dialog.sheet[open] {
+  animation: sheet-in 0.25s ease-out;
+}
+dialog.sheet::backdrop {
+  background: rgb(20 12 10 / 0.42);
+  animation: fade-in 0.2s ease-out;
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.sheet-body {
+  padding: 0.5rem 1.25rem 0;
+}
+.sheet-grab {
+  width: 38px;
+  height: 4px;
+  margin: 0.25rem auto 0.75rem;
+  border-radius: 4px;
+  background: var(--line);
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sheet-head h2 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--display);
+  font-variation-settings: var(--display-variation);
+  font-weight: var(--display-weight);
+  font-size: 1.35rem;
+  line-height: 1.15;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.log-group {
+  min-width: 0;
+  margin: 1.1rem 0 0;
+  padding: 0;
+  border: 0;
+}
+.log-group legend,
+.log-label {
+  display: block;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.log-group .log-label {
+  margin-top: 0.9rem;
+}
+/* The trying-to-conceive fields, set apart as one group. */
+.log-group.ttc {
+  margin-top: 1.4rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--line);
+}
+.log-group.ttc legend {
+  float: left;
+  width: 100%;
+  color: var(--ink);
+}
+.log-note-label {
+  margin-top: 1.1rem;
+}
+
+.flows {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+.flow {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.65rem 0.1rem 0.5rem;
+  border: 1.5px solid var(--line);
+  border-radius: calc(var(--radius) * 0.6);
+  background: var(--bg);
+  color: var(--ink);
+  font: 500 0.75rem var(--body);
+  cursor: pointer;
+}
+.flow svg {
+  width: 22px;
+  height: 29px;
+}
+.flow[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--surface);
+  font-weight: 700;
+}
+.drop-fill {
+  fill: var(--period);
+}
+.drop-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.chip {
+  padding: 0.5rem 0.85rem;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 500 0.9rem var(--body);
+  cursor: pointer;
+}
+.chip[aria-pressed="true"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+.chip[aria-pressed="true"]::before {
+  content: "✓ ";
+}
+
+.log-note,
+.log-temperature input {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1.5px solid var(--line);
+  border-radius: calc(var(--radius) * 0.6);
+  background: var(--bg);
+  color: var(--ink);
+  font: 1rem/1.4 var(--body);
+}
+.log-note {
+  display: block;
+  resize: none;
+}
+.log-note::placeholder {
+  color: var(--ink-soft);
+}
+.log-temperature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 10rem;
+}
+.log-temperature input[aria-invalid="true"] {
+  border-color: var(--accent);
+}
+.log-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+}
+
+.sheet-actions {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1.25rem max(1rem, env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, transparent, var(--surface) 1rem);
+}
+.sheet-error {
+  margin: 0;
+}

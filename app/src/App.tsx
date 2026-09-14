@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Home } from "./home/Home";
 import { t } from "./i18n";
 import { Onboarding } from "./onboarding/Onboarding";
 import { memoryHost, type Host } from "./platform";
+import { Shell } from "./shell/Shell";
 import { Vault } from "./vault";
 import "./ui/ui.css";
 
@@ -54,7 +54,7 @@ export function App({ host }: { host: Promise<Host | null> }) {
         </aside>
       )}
       {screen.kind === "onboarding" && <Onboarding host={screen.host} onDone={(vault) => setScreen({ kind: "home", vault })} />}
-      {screen.kind === "home" && <Home vault={screen.vault} />}
+      {screen.kind === "home" && <Shell vault={screen.vault} tryout={tryout} />}
       {screen.kind === "starting" && (
         <main>
           <p>{t("app.starting")}</p>

@@ -176,6 +176,11 @@ interface Settings {
 }
 ```
 
+Symptoms and moods are stored as ids (`cramps`, `calm`) and shown in words from `src/i18n/`.
+Temperatures are stored in °C and shown in °F where the phone's region uses it. Saving a day
+replaces only what the log sheet edits; a period-start override or energy stays as it was, and
+trying-to-conceive details are hidden, not erased, while that mode is off.
+
 **Storage layout** (host local storage, already namespaced per product):
 
 | Key | Holds |

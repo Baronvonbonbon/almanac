@@ -30,6 +30,17 @@ export function firstDayOfWeek(): number {
   }
 }
 
+/** °F where the phone's region measures body temperature that way, °C elsewhere. Stored in °C either way. */
+export function temperatureUnit(language = typeof navigator === "undefined" ? LOCALE : navigator.language): "C" | "F" {
+  let region: string | undefined;
+  try {
+    region = new Intl.Locale(language).maximize().region;
+  } catch {
+    // An unreadable language tag: °C.
+  }
+  return region && ["US", "BS", "BZ", "KY", "LR", "PW", "FM", "MH"].includes(region) ? "F" : "C";
+}
+
 /** One-letter weekday names, starting from `firstDay` (1 is Monday). */
 export function weekdayInitials(firstDay: number): string[] {
   // 2024-01-01 was a Monday.
