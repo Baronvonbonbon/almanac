@@ -65,6 +65,9 @@ The Phase 0 gate needs every check on at least one Android and one iOS phone.
       and 2026-09-29 for the newer
 - [ ] P9b and P9c on two phones
 - [ ] P10 in a phone browser, at `almanacapp.dev-dot.li` — once the probe is published there again
+- [ ] P13 — WebRTC inside the app: the `WebRtc` permission, a reload, then two phones on one Wi-Fi
+      with no STUN server. Added 2026-09-14, for provider shares
+- [ ] P14 — reading a QR code on iOS: `BarcodeDetector`, or the size of a JavaScript reader
 
 ## Notes on running the probe
 

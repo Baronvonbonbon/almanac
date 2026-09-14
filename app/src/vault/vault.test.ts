@@ -201,6 +201,22 @@ describe("vault", () => {
     expect(await Vault.open(host)).toEqual({ state: "new" });
   });
 
+  it("leaves nothing openable when erase is cut short after its first write", async () => {
+    for (const pins of [[], ["482913", "135790"]]) {
+      const { host, vault } = await fresh();
+      await vault.writeJSON("m/2026-09", { flow: "medium" });
+      if (pins.length) {
+        await vault.setPin(pins[0]);
+        await vault.setDuressPin(pins[1]);
+      }
+      // The phone dies, or storage fails, right after the wrapped keys are overwritten.
+      host.storage.remove = () => Promise.reject(new Error("storage went away"));
+      await expect(Vault.erase(host)).rejects.toThrow("storage went away");
+      expect((await Vault.open(host)).state).toBe("locked");
+      for (const pin of pins) expect(await Vault.unlock(host, pin)).toBeNull();
+    }
+  });
+
   it("reserves names starting with an underscore", async () => {
     const { vault } = await fresh();
     await expect(vault.write("_vault", new Uint8Array(1))).rejects.toBeInstanceOf(VaultError);

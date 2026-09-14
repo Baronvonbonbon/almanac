@@ -21,7 +21,7 @@ how, and — just as plainly — what it cannot do.
 | **Someone who picks up your phone** | The unlocked phone | Optional PIN, auto-lock, discreet notifications, a neutral name, erase everything |
 | **Someone forcing you to unlock** | You | Optional duress PIN that opens a decoy vault. The store has two vaults from the first launch, mirrored record for record, so a copy of it does not reveal whether a decoy exists (but see R3) |
 | **Legal demands on anyone but you** | Whatever exists off your phone | Only ciphertext exists off the phone, and only you hold the keys |
-| **A share recipient** | What you shared with them | Only the categories and dates you chose; every share ends; stopping a share cuts off anything not yet opened and all future updates |
+| **A share recipient, or a provider** | What you shared with them | Only the categories and dates you chose; every share ends. A provider opens it only while you allow, and the provider app forgets it afterwards; approvals are sealed, not signed, so they prove nothing to anyone else (DESIGN §9). Stopping a share cuts off anything not yet opened and all future updates |
 | **Supply chain** | Dependencies, the build, the published bundle | Few dependencies, pinned with a lockfile; reproducible builds; each published CID recorded against its commit |
 
 ## Named risks
@@ -40,7 +40,9 @@ different account, which is not product account #0, #1 or #2. Whether that one c
 the main account is still open: the app showed almanac no main account to test against.*
 
 **R2 — Recipients can keep what they see.** Screenshots, photos, copies. Stopping a share cannot
-reach into someone else's phone. The sharing screen says this before every share.
+reach into someone else's phone. The sharing screen says this before every share. A modified provider
+app could also keep what it was allowed to open, or the key that opened it; the provider app almanac
+publishes forgets both.
 
 **R3 — A careful coercer might tell the decoy from the real vault by behaviour,** not by storage —
 for example, upload history on Bulletin that does not match the decoy's contents. Open question: the
@@ -79,6 +81,12 @@ computer could open. See PLAN open questions.
 **R8 — Devnet resets.** A reset can wipe accounts and host storage. The backup code does not depend
 on the account, and the app labels devnet as a preview.
 
+**R9 — Timing on the statement store.** A provider's request and almanac's answer are statements of
+one size, under topics only the two of them can compute. But both are posted where anyone can
+watch, signed by accounts that R1 may tie to their owners, and an answer follows a request. Someone
+watching both could guess that a patient answered a provider. almanac answers only when the patient
+opens it, which blurs the timing, but does not hide it.
+
 ## Not in scope
 
 - Malware or a compromised operating system on the phone
@@ -93,3 +101,7 @@ on the account, and the app labels devnet as a preview.
   probe's `dist/` on 2026-09-11 — so this check reads `src/`, not `dist/`
 - No word from the banned list in user-facing strings ([DESIGN §3](DESIGN.md#words))
 - Crypto test vectors for every wrap, unwrap, backup and share format
+- What a copy of the store shows: one filled as a real user would — a look, every mode, a sensitive
+  month, a backup code, a PIN and a decoy — holds nothing logged, named, chosen or typed in any key
+  or value, and only the format record is readable as it is; the copied backup shows only its
+  heading (`app/src/vault/at-rest.test.ts`)

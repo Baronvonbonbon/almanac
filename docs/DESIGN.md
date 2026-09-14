@@ -21,7 +21,7 @@ here with its date. Open items that depend on the probe name their check ID (P1�
 |---|---|
 | **The Polkadot app** (`almanac.dot`) | The full app |
 | **Web gateway** (`almanac.dev-dot.li`) | Tryout mode: the same onboarding and app, kept in memory and gone on reload. Home offers example months — five cycles before the first period logged — so the calendar and insights can be seen filled in; they are added only when asked for, and never in the Polkadot app. The gateway cannot keep almanac's data, so this is a constraint, not a choice (below) |
-| **Web viewer** (same gateway, opened from a timed link) | Read-only view of one share, if P10 shows the gateway can reach Bulletin and the statement store |
+| **Provider app** (a name of its own) | A separate Product for doctors, midwives and clinics: reads a patient's share at the visit, opens it only while the patient allows, then forgets it (§9). *Changed 2026-09-14: replaces the web viewer for timed links* |
 
 *Changed 2026-09-14.* The gateway now runs products on a host of its own, in a frame, but that host
 fails every `deriveEntropy` with *Not connected*, so almanac could not make its key there. The
@@ -357,7 +357,7 @@ Once someone has seen your data, no technology can make them unsee it. So in alm
 | Kind | For | How | Stop sharing |
 |---|---|---|---|
 | **Live share** | Family or a partner with almanac | Pair by scanning their QR code. It carries their almanac sharing key (X25519, derived from their `deriveEntropy`) — not their Polkadot username. Updates when you open almanac | Anytime; future updates use a new key |
-| **Timed link** | A doctor or midwife, on the web | A link plus an access code given separately — in person or by phone. The link alone opens nothing | Works until they open it |
+| **Provider share** | A doctor, midwife or clinic, in their own provider app | At the visit: the patient scans the provider's code, checks the name and six digits, chooses what to share and shows it back as codes. Every opening needs the patient's *Allow* — for 15 minutes, an hour or the rest of the day | Anytime; the provider app deletes its copy, and does anyway at the end date |
 | **Visit summary** | A clinic visit | A clean summary on the phone's screen, to show, or copied as text. *Corrected 2026-09-14 (P4): the app cannot print or save a file, so it is no longer a printable file* | Cannot be taken back once copied — and the app says so first |
 
 **What you choose in every share:** categories, date range, end date.
@@ -372,7 +372,95 @@ Once someone has seen your data, no technology can make them unsee it. So in alm
 | Trying to conceive, intimacy | off |
 | Pregnancy | off |
 
-**How it works underneath:**
+*Changed 2026-09-14: the timed link for a doctor on the web is replaced by the provider share — a
+provider app of their own, pairing in person, and the patient's approval for every opening.*
+
+### Provider shares
+
+*Decided 2026-09-14.* For a doctor, midwife or clinic, who uses a provider app — a separate Product
+that only views, then forgets.
+
+**At the visit — two scans, no network:**
+
+1. The provider app shows a code: a pairing key made for this one patient, the provider's name as
+   they typed it, and six digits worked out from the key.
+2. The patient taps *Share with a provider* and scans it. almanac shows the name and the six digits,
+   to check against the provider's screen. A swapped code — a sticker over the real one — shows
+   other digits.
+3. The patient chooses categories, dates and an end date (the defaults above), sees exactly what
+   the provider will see, and picks how long this first opening lasts: 15 minutes, an hour or the
+   rest of the day.
+4. almanac shows the share as a short loop of codes, and the provider app reads them. It opens for
+   the time chosen, with a countdown, and then the provider app forgets what it showed.
+
+**Later — the provider asks, the patient allows:**
+
+5. The provider app sends a request through the statement store. almanac cannot hear it while it
+   is closed, so the patient sees it the next time they open almanac: *Dr Okafor asks to see what
+   you shared (asked 3 hours ago)* — *Allow for 15 minutes · an hour · the rest of the day*, or
+   *Not now*.
+6. On *Allow*, almanac answers through the statement store, and the share opens on the provider's
+   side for that long.
+7. *Stop sharing*, anytime, in Privacy: almanac forgets the share's key, so it can never allow
+   another opening, and tells the provider app, which deletes its copy. It deletes it at the end
+   date anyway.
+
+**Keys:**
+
+```
+provider app   P    X25519 key pair, new for each pairing           (its public half is in the code)
+almanac        S    X25519 key pair, new for each share             (its public half is in the share)
+               KS   random 32 bytes per share; seals the selection  (XChaCha20-Poly1305)
+pair key       X25519(S, P) ──HKDF──►  the request and answer topics, and the keys that seal them
+an opening     the provider app makes a key E for each request; the answer carries KS sealed to E
+```
+
+- **The provider gets the sealed selection at once, but not KS.** Only an approval carries it,
+  sealed to that opening's key. The first approval comes with the share, sealed to P.
+- **Nothing from the vault leaves** — not the vault's key, not the backup code. A share's keys are
+  its own, kept in the vault with the share. The decoy has no shares.
+- **Approvals are sealed, not signed.** The pair key authenticates them (X25519 box), so the
+  provider app knows they came from the patient's almanac, but it cannot prove that to anyone else.
+  A signature could: it would be evidence that someone sought care, which matters where cycle data
+  has legal consequences. *Open question: if providers need a consent record they can show, the
+  patient could choose to add a signature.*
+- **One opening, then forgotten.** The provider app keeps KS, E and the opened selection in memory
+  only, and drops them when the time is up, when the patient stops sharing, or when the app closes.
+
+| Message | From → to | Carried by | Size |
+|---|---|---|---|
+| Pairing code | provider app → almanac | a code on screen | about 100 bytes |
+| Share, with the first approval | almanac → provider app | a short loop of codes; WebRTC after P13; Bulletin after P6 | padded to 2, 4, 8 or 16 KiB |
+| Request | provider app → almanac | the provider app's one requests statement | about 100 bytes |
+| Approval, or stop | almanac → provider app | almanac's one sharing statement, replaced each time | about 170 bytes; three fit |
+
+- **The statement budget.** almanac keeps one sharing statement — approvals and stops for every
+  provider, always padded to 512 bytes, and later the live-share outbox pointer — and one backup
+  pointer: the two P9 allows. Its topics are those of the providers it is answering, so each
+  provider app hears only its own. A provider app likewise keeps one requests statement for all its
+  patients.
+- **What an observer sees:** statements of one size, under topics nobody else can compute, and when
+  each was posted. That timing could suggest that a patient answered a provider (THREAT-MODEL R9).
+
+**The provider app — view only, then forget** (decided 2026-09-14). Until a share's end date it keeps
+the sealed selection, the pairing keys and a label the provider typed, all encrypted under its own
+device key — never the opened selection. No patient list beyond those labels, no export, no copy.
+
+**Bulletin rails** — built, and switched off until P6 is fixed: the same sealed selection, padded
+and uploaded, so an updated share can reach the provider away from the visit. Before the first
+upload almanac says, once: *To let your provider see this away from the visit, almanac puts an
+encrypted copy on a public storage network run by many computers. Nobody can read it without your
+OK, and the copy may stay there after the share ends* (R7).
+
+**WebRTC** — after P13: for a larger share at the visit, the two codes carry the connection details
+instead, and the share goes over a direct connection on the same Wi-Fi, with no server. If the
+phones cannot reach each other, the loop of codes.
+
+**What almanac tells the patient before the first share:** *They can't open it without your OK.
+When you stop sharing, they get nothing new and their app deletes its copy. Anything they saw, they
+could have written down or photographed.*
+
+**How live shares work underneath:**
 
 - Each share has its own random key `KS`. The shared snapshot is encrypted under `KS`, padded, and
   uploaded to Bulletin.
@@ -383,10 +471,8 @@ Once someone has seen your data, no technology can make them unsee it. So in alm
 - **Stop sharing** = upload a new index without that entry and replace the outbox statement on the
   same channel (last-write-wins). Live shares also rotate `KS`. *P9, 2026-09-14 (Android):
   replacement works — after A, then B, on one channel, a fresh subscription saw only B.*
-- **Timed links:** the link carries `TO`, the entry's tag and half the entry key (in the URL
-  fragment, which browsers never send to servers); the access code carries the other half.
-- **The budget:** an outbox pointer plus a backup pointer is two small statements, however many
-  shares exist. *Corrected 2026-09-14 (P9): that is the whole budget, not a part of it. A full
+- **The budget:** one sharing statement — the outbox pointer, with provider approvals (above) — plus
+  a backup pointer is two small statements, however many shares exist. *Corrected 2026-09-14 (P9): that is the whole budget, not a part of it. A full
   account refuses a statement that expires sooner than the shortest one it holds. In the first run
   one account held only two small statements; later runs held more — perhaps each allowance grant
   adds room — but until that is settled, almanac plans for two. So both pointers use the longest
@@ -397,9 +483,10 @@ Once someone has seen your data, no technology can make them unsee it. So in alm
 - **Recipients' apps delete shared data** at expiry or when the outbox drops their entry. This is a
   courtesy, not a guarantee — a modified app could ignore it — and the sharing screen says so.
 
-**Depends on the probe:** P9 (TTL, channel replacement, delivery), P10 (whether a web viewer can
-exist — if not, timed links carry a small encrypted snapshot in the link itself, and become
-expire-only), P12 (camera for QR pairing; otherwise pairing by a short code).
+**Depends on the probe:** P9 (delivery between two phones), P12 and P14 (reading codes — measured on
+Android; iOS to check), P13 (WebRTC inside the app), P6 (Bulletin uploads, for the rails). *Changed
+2026-09-14: P10 no longer decides anything here, since providers use an app of their own rather
+than a web viewer.*
 
 ## 10. Reminders
 

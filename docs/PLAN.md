@@ -10,7 +10,7 @@
 | 2 | Core experience — design, logging, calendar, tryout mode | 🟡 built, and walked through in a browser in all three looks; publishing next |
 | 3 | Protection — PIN, duress PIN, erase, export file, backup code | 🟡 built, and walked through in a browser; restore on a second phone to go |
 | 4 | Encrypted Bulletin backups | ⬜ |
-| 5 | Sharing — live share, timed link, printable report | ⬜ |
+| 5 | Sharing — provider share and provider app, visit summary, live share | ⬜ designed ([DESIGN §9](DESIGN.md#provider-shares)) |
 | 6 | Reminders, insights, health nudges | ⬜ |
 | 7 | Production readiness | ⬜ |
 
@@ -39,7 +39,7 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Optional modes | Fertility window, trying to conceive, pregnancy — all off by default |
 | Protection | Optional PIN. Optional duress PIN that opens a decoy; "also erase the real data" is a separate, informed opt-in |
 | Backups | Encrypted Bulletin backups + a backup code (28 letters and digits) + the same encrypted backup copied as text, since no file can leave the app (P4) |
-| Sharing | Selective by category and date range. Every share expires — default 7 days, maximum 90. Revocable |
+| Sharing | Selective by category and date range. Every share expires — default 7 days, maximum 90. Revocable. Providers use a provider app of their own: pairing in person by QR code, and the patient's *Allow* for every opening ([DESIGN §9](DESIGN.md#provider-shares)) |
 | Web gateway | Tryout mode: example months on request, nothing saved, a clear "use the Polkadot app" banner. Opened as a fallback when the host can't be used ([DESIGN §2](DESIGN.md#2-surfaces)) |
 | Look | Soft, warm, minimal — in three looks, picked on the first screen and changeable in Settings: Hearth (the default), Moonpaper, Pebble ([DESIGN §4](DESIGN.md#4-look--soft-warm-minimal)) |
 | License · language | GPL-3.0-or-later · English, with every string externalised from day one |
@@ -98,15 +98,17 @@ half waits.*
 | P1 | Does host local storage survive a restart, an app update, a reinstall? How much fits? | Install marker + run history; capacity ladder 64 KiB → 4 MiB | Whether reinstall means data loss; record sizing |
 | P2 | Is `deriveEntropy` the same after a reinstall, and on a second device with the same account? | An 8-byte fingerprint of the entropy, compared by hand across runs | Whether the device key regenerates, or every restore needs the backup code |
 | P3 | Does a scheduled notification fire with the app closed? | `push` with `scheduledAt` two minutes out; confirm on next open | Reminders in v1, or later |
-| P4 | Which export paths work inside the app? | Download link, Web Share with a file, share text, clipboard, print | Export file and printable report |
+| P4 | Which export paths work inside the app? | Download link, Web Share with a file, share text, clipboard, print | Export file and visit summary |
 | P5 | Is host storage included in iCloud / Google device backups? | Manual: back up, restore to another phone, open the probe, read P1's marker | THREAT-MODEL R6 |
 | P6 | How large can a Bulletin upload be? | Allowance, then 1 KiB → 1 MiB ladder | Backup padding buckets |
 | P7 | How long does Bulletin keep data? | Re-fetch every recorded CID over at least three weeks | Backup schedule and the status wording |
 | P8 | Which account signs uploads and statements, and can it be derived from the root account? | Compare the selected account, product accounts 0–2, locally derived keys, and the proof signer | THREAT-MODEL R1 |
 | P9 | Statement store: longest TTL, channel replacement, per-account quota, delivery to another phone | TTL ladder 1 h → 90 d; A-then-B on one channel; 400-byte statements until refused; listen on a shared code from a second phone | Revocation design and the backup pointer |
-| P10 | What can the web gateway reach? | Fetch a CID through the devnet IPFS gateway; WebSocket to a People-chain RPC, look for `statement_*` methods | A web viewer for timed links, or expire-only links |
+| P10 | What can the web gateway reach? | Fetch a CID through the devnet IPFS gateway; WebSocket to a People-chain RPC, look for `statement_*` methods | What the web tryout can reach. *Changed 2026-09-14:* it was to decide a web viewer for timed links, which the provider app replaces (DESIGN §9) |
 | P11 | How fast are scrypt and XChaCha on a phone? | scrypt N = 2¹⁵ … 2¹⁷; XChaCha over 1 MiB | PIN KDF parameters |
 | P12 | Host theme and camera | Theme subscription; `getUserMedia` + `BarcodeDetector` | Dark mode; QR pairing for live shares |
+| P13 | Does WebRTC work inside the app? | Ask for the `WebRtc` permission, reload, then connect two phones on one Wi-Fi with no STUN server; note the prompt's wording | Whether a provider share can go over a direct connection, or only as codes |
+| P14 | Can almanac read a QR code on iOS? | `BarcodeDetector`; if it is absent, the size of a JavaScript reader | Provider shares on iOS, and what they add to the bundle |
 
 **Gate**
 - [ ] Every check answered on at least one Android and one iOS device (P2 and P9-delivery need two)
@@ -210,7 +212,8 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
 - [ ] Restore from the copied backup + backup code on a second device with a **different** account.
       In a browser, a fresh tryout page — a new account and new storage — restores it (2026-09-14)
 - [x] With no duress PIN set, the raw store has the same shape as with one — automated test
-- [ ] After erase, no record decrypts with any old key — automated test
+- [x] After erase, no record decrypts with any old key — automated test, including an erase cut
+      short right after its first write, with and without a PIN (`vault.test.ts`, 2026-09-14)
 
 ## Phase 4 — Encrypted Bulletin backups ⬜
 
@@ -226,17 +229,31 @@ Depends on P6, P7, P8, P9.
 
 ## Phase 5 — Sharing ⬜
 
-Depends on P9, P10, P12.
+Provider shares first ([DESIGN §9](DESIGN.md#provider-shares)), decided 2026-09-14: in person by
+codes now; later openings through the statement store; WebRTC once P13 shows it works; Bulletin
+rails built but switched off until P6. Depends on P9 (delivery between two phones), P12 and P14
+(reading codes), P13 and P6.
 
 **Produces**
-- [ ] Live share (QR pairing), timed link + access code, printable report
-- [ ] Category and date-range selection; expiry (default 7 days, maximum 90); revoke
-- [ ] The recipient's view deletes shared data at expiry or revocation
+- [ ] `share/` — the provider-share formats (pairing code, share, request, approval, stop), used by
+      both almanac and the provider app, with test vectors
+- [ ] almanac: *Share with a provider* — scan, check the name and six digits, choose categories,
+      dates and end date, preview, show the codes; *Allow* for 15 minutes, an hour or the rest of the
+      day; requests waiting when almanac opens; the shares listed in Privacy, each with *Stop sharing*
+- [ ] `provider/` — the provider app, a Product of its own, under a name still to choose
+      (registration is permanent): show a pairing code, read a share, view it with a countdown,
+      forget it; ask to see it again; delete it at the end date or on *Stop sharing*
+- [ ] The sharing statement: approvals and stops for every provider, at one fixed size
+- [ ] Bulletin rails with the one-time notice, switched off until P6 works
+- [ ] WebRTC at the visit, if P13 shows it works
+- [ ] Then: the visit summary (copied as text), and live shares for family or a partner
 
 **Gate**
-- [ ] Revoke before opening → the recipient cannot open it. If P9/P10 rule this out, the app says
-      timed links are expire-only instead
-- [ ] Revoke after opening → no further updates reach the recipient
+- [ ] Two phones: a share made at the visit opens on the provider's phone for the time chosen, then
+      is gone from it
+- [ ] A later request reaches almanac; *Allow* opens it for the time chosen; after *Stop sharing*
+      no request is answered, and the provider app deletes its copy
+- [ ] Nothing opens without an approval, and an approval opens only its own share — automated test
 - [ ] Sensitive categories are off in every new share — automated test
 
 ## Phase 6 — Reminders, insights, health nudges ⬜
