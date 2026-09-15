@@ -21,7 +21,7 @@ here with its date. Open items that depend on the probe name their check ID (P1�
 |---|---|
 | **The Polkadot app** (`almanac.dot`) | The full app |
 | **Web gateway** (`almanac.dev-dot.li`) | Tryout mode: the same onboarding and app, kept in memory and gone on reload. Home offers example months — five cycles before the first period logged — so the calendar and insights can be seen filled in; they are added only when asked for, and never in the Polkadot app. The gateway cannot keep almanac's data, so this is a constraint, not a choice (below) |
-| **Provider app** (a name of its own) | A separate Product for doctors, midwives and clinics: reads a patient's share at the visit, opens it only while the patient allows, then forgets it (§9). *Changed 2026-09-14: replaces the web viewer for timed links* |
+| **Provider app** (`almanacappprovider.dot`) | A separate Product for doctors, midwives and clinics: reads a patient's share at the visit, opens it only while the patient allows, then forgets it (§9). *Changed 2026-09-14: replaces the web viewer for timed links* |
 
 *Changed 2026-09-14.* The gateway now runs products on a host of its own, in a frame, but that host
 fails every `deriveEntropy` with *Not connected*, so almanac could not make its key there. The
@@ -157,8 +157,9 @@ Colours. Every text pair, in all six palettes, is checked to WCAG AA in Phase 2 
 - **Type.** All six families are OFL-licensed and **bundled as woff2** — no font CDN, since a CDN
   request reveals who is opening the app. Latin only, from Fontsource: Fraunces with its weight and
   softness axes, the others with their weight axis only — 242 KiB in seven files (the full families
-  would be 357 KiB). Fonts have their own 400 KiB budget, apart from the code's 512 KiB, and a phone
-  loads only the fonts of the look in use.
+  would be 357 KiB). Fonts have their own 400 KiB budget, apart from the code's — 512 KiB loaded at start,
+  640 KiB in all, counting code loaded only when a screen needs it (*raised 2026-09-15, for the QR
+  reader*) — and a phone loads only the fonts of the look in use.
 - **Shape.** Generous space, one accent, hairline dividers; radii as in the table.
 - **Meaning is never colour alone.** Flow shows as fill level and a label; predictions use an
   outline; the fertile window uses a pattern.
@@ -382,8 +383,10 @@ that only views, then forgets.
 
 **At the visit — two scans, no network:**
 
-1. The provider app shows a code: a pairing key made for this one patient, the provider's name as
-   they typed it, and six digits worked out from the key.
+1. The provider app shows a code: a pairing key made for this one patient, a key for the first
+   opening, and the provider's name as they typed it — and beside it, six digits worked out from
+   the pairing key. Codes are digits and capital letters (Crockford's base32), which a QR code
+   packs most tightly.
 2. The patient taps *Share with a provider* and scans it. almanac shows the name and the six digits,
    to check against the provider's screen. A swapped code — a sticker over the real one — shows
    other digits.
@@ -409,6 +412,7 @@ that only views, then forgets.
 
 ```
 provider app   P    X25519 key pair, new for each pairing           (its public half is in the code)
+               E0   X25519 key pair for the first opening           (in the code too; dropped when it ends)
 almanac        S    X25519 key pair, new for each share             (its public half is in the share)
                KS   random 32 bytes per share; seals the selection  (XChaCha20-Poly1305)
 pair key       X25519(S, P) ──HKDF──►  the request and answer topics, and the keys that seal them
@@ -416,7 +420,9 @@ an opening     the provider app makes a key E for each request; the answer carri
 ```
 
 - **The provider gets the sealed selection at once, but not KS.** Only an approval carries it,
-  sealed to that opening's key. The first approval comes with the share, sealed to P.
+  sealed to that opening's key. The first approval comes with the share, for E0 — a key of its own
+  rather than P, which the provider app keeps to ask again — so it opens nothing once that first
+  opening ends. *Refined 2026-09-14, building the formats.*
 - **Nothing from the vault leaves** — not the vault's key, not the backup code. A share's keys are
   its own, kept in the vault with the share. The decoy has no shares.
 - **Approvals are sealed, not signed.** The pair key authenticates them (X25519 box), so the

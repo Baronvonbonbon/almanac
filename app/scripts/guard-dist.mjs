@@ -9,10 +9,14 @@ import { join, relative, resolve } from "node:path";
 
 const DIST = resolve(import.meta.dirname, "../dist");
 
-// Code and fonts have separate budgets (docs/DESIGN.md §4). Code runs on every open; each font file is
-// fetched only by a phone showing the look that uses it. The first Phase 1 build was 355 KiB of code,
-// and the three looks' fonts are about 242 KiB. Raising either is deliberate — never accidental.
-const CODE_BUDGET = 512 * 1024;
+// Code and fonts have separate budgets (docs/DESIGN.md §4). The code index.html loads runs on every
+// open, so it has a budget of its own; code loaded only when a screen needs it — the QR reader, on a
+// phone that cannot read codes itself — counts toward the whole. Each font file is fetched only by a
+// phone showing the look that uses it. The first Phase 1 build was 355 KiB of code, and the three
+// looks' fonts are about 242 KiB. Raising any of these is deliberate — never accidental. The whole was
+// raised from 512 KiB on 2026-09-15, for the QR reader (62 KiB), measured before it was added.
+const START_BUDGET = 512 * 1024;
+const CODE_BUDGET = 640 * 1024;
 const FONT_BUDGET = 400 * 1024;
 const isFont = (file) => /\.(woff2?|ttf|otf)$/.test(file);
 
@@ -44,11 +48,18 @@ try {
   process.exit(1);
 }
 
+// What index.html loads: itself, and every script and stylesheet it names — the entry and the modules
+// Vite preloads for it. Anything else is loaded later, if at all.
+const INDEX = join(DIST, "index.html");
+const atStart = new Set([INDEX]);
+for (const [, path] of readFileSync(INDEX, "utf8").matchAll(/(?:src|href)="(?:\.\/)?([^"]+\.(?:m?js|css))"/g)) atStart.add(join(DIST, path));
+
 const found = new Map();
-const size = { code: 0, fonts: 0 };
+const size = { code: 0, fonts: 0, start: 0 };
 const fontFiles = all.filter(isFont).length;
 for (const file of all) {
   size[isFont(file) ? "fonts" : "code"] += statSync(file).size;
+  if (atStart.has(file)) size.start += statSync(file).size;
   if (!/\.(js|mjs|html|css)$/.test(file)) continue;
   for (const [url] of readFileSync(file, "utf8").matchAll(/\b(?:https?|wss?):\/\/[^\s"'`)<>\\]+/g)) {
     if (!ALLOWED.some((re) => re.test(url))) found.set(url, relative(DIST, file));
@@ -63,12 +74,16 @@ if (found.size) {
 }
 const kib = (bytes) => (bytes / 1024).toFixed(1);
 console.log(
-  `guard: dist/ is ${kib(size.code)} KiB of code in ${all.length - fontFiles} files, ${kib(size.fonts)} KiB of fonts in ${fontFiles}`,
+  `guard: dist/ is ${kib(size.code)} KiB of code in ${all.length - fontFiles} files (${kib(size.start)} KiB loaded at start), ${kib(size.fonts)} KiB of fonts in ${fontFiles}`,
 );
-for (const [kind, budget] of [["code", CODE_BUDGET], ["fonts", FONT_BUDGET]]) {
+for (const [kind, budget, what] of [
+  ["start", START_BUDGET, "code loaded at start"],
+  ["code", CODE_BUDGET, "code"],
+  ["fonts", FONT_BUDGET, "fonts"],
+]) {
   if (size[kind] > budget) {
     failed = true;
-    console.error(`guard: ${kind} over the ${budget / 1024} KiB budget`);
+    console.error(`guard: ${what} over the ${budget / 1024} KiB budget`);
   }
 }
 process.exit(failed ? 1 : 0);

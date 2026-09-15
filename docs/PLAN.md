@@ -29,7 +29,7 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Decision | Choice |
 |---|---|
 | Name | **almanac** |
-| Labels | `almanacapp.dot` — prototype and probe, open to any account. `almanac.dot` — production, needs Full personhood. `almanacapp.dot` was registered on 2026-09-13 and is owned by the deploy key until it is transferred to the phone account; `almanac.dot` is not registered. Registration is permanent. *Corrected 2026-09-11:* the prototype was `almanac01.dot` until `pad` refused it. `pad` requires Personhood Lite for a base of 6–8 letters with two trailing digits; only a base of 9+ letters (with or without two digits) is open to a NoStatus signer. The chain's own v2 check had said "Available to all" — `tools/whois.mjs` now prints `pad`'s rule first |
+| Labels | `almanacapp.dot` — prototype and probe, open to any account. `almanac.dot` — production, needs Full personhood. `almanacappprovider.dot` — the provider app, decided 2026-09-15: open to any account, not registered yet; its first deploy registers it. `almanacapp.dot` was registered on 2026-09-13 and is owned by the deploy key until it is transferred to the phone account; `almanac.dot` is not registered. Registration is permanent. *Corrected 2026-09-11:* the prototype was `almanac01.dot` until `pad` refused it. `pad` requires Personhood Lite for a base of 6–8 letters with two trailing digits; only a base of 9+ letters (with or without two digits) is open to a NoStatus signer. The chain's own v2 check had said "Available to all" — `tools/whois.mjs` now prints `pad`'s rule first |
 | Environment | Products Devnet, which since the 2026-09-08 update runs on Paseo system chains: Asset Hub 1000, People 1004, Bulletin 1010 (`pad` 0.16.1 `environments.json`) |
 | Build standard | Production quality from day one. Devnet is labelled as a preview in the app, because it resets |
 | Contracts | **None** |
@@ -40,6 +40,7 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Protection | Optional PIN. Optional duress PIN that opens a decoy; "also erase the real data" is a separate, informed opt-in |
 | Backups | Encrypted Bulletin backups + a backup code (28 letters and digits) + the same encrypted backup copied as text, since no file can leave the app (P4) |
 | Sharing | Selective by category and date range. Every share expires — default 7 days, maximum 90. Revocable. Providers use a provider app of their own: pairing in person by QR code, and the patient's *Allow* for every opening ([DESIGN §9](DESIGN.md#provider-shares)) |
+| QR codes | `qr` 0.7.0 (Paul Miller, no dependencies), measured 2026-09-15 as the app builds it: writing codes 20 KiB, reading them 62 KiB — loaded only on a phone without a built-in reader (`BarcodeDetector`: present on Android, P12; iOS is P14). Against `uqr`, 19 KiB but writing only, and `jsQR`, 269 KiB. The code budget became 512 KiB loaded at start and 640 KiB in all |
 | Web gateway | Tryout mode: example months on request, nothing saved, a clear "use the Polkadot app" banner. Opened as a fallback when the host can't be used ([DESIGN §2](DESIGN.md#2-surfaces)) |
 | Look | Soft, warm, minimal — in three looks, picked on the first screen and changeable in Settings: Hearth (the default), Moonpaper, Pebble ([DESIGN §4](DESIGN.md#4-look--soft-warm-minimal)) |
 | License · language | GPL-3.0-or-later · English, with every string externalised from day one |
@@ -235,13 +236,14 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
 (reading codes), P13 and P6.
 
 **Produces**
-- [ ] `share/` — the provider-share formats (pairing code, share, request, approval, stop), used by
-      both almanac and the provider app, with test vectors
+- [x] `share/` — the provider-share formats (pairing code, share, request, approval, stop), used by
+      both almanac and the provider app, with test vectors. In `app/src/share/` until `provider/`
+      exists, then a workspace package of its own (2026-09-14)
 - [ ] almanac: *Share with a provider* — scan, check the name and six digits, choose categories,
       dates and end date, preview, show the codes; *Allow* for 15 minutes, an hour or the rest of the
       day; requests waiting when almanac opens; the shares listed in Privacy, each with *Stop sharing*
-- [ ] `provider/` — the provider app, a Product of its own, under a name still to choose
-      (registration is permanent): show a pairing code, read a share, view it with a countdown,
+- [ ] `provider/` — the provider app, a Product of its own at `almanacappprovider.dot` (its first
+      deploy registers the name, permanently): show a pairing code, read a share, view it with a countdown,
       forget it; ask to see it again; delete it at the end date or on *Stop sharing*
 - [ ] The sharing statement: approvals and stops for every provider, at one fixed size
 - [ ] Bulletin rails with the one-time notice, switched off until P6 works
