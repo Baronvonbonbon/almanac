@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentProps } from "react";
 import { BackupFlow } from "../backup/BackupFlow";
 import { cycles, periodLengths, periodStarts } from "../cycle";
 import { TYPICAL_CYCLE, TYPICAL_PERIOD, withLength, type Settings } from "../data";
@@ -10,10 +10,22 @@ import { DuressFlow } from "../protect/DuressFlow";
 import { EraseConfirm } from "../protect/EraseConfirm";
 import { PinFlow } from "../protect/PinFlow";
 import { PrivacySection, type PrivacyFlow } from "../protect/PrivacySection";
+import type { SharingFlow as SharingScreens } from "../sharing/SharingFlow";
 import type { CycleData } from "../shell/useCycle";
 import { Toggle } from "../ui/Toggle";
 import type { Vault } from "../vault";
 import "./settings.css";
+
+// Sharing loads when it is opened (docs/DESIGN.md §4): the codes, the share formats and the preview
+// are not needed to start almanac, and most days nobody shares anything.
+const LazySharing = lazy(() => import("../sharing/SharingFlow").then((m) => ({ default: m.SharingFlow })));
+function SharingFlow(props: ComponentProps<typeof SharingScreens>) {
+  return (
+    <Suspense fallback={<p className="flow-note">{t("privacy.working")}</p>}>
+      <LazySharing {...props} />
+    </Suspense>
+  );
+}
 
 type Change = (settings: Settings) => Settings;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -74,6 +86,7 @@ export function SettingsView({
   if (flow === "pin") return <PinFlow vault={vault} host={host} hasPin={data.privacy.pin} onFinish={finish} onBack={leave} />;
   if (flow === "duress") return <DuressFlow vault={vault} host={host} data={data} onFinish={finish} onBack={leave} onPin={() => setFlow("pin")} />;
   if (flow === "backup") return <BackupFlow vault={vault} host={host} data={data} onBack={leave} onChanged={onChanged} onNotice={onNotice} />;
+  if (flow === "sharing") return <SharingFlow vault={vault} data={data} onBack={leave} onChanged={onChanged} onNotice={onNotice} />;
   if (flow === "erase") return <EraseConfirm host={host} onErased={onErased} onCancel={leave} />;
 
   // Once almanac has these from what was logged, the usual lengths no longer change its guesses — and it says so.

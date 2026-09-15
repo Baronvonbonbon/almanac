@@ -1,6 +1,6 @@
 import type { ISODate } from "../cycle";
-import { fromHex, hex } from "../lib/bytes";
-import { keyPairFrom, type Category, type KeyPair, type NewShare, type Pairing } from "../share";
+import { hex } from "../lib/bytes";
+import type { Category, NewShare, Pairing } from "../share";
 import type { Vault } from "../vault";
 
 /**
@@ -8,6 +8,9 @@ import type { Vault } from "../vault";
  * backup carries them, and the decoy, a vault of its own, has none. A share's keys stay only while
  * they are needed: stopping it forgets the key that opens it, at once, so no opening can be allowed
  * again; the rest goes at the end date, after which there is nothing left to answer.
+ *
+ * Read at every start, so this imports only types from the share formats: they load with the
+ * sharing screens.
  */
 
 export interface ShareChoice {
@@ -70,12 +73,19 @@ export const pruneShares = (vault: Vault, now: number): Promise<void> => vault.u
 /** Whether a provider can still be allowed to open it. */
 export const isLive = (r: ShareRecord, now: number): boolean => r.shareKey !== undefined && r.stopped === undefined && r.ends > now;
 
-/** A record's keys, as the share formats take them. */
-export function shareKeys(r: ShareRecord): { id: Uint8Array; sender: KeyPair; providerKey: Uint8Array; shareKey?: Uint8Array } {
-  return {
-    id: fromHex(r.id),
-    sender: keyPairFrom(fromHex(r.secret)),
-    providerKey: fromHex(r.provider.key),
-    ...(r.shareKey ? { shareKey: fromHex(r.shareKey) } : {}),
-  };
+/**
+ * Until when an opening the patient allowed is still open on the provider's screen, if one is.
+ * Stopping the share cannot close it: the provider app already holds the key for that long.
+ */
+export function openUntil(r: ShareRecord, now: number): number | null {
+  const open = r.openings.map((o) => o.until).filter((until) => until > now);
+  return open.length ? Math.max(...open) : null;
+}
+
+/** The shares kept, once any past their end date are forgotten — keys and all. */
+export async function keptShares(vault: Vault, now: number): Promise<ShareRecord[]> {
+  const all = await readShares(vault);
+  if (all.every((r) => r.ends > now)) return all;
+  await pruneShares(vault, now);
+  return all.filter((r) => r.ends > now);
 }

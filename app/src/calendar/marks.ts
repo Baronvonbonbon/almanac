@@ -83,8 +83,8 @@ export function monthCells(month: Month, days: Map<ISODate, DayEntry>, fc: Forec
   });
 }
 
-/** Everything logged on a day, one line each, for the calendar's day detail. */
-export function detailLines(entry: DayEntry | undefined, unit: "C" | "F"): string[] {
+/** Everything logged on a day, one line each, for the calendar's day detail — and a shared day's, in a share. */
+export function detailLines(entry: Pick<DayEntry, "flow" | "symptoms" | "mood" | "fertility" | "intimacy" | "note"> | undefined, unit: "C" | "F"): string[] {
   if (!entry) return [];
   const lines: string[] = [];
   const detail = (label: string, value: string) => lines.push(t("calendar.detail", { label, value }));

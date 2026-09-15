@@ -159,7 +159,9 @@ Colours. Every text pair, in all six palettes, is checked to WCAG AA in Phase 2 
   softness axes, the others with their weight axis only — 242 KiB in seven files (the full families
   would be 357 KiB). Fonts have their own 400 KiB budget, apart from the code's — 512 KiB loaded at start,
   640 KiB in all, counting code loaded only when a screen needs it (*raised 2026-09-15, for the QR
-  reader*) — and a phone loads only the fonts of the look in use.
+  reader*) — and a phone loads only the fonts of the look in use. Loaded only when needed: the QR
+  reader (33 KiB, on a phone without its own) and the sharing screens with the share formats (34 KiB,
+  when Sharing is opened). *At 2026-09-15: 466 KiB at start, 538 KiB in all.*
 - **Shape.** Generous space, one accent, hairline dividers; radii as in the table.
 - **Meaning is never colour alone.** Flow shows as fill level and a label; predictions use an
   outline; the fertile window uses a pattern.
@@ -464,7 +466,25 @@ phones cannot reach each other, the loop of codes.
 
 **What almanac tells the patient before the first share:** *They can't open it without your OK.
 When you stop sharing, they get nothing new and their app deletes its copy. Anything they saw, they
-could have written down or photographed.*
+could have written down or photographed.* It heads the Sharing screen in Privacy.
+
+**The screens** (built 2026-09-15):
+
+- *Share with a provider* scans their code, or takes it pasted. A share's code, or anything else,
+  is refused in words ("That isn't a provider's code"). The name and six digits come next, with *Yes,
+  both are the same* or *No, something's different* — which goes back to scanning, saying why.
+- The choices start at the defaults above, over six months, ending in a week. Only the modes that are
+  on offer their categories. Days are three months, six, a year, everything, or any dates picked.
+- The preview is drawn from the packed selection unpacked again, so it is exactly what the provider
+  app will read. Below it, the first opening — 15 minutes, an hour or the rest of the day — with none
+  picked in advance. The rest of the day ends at midnight, and no opening outlasts the share.
+- The share is kept in the vault before its codes are shown, so it can be stopped from the moment the
+  provider app might have it; *Stop, don't share this* stops it there and then.
+- Sharing lists each share — who, what, which days, when it ends — and each opening allowed, with
+  one still open shown as *Open on their screen now, until 3:40 PM*. *Stop sharing* asks first and says
+  what it cannot do: an opening already allowed stays open until its time is up, since the provider
+  app holds that opening's key. Until the sharing statement carries stops, it says the provider app
+  deletes its copy by the end date, which it does anyway.
 
 **How live shares work underneath:**
 

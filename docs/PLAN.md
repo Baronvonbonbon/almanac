@@ -239,9 +239,14 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
 - [x] `share/` — the provider-share formats (pairing code, share, request, approval, stop), used by
       both almanac and the provider app, with test vectors. In `app/src/share/` until `provider/`
       exists, then a workspace package of its own (2026-09-14)
-- [ ] almanac: *Share with a provider* — scan, check the name and six digits, choose categories,
-      dates and end date, preview, show the codes; *Allow* for 15 minutes, an hour or the rest of the
-      day; requests waiting when almanac opens; the shares listed in Privacy, each with *Stop sharing*
+- [x] almanac: *Share with a provider* — scan (or paste) their code, check the name and six digits,
+      choose categories, dates and end date, preview, pick the first opening, show the codes; the
+      shares listed in Privacy, each with its openings and *Stop sharing*. Loaded only when Sharing is
+      opened. Walked through 2026-09-15 in headless Chromium with a fake camera playing a provider's
+      code, and the codes shown were read back and opened with the provider's keys — exactly what the
+      preview showed
+- [ ] almanac: *Allow* for 15 minutes, an hour or the rest of the day, for requests waiting when
+      almanac opens — with the sharing statement, which carries the answers
 - [ ] `provider/` — the provider app, a Product of its own at `almanacappprovider.dot` (its first
       deploy registers the name, permanently): show a pairing code, read a share, view it with a countdown,
       forget it; ask to see it again; delete it at the end date or on *Stop sharing*

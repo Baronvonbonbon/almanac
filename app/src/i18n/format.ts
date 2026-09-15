@@ -6,8 +6,9 @@ const LOCALE = "en";
 const atNoonUtc = (date: ISODate) => new Date(toDay(date) * 86_400_000 + 43_200_000);
 const format = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(LOCALE, { ...options, timeZone: "UTC" });
 
-/** "Sep 25" */
-export const shortDate = (date: ISODate): string => format({ month: "short", day: "numeric" }).format(atNoonUtc(date));
+/** "Sep 25", or "Sep 25, 2026" */
+export const shortDate = (date: ISODate, withYear = false): string =>
+  format({ month: "short", day: "numeric", ...(withYear ? { year: "numeric" } : {}) }).format(atNoonUtc(date));
 
 /** "Thursday, September 25" */
 export const longDate = (date: ISODate): string =>
@@ -16,6 +17,9 @@ export const longDate = (date: ISODate): string =>
 /** A moment as a date on this phone's calendar: "Sep 14", or "Sep 14, 2026". */
 export const dateOf = (ms: number, withYear = false): string =>
   new Intl.DateTimeFormat(LOCALE, { month: "short", day: "numeric", ...(withYear ? { year: "numeric" } : {}) }).format(new Date(ms));
+
+/** A moment as a time on this phone's clock: "3:40 PM". */
+export const timeOf = (ms: number): string => new Intl.DateTimeFormat(LOCALE, { hour: "numeric", minute: "2-digit" }).format(new Date(ms));
 
 /** "September 2026"; `month` counts from 0. */
 export const monthTitle = (year: number, month: number): string =>

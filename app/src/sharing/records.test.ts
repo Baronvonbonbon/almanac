@@ -3,7 +3,8 @@ import { hex, utf8 } from "../lib/bytes";
 import { memoryHost } from "../platform";
 import { almanacPair, newKeyPair, newShare, pairingCode, readPairingCode } from "../share";
 import { Vault, type KdfParams } from "../vault";
-import { addShare, isLive, pruneShares, readShares, recordOpening, shareKeys, shareRecord, stopShare, type ShareChoice } from "./records";
+import { shareKeys } from "./keys";
+import { addShare, isLive, keptShares, openUntil, pruneShares, readShares, recordOpening, shareRecord, stopShare, type ShareChoice } from "./records";
 
 const FAST: KdfParams = { N: 2 ** 10, r: 8, p: 1 };
 const NOW = Date.UTC(2026, 8, 14, 9, 30);
@@ -59,6 +60,25 @@ describe("shares in the vault", () => {
     expect(await readShares(vault)).toHaveLength(1);
     await pruneShares(vault, NOW + 7 * DAY);
     expect(await readShares(vault)).toEqual([]);
+  });
+
+  it("are forgotten as almanac reads them, once past their end date", async () => {
+    const { vault, record } = await made();
+    const later = shareRecord(newShare(NOW + 30 * DAY, utf8("{}")), readPairingCode(pairingCode({ providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Riverside Midwives" })), CHOICE, NOW, NOW + 3600_000);
+    await addShare(vault, later);
+    expect(await keptShares(vault, NOW + DAY)).toEqual([record, later]);
+    expect(await keptShares(vault, NOW + 7 * DAY)).toEqual([later]);
+    // Gone from the vault too, keys and all — not only from what was shown.
+    expect(await readShares(vault)).toEqual([later]);
+  });
+
+  it("know while an opening is still open on the provider's screen — stopped or not", async () => {
+    const { vault, record } = await made();
+    expect(openUntil(record, NOW + 60_000)).toBe(NOW + 15 * 60_000);
+    expect(openUntil(record, NOW + 15 * 60_000)).toBeNull();
+    await stopShare(vault, record.id, NOW + 60_000);
+    // The provider app already has the key for this opening: stopping can't take it back.
+    expect(openUntil((await readShares(vault))[0], NOW + 2 * 60_000)).toBe(NOW + 15 * 60_000);
   });
 
   it("belong to the vault that made them: the decoy has none", async () => {
