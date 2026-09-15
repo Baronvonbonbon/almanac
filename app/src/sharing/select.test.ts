@@ -45,7 +45,9 @@ describe("what a share holds", () => {
       selectForShare(ENTRIES, everything, { ...defaultChoice(TODAY), categories }, TODAY).days["2026-08-02"];
     expect(only(["mood"])).toEqual({ mood: ["anxious"], energy: 2 });
     expect(only(["notes"])).toEqual({ note: "saw the midwife" });
-    expect(only(["ttc"])).toEqual({ fertility: { lhTest: "positive", temperatureC: 36.7 }, intimacy: { protected: false } });
+    expect(only(["ttc"])).toEqual({ fertility: { lhTest: "positive", temperatureC: 36.7 } });
+    // Sex is a category of its own: trying to conceive does not bring it along.
+    expect(only(["intimacy"])).toEqual({ intimacy: { protected: false } });
     expect(only(["periods"])).toBeUndefined();
   });
 
@@ -79,9 +81,18 @@ describe("what a share holds", () => {
     expect(selectForShare(ENTRIES, { ...everything, modes: { ...everything.modes, fertility: false } }, { ...all, categories: [...all.categories] }, TODAY).fertile).toBeUndefined();
   });
 
-  it("offers the modes' categories only when those modes are on", () => {
-    expect(offeredCategories(DEFAULT_SETTINGS)).toEqual(["periods", "symptoms", "mood", "notes"]);
-    expect(offeredCategories(everything)).toEqual(["periods", "symptoms", "mood", "notes", "fertileWindow", "ttc"]);
+  it("offers what was logged in the days chosen, even with its mode off now — and almanac's own reckoning only with its mode on", () => {
+    const sixMonths = { from: "2026-03-16", to: TODAY };
+    const always = ["periods", "symptoms", "mood", "notes"];
+    expect(offeredCategories([], DEFAULT_SETTINGS, sixMonths)).toEqual(always);
+    // Trying-to-conceive details and sex were logged on Aug 2; the mode is off now.
+    expect(offeredCategories(ENTRIES, DEFAULT_SETTINGS, sixMonths)).toEqual([...always, "ttc", "intimacy"]);
+    expect(offeredCategories(ENTRIES, DEFAULT_SETTINGS, { from: "2026-08-03", to: TODAY })).toEqual(always);
+    const sexOnly = [day("2026-09-01", { intimacy: {} })];
+    expect(offeredCategories(sexOnly, DEFAULT_SETTINGS, sixMonths)).toEqual([...always, "intimacy"]);
+    // With a mode on, its categories are offered whatever was logged.
+    expect(offeredCategories([], everything, sixMonths)).toEqual([...always, "fertileWindow", "ttc", "intimacy"]);
+    expect(offeredCategories(ENTRIES, { ...DEFAULT_SETTINGS, modes: { fertility: false, ttc: false, pregnancy: true } }, sixMonths)).toEqual([...always, "ttc", "intimacy", "pregnancy"]);
   });
 
   it("goes into a share and comes back out whole", async () => {

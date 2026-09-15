@@ -104,12 +104,17 @@ export function ShareFlow({
   ];
   const dateText = (d: ISODate) => (d === today ? t("common.today") : shortDate(d, true));
 
+  const offered = offeredCategories(data.entries, data.settings, choice);
+
   async function review() {
-    if (!choice.categories.length) return setError(t("sharing.choose.nothingChosen"));
+    // A category switched on for other days, then left behind by a change of dates, is not shared.
+    const chosen: ShareChoice = { ...choice, categories: choice.categories.filter((c) => offered.includes(c)) };
+    if (!chosen.categories.length) return setError(t("sharing.choose.nothingChosen"));
+    setChoice(chosen);
     setBusy(true);
     setError(null);
     try {
-      const selection = selectForShare(data.entries, data.settings, choice, today);
+      const selection = selectForShare(data.entries, data.settings, chosen, today);
       if (isEmpty(selection)) return setError(t("sharing.choose.nothingThere"));
       const payload = await encodeSelection(selection);
       if (payload.length > MAX_PAYLOAD) return setError(t("sharing.choose.tooMuch"));
@@ -244,7 +249,7 @@ export function ShareFlow({
           <section className="share-group" aria-labelledby="share-what">
             <h2 id="share-what">{t("sharing.choose.what")}</h2>
             <div className="toggles">
-              {offeredCategories(data.settings).map((c) => (
+              {offered.map((c) => (
                 <Toggle key={c} id={`share-${c}`} label={t(`sharing.categories.${c}`)} note={t(`sharing.categoryNotes.${c}`)} checked={choice.categories.includes(c)} onChange={toggle(c)} />
               ))}
             </div>

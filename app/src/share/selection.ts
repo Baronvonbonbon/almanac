@@ -7,7 +7,7 @@ import { ShareError } from "./errors";
  * share. Kept free of almanac's own types, since the provider app reads it too.
  */
 
-export const CATEGORIES = ["periods", "symptoms", "mood", "notes", "fertileWindow", "ttc", "pregnancy"] as const;
+export const CATEGORIES = ["periods", "symptoms", "mood", "notes", "fertileWindow", "ttc", "intimacy", "pregnancy"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 /** On in every new share: periods and symptoms. Everything more personal starts off. */

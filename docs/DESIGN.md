@@ -372,8 +372,13 @@ Once someone has seen your data, no technology can make them unsee it. So in alm
 | Mood | off |
 | Notes | off |
 | Fertility window | off |
-| Trying to conceive, intimacy | off |
+| Trying to conceive: ovulation tests, temperature, cervical fluid | off |
+| Sex | off |
 | Pregnancy | off |
+
+*Changed 2026-09-15: sex is a category of its own, apart from trying to conceive. What was logged is
+offered whenever the days chosen hold some, even with its mode off now; the fertile window and
+pregnancy, which almanac works out, only while their modes are on.*
 
 *Changed 2026-09-14: the timed link for a doctor on the web is replaced by the provider share — a
 provider app of their own, pairing in person, and the patient's approval for every opening.*
@@ -473,8 +478,11 @@ could have written down or photographed.* It heads the Sharing screen in Privacy
 - *Share with a provider* scans their code, or takes it pasted. A share's code, or anything else,
   is refused in words ("That isn't a provider's code"). The name and six digits come next, with *Yes,
   both are the same* or *No, something's different* — which goes back to scanning, saying why.
-- The choices start at the defaults above, over six months, ending in a week. Only the modes that are
-  on offer their categories. Days are three months, six, a year, everything, or any dates picked.
+- The choices start at the defaults above, over six months, ending in a week, each category a switch
+  of its own. What was logged is offered whenever the days chosen hold some — trying-to-conceive
+  details and sex even with that mode off now; the fertile window and pregnancy only while their
+  modes are on. A category switched on and then left behind by a change of dates is not shared. Days
+  are three months, six, a year, everything, or any dates picked.
 - The preview is drawn from the packed selection unpacked again, so it is exactly what the provider
   app will read. Below it, the first opening — 15 minutes, an hour or the rest of the day — with none
   picked in advance. The rest of the day ends at midnight, and no opening outlasts the share.

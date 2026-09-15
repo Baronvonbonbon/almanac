@@ -305,7 +305,8 @@ export const en = {
       mood: "Mood",
       notes: "Notes",
       fertileWindow: "Fertile window (estimate)",
-      ttc: "Trying to conceive, and sex",
+      ttc: "Trying to conceive",
+      intimacy: "Sex",
       pregnancy: "Pregnancy",
     },
     categoryNotes: {
@@ -314,7 +315,8 @@ export const en = {
       mood: "Your moods, day by day.",
       notes: "Your notes, word for word.",
       fertileWindow: "almanac's current estimate.",
-      ttc: "Ovulation tests, temperature, cervical fluid and sex.",
+      ttc: "Ovulation tests, temperature and cervical fluid.",
+      intimacy: "The days you logged sex, and whether it was protected.",
       pregnancy: "The day your weeks are counted from.",
     },
     scan: {

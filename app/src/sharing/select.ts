@@ -12,9 +12,26 @@ import type { ShareChoice } from "./records";
 /** A new share: periods and symptoms, over the last six months. Everything more personal starts off. */
 export const defaultChoice = (today: ISODate): ShareChoice => ({ categories: [...DEFAULT_CATEGORIES], from: addDays(today, -182), to: today });
 
-/** The categories worth offering: the modes' own only when those modes are on. */
-export const offeredCategories = (settings: Settings): Category[] =>
-  CATEGORIES.filter((c) => (c === "fertileWindow" ? settings.modes.fertility : c === "ttc" ? settings.modes.ttc : c === "pregnancy" ? settings.modes.pregnancy : true));
+/**
+ * The categories worth offering for the days chosen. What was logged is offered whenever those days
+ * hold some — trying-to-conceive details and sex even with that mode off now, since they may have been
+ * logged while it was on. The fertile window and pregnancy are almanac's own reckoning, which exists
+ * only while their modes are on.
+ */
+export function offeredCategories(entries: DayEntry[], settings: Settings, days: Pick<ShareChoice, "from" | "to">): Category[] {
+  const logged = (holds: (e: DayEntry) => boolean) => entries.some((e) => e.date >= days.from && e.date <= days.to && holds(e));
+  const offered: Record<Category, boolean> = {
+    periods: true,
+    symptoms: true,
+    mood: true,
+    notes: true,
+    fertileWindow: settings.modes.fertility,
+    ttc: settings.modes.ttc || logged((e) => !!e.fertility && Object.keys(e.fertility).length > 0),
+    intimacy: settings.modes.ttc || logged((e) => !!e.intimacy),
+    pregnancy: settings.modes.pregnancy,
+  };
+  return CATEGORIES.filter((c) => offered[c]);
+}
 
 // As in cycle/periods.ts: spotting alone neither starts a period nor keeps one going.
 const counts = (e: DayEntry) => e.flow === "light" || e.flow === "medium" || e.flow === "heavy";
@@ -33,7 +50,7 @@ export function selectForShare(entries: DayEntry[], settings: Settings, choice: 
     if (has("mood") && e.energy) day.energy = e.energy;
     if (has("notes") && e.note?.trim()) day.note = e.note.trim();
     if (has("ttc") && e.fertility && Object.keys(e.fertility).length) day.fertility = { ...e.fertility };
-    if (has("ttc") && e.intimacy) day.intimacy = { ...e.intimacy };
+    if (has("intimacy") && e.intimacy) day.intimacy = { ...e.intimacy };
     if (Object.keys(day).length) days[e.date] = day;
   }
 
