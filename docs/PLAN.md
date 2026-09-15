@@ -271,8 +271,10 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
       is gone from it
 - [ ] A later request reaches almanac; *Allow* opens it for the time chosen; after *Stop sharing*
       no request is answered, and the provider app deletes its copy
-- [ ] Nothing opens without an approval, and an approval opens only its own share — automated test
-- [ ] Sensitive categories are off in every new share — automated test
+- [x] Nothing opens without an approval, and an approval opens only its own share — automated test
+      (`app/src/share/share.test.ts`; the provider app's side in `provider/src/exchange.test.ts`)
+- [x] Sensitive categories are off in every new share — automated test
+      (`app/src/sharing/select.test.ts`: a new share holds periods and symptoms only)
 
 ## Phase 6 — Reminders, insights, health nudges ⬜
 
