@@ -22,6 +22,13 @@ export const en = {
     locked: "almanac is locked.",
     failed: "Something went wrong: {message}",
   },
+  qr: {
+    point: "Point the camera at the code on the other screen.",
+    part: "Code {n} of {of}",
+    noCamera: "almanac can't find a camera on this phone.",
+    denied: "almanac isn't allowed to use the camera. You can allow it for the Polkadot app in your phone's settings, then try again.",
+    unavailable: "The camera didn't start. Close almanac, open it again, and try once more.",
+  },
   common: {
     today: "Today",
     earlierMonth: "Earlier month",
