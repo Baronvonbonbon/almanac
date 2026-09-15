@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { addDays, type ISODate } from "../cycle";
 import { t } from "../i18n";
 import { dateOf, shortDate } from "../i18n/format";
+import type { Host } from "../platform";
 import { FlowBack, Heading, message } from "../protect/FlowParts";
 import { QrLoop, QrScanner } from "../qr";
 import {
@@ -23,6 +24,7 @@ import { DatePicker } from "../ui/DatePicker";
 import { Row } from "../ui/Row";
 import { Toggle } from "../ui/Toggle";
 import type { Vault } from "../vault";
+import { sendSharing } from "./outbox";
 import { addShare, shareRecord, stopShare, type ShareChoice } from "./records";
 import { defaultChoice, offeredCategories, selectForShare } from "./select";
 import { SelectionView } from "./SelectionView";
@@ -40,7 +42,21 @@ const isEmpty = (s: Selection) => !Object.keys(s.days).length && !s.cycles?.leng
  * digits against their screen, choose what to share, see exactly what they will, and pick how long this
  * first opening lasts — then the share, as a loop of codes for their app to read.
  */
-export function ShareFlow({ vault, data, onBack, onChanged, onDone }: { vault: Vault; data: CycleData; onBack(): void; onChanged(): void; onDone(notice: string): void }) {
+export function ShareFlow({
+  vault,
+  host,
+  data,
+  onBack,
+  onChanged,
+  onDone,
+}: {
+  vault: Vault;
+  host: Host;
+  data: CycleData;
+  onBack(): void;
+  onChanged(): void;
+  onDone(notice: string): void;
+}) {
   const today = data.today;
   const [step, setStep] = useState<Step>("scan");
   const [pairing, setPairing] = useState<(Pairing & { check: string }) | null>(null);
@@ -133,8 +149,13 @@ export function ShareFlow({ vault, data, onBack, onChanged, onDone }: { vault: V
     setBusy(true);
     try {
       await stopShare(vault, shown!.id, Date.now());
+      // Stopped here whatever happens next; telling their app can wait for a connection.
+      const sent = await sendSharing(host, vault).then(
+        () => true,
+        () => false,
+      );
       onChanged();
-      onDone(t("sharing.stop.done", { name }));
+      onDone(t(sent ? "sharing.stop.done" : "sharing.stop.doneLater", { name }));
     } catch (e) {
       setError(message(e));
       setBusy(false);

@@ -1,0 +1,12 @@
+/* A provider app's request, on Today: edged in the accent, since it waits on an answer. */
+.home-request {
+  border-color: var(--accent);
+}
+.home-request-actions {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.home-request-actions .link-button {
+  justify-self: center;
+}

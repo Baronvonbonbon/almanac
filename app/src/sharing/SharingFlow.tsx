@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { t } from "../i18n";
 import { dateOf, timeOf } from "../i18n/format";
+import type { Host } from "../platform";
 import { FlowBack, Heading, message } from "../protect/FlowParts";
 import type { CycleData } from "../shell/useCycle";
 import { Row } from "../ui/Row";
 import type { Vault } from "../vault";
+import { sendSharing } from "./outbox";
 import { isLive, openUntil, stopShare, type ShareRecord } from "./records";
 import { categoriesText, rangeText } from "./SelectionView";
 import { ShareFlow, spaced } from "./ShareFlow";
@@ -17,7 +19,21 @@ type View = { at: "list" } | { at: "new" } | { at: "one" | "stop"; id: string };
  * Privacy's Sharing (docs/DESIGN.md §9): what almanac can promise, a new share with a provider, and the
  * shares made — each with the openings allowed, and Stop sharing.
  */
-export function SharingFlow({ vault, data, onBack, onChanged, onNotice }: { vault: Vault; data: CycleData; onBack(): void; onChanged(): void; onNotice(message: string): void }) {
+export function SharingFlow({
+  vault,
+  host,
+  data,
+  onBack,
+  onChanged,
+  onNotice,
+}: {
+  vault: Vault;
+  host: Host;
+  data: CycleData;
+  onBack(): void;
+  onChanged(): void;
+  onNotice(message: string): void;
+}) {
   const [view, setView] = useState<View>({ at: "list" });
   const toList = () => setView({ at: "list" });
   const now = Date.now();
@@ -27,6 +43,7 @@ export function SharingFlow({ vault, data, onBack, onChanged, onNotice }: { vaul
     return (
       <ShareFlow
         vault={vault}
+        host={host}
         data={data}
         onBack={toList}
         onChanged={onChanged}
@@ -43,12 +60,13 @@ export function SharingFlow({ vault, data, onBack, onChanged, onNotice }: { vaul
     return (
       <StopSharing
         vault={vault}
+        host={host}
         record={record}
         now={now}
         onBack={() => setView({ at: "one", id: record.id })}
-        onStopped={() => {
+        onStopped={(sent) => {
           onChanged();
-          onNotice(t("sharing.stop.done", { name: record.provider.name }));
+          onNotice(t(sent ? "sharing.stop.done" : "sharing.stop.doneLater", { name: record.provider.name }));
           toList();
         }}
       />
@@ -136,7 +154,22 @@ function OneShare({ record: r, now, onBack, onStop }: { record: ShareRecord; now
   );
 }
 
-function StopSharing({ vault, record: r, now, onBack, onStopped }: { vault: Vault; record: ShareRecord; now: number; onBack(): void; onStopped(): void }) {
+function StopSharing({
+  vault,
+  host,
+  record: r,
+  now,
+  onBack,
+  onStopped,
+}: {
+  vault: Vault;
+  host: Host;
+  record: ShareRecord;
+  now: number;
+  onBack(): void;
+  /** `sent` is false when the stop couldn't go out yet: it goes the next time almanac opens. */
+  onStopped(sent: boolean): void;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const open = openUntil(r, now);
@@ -146,11 +179,18 @@ function StopSharing({ vault, record: r, now, onBack, onStopped }: { vault: Vaul
     setError(null);
     try {
       await stopShare(vault, r.id, Date.now());
-      onStopped();
     } catch (e) {
       setError(message(e));
       setBusy(false);
+      return;
     }
+    // Stopped here whatever happens next: the key is gone. Telling their app can wait for a connection.
+    onStopped(
+      await sendSharing(host, vault).then(
+        () => true,
+        () => false,
+      ),
+    );
   }
 
   return (

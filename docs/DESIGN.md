@@ -439,8 +439,8 @@ an opening     the provider app makes a key E for each request; the answer carri
 |---|---|---|---|
 | Pairing code | provider app → almanac | a code on screen | about 100 bytes |
 | Share, with the first approval | almanac → provider app | a short loop of codes; WebRTC after P13; Bulletin after P6 | padded to 2, 4, 8 or 16 KiB |
-| Request | provider app → almanac | the provider app's one requests statement | about 100 bytes |
-| Approval, or stop | almanac → provider app | almanac's one sharing statement, replaced each time | about 170 bytes; three fit |
+| Request | provider app → almanac | the provider app's one requests statement | 93 bytes; five fit |
+| Approval, or stop | almanac → provider app | almanac's one sharing statement, replaced each time | 125 bytes; four fit |
 
 - **The statement budget.** almanac keeps one sharing statement — approvals and stops for every
   provider, always padded to 512 bytes, and later the live-share outbox pointer — and one backup
@@ -483,8 +483,21 @@ could have written down or photographed.* It heads the Sharing screen in Privacy
 - Sharing lists each share — who, what, which days, when it ends — and each opening allowed, with
   one still open shown as *Open on their screen now, until 3:40 PM*. *Stop sharing* asks first and says
   what it cannot do: an opening already allowed stays open until its time is up, since the provider
-  app holds that opening's key. Until the sharing statement carries stops, it says the provider app
-  deletes its copy by the end date, which it does anyway.
+  app holds that opening's key. It says almanac tells the provider app to delete its copy, and that
+  the app deletes it by the end date anyway.
+- *Allow* (built 2026-09-15). While almanac is open it listens on the request topic of each share it
+  can still allow; a subscription hands over the requests already waiting as it opens (P9). A waiting
+  request shows on Today — *Dr Okafor asks to see what you shared. Asked 3 hours ago.* — with the
+  three lengths, none picked in advance, and *Not now*. Several asks for one share wait as one. Either
+  answer is kept with the share (the last 32 requests' keys), so a request still sitting in the
+  provider app's statement is not asked about again; the provider app can always ask anew.
+- The sharing statement holds an approval for each opening asked for that is still open, then a stop
+  for each share stopped before its end date — the newest of each first, four at most. It is sealed
+  afresh and sent whole on every change, living 90 days, with the statement allowance asked for once
+  a session before the first. If four open approvals fill it, a stop waits until they end; that share
+  cannot be opened meanwhile. A change that could not go out stays due, and goes the next time
+  almanac opens. Stopping takes effect at once either way: the share's key is gone.
+- The listening and the statement load only when there are shares (7 KiB).
 
 **How live shares work underneath:**
 

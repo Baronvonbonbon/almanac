@@ -1,6 +1,6 @@
 import { deriveKey } from "@parity/product-sdk-crypto";
-import { utf8 } from "../lib/bytes";
-import type { Host, Storage } from "./host";
+import { hex, utf8 } from "../lib/bytes";
+import type { Host, StatementPort, Storage } from "./host";
 
 /** Storage in a Map. It can also list its contents, which tests use to inspect the raw store. */
 export class MemoryStorage implements Storage {
@@ -28,17 +28,67 @@ export class MemoryStorage implements Storage {
   }
 }
 
+interface Held {
+  topics: string[];
+  data: Uint8Array;
+  expires: number;
+}
+
+/**
+ * A statement store in memory, behaving as P9 found the real one does: a statement replaces its
+ * account's earlier one on the same channel, and a listener hears what is held already, then what
+ * arrives — a moment later, as the real one delivers. Each account publishes through a port of its own.
+ */
+export class MemoryStatements {
+  private readonly held = new Map<string, Held>();
+  private readonly listeners = new Set<{ topics: string[]; heard(data: Uint8Array): void }>();
+
+  constructor(private readonly now: () => number = Date.now) {}
+
+  port(account: string): StatementPort {
+    return {
+      publish: async ({ channel, topics, data, expires }) => {
+        if (topics.length > 4) throw new Error("a statement has at most four topics");
+        const statement = { topics: topics.map(hex), data: data.slice(), expires };
+        this.held.set(`${account} ${hex(channel)}`, statement);
+        for (const listener of this.listeners) if (matches(listener.topics, statement)) this.tell(listener, statement.data);
+      },
+      listen: (topics, heard) => {
+        const listener = { topics: topics.map(hex), heard };
+        this.listeners.add(listener);
+        for (const statement of this.held.values()) if (statement.expires > this.now() && matches(listener.topics, statement)) this.tell(listener, statement.data);
+        return () => void this.listeners.delete(listener);
+      },
+    };
+  }
+
+  /** What an account holds on a channel, for tests to look at. */
+  heldBy(account: string, channel: Uint8Array): Held | undefined {
+    return this.held.get(`${account} ${hex(channel)}`);
+  }
+
+  private tell(listener: { heard(data: Uint8Array): void }, data: Uint8Array) {
+    queueMicrotask(() => {
+      if (this.listeners.has(listener as never)) listener.heard(data.slice());
+    });
+  }
+}
+
+const matches = (topics: string[], statement: Held) => statement.topics.some((t) => topics.includes(t));
+
 export type MemoryHost = Host & { storage: MemoryStorage };
 
 /**
  * A host with no Polkadot app behind it. `seed` stands in for the account the real host derives
  * entropy from: the same seed gives the same entropy, as the real host does across restarts. Pass an
- * existing `storage` to model the same phone opened by a different account.
+ * existing `storage` to model the same phone opened by a different account, and `statements` to give
+ * it a statement store — the web tryout has none.
  */
-export function memoryHost(seed = "almanac-dev", storage = new MemoryStorage()): MemoryHost {
+export function memoryHost(seed = "almanac-dev", storage = new MemoryStorage(), statements?: StatementPort): MemoryHost {
   return {
     kind: "memory",
     storage,
+    ...(statements ? { statements } : {}),
     async deriveEntropy(input) {
       return deriveKey(utf8(seed), "almanac/memory-host", input);
     },

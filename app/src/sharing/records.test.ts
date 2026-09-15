@@ -4,7 +4,7 @@ import { memoryHost } from "../platform";
 import { almanacPair, newKeyPair, newShare, pairingCode, readPairingCode } from "../share";
 import { Vault, type KdfParams } from "../vault";
 import { shareKeys } from "./keys";
-import { addShare, isLive, keptShares, openUntil, pruneShares, readShares, recordOpening, shareRecord, stopShare, type ShareChoice } from "./records";
+import { addShare, answerRequests, isLive, keptShares, openUntil, pruneShares, readShares, shareRecord, stopShare, type ShareChoice } from "./records";
 
 const FAST: KdfParams = { N: 2 ** 10, r: 8, p: 1 };
 const NOW = Date.UTC(2026, 8, 14, 9, 30);
@@ -48,18 +48,30 @@ describe("shares in the vault", () => {
     expect(kept.secret).toBe(record.secret);
   });
 
-  it("note each opening for the sharing history, and go altogether at the end date", async () => {
+  it("note each opening allowed for the sharing history, and go altogether at the end date", async () => {
     const { vault, record } = await made();
-    await recordOpening(vault, record.id, NOW + 2 * DAY, NOW + 2 * DAY + 3600_000);
-    expect((await readShares(vault))[0].openings).toEqual([
+    await answerRequests(vault, record.id, ["k0", "k1"], { at: NOW + 2 * DAY, until: NOW + 2 * DAY + 3600_000, key: "k1" });
+    const [kept] = await readShares(vault);
+    expect(kept.openings).toEqual([
       { at: NOW, until: NOW + 15 * 60_000 },
-      { at: NOW + 2 * DAY, until: NOW + 2 * DAY + 3600_000 },
+      { at: NOW + 2 * DAY, until: NOW + 2 * DAY + 3600_000, key: "k1" },
     ]);
-    expect(isLive((await readShares(vault))[0], NOW + 7 * DAY)).toBe(false);
+    expect(kept.answered).toEqual(["k0", "k1"]);
+    expect(isLive(kept, NOW + 7 * DAY)).toBe(false);
     await pruneShares(vault, NOW + 6 * DAY);
     expect(await readShares(vault)).toHaveLength(1);
     await pruneShares(vault, NOW + 7 * DAY);
     expect(await readShares(vault)).toEqual([]);
+  });
+
+  it("remember the last 32 requests answered, allowed or not, so none is asked about twice", async () => {
+    const { vault, record } = await made();
+    for (let i = 0; i < 40; i++) await answerRequests(vault, record.id, [`k${i}`]);
+    const [kept] = await readShares(vault);
+    expect(kept.answered).toHaveLength(32);
+    expect([kept.answered![0], kept.answered!.at(-1)]).toEqual(["k8", "k39"]);
+    // "Not now" allows nothing.
+    expect(kept.openings).toHaveLength(1);
   });
 
   it("are forgotten as almanac reads them, once past their end date", async () => {

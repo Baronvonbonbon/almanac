@@ -86,7 +86,7 @@ export function SettingsView({
   if (flow === "pin") return <PinFlow vault={vault} host={host} hasPin={data.privacy.pin} onFinish={finish} onBack={leave} />;
   if (flow === "duress") return <DuressFlow vault={vault} host={host} data={data} onFinish={finish} onBack={leave} onPin={() => setFlow("pin")} />;
   if (flow === "backup") return <BackupFlow vault={vault} host={host} data={data} onBack={leave} onChanged={onChanged} onNotice={onNotice} />;
-  if (flow === "sharing") return <SharingFlow vault={vault} data={data} onBack={leave} onChanged={onChanged} onNotice={onNotice} />;
+  if (flow === "sharing") return <SharingFlow vault={vault} host={host} data={data} onBack={leave} onChanged={onChanged} onNotice={onNotice} />;
   if (flow === "erase") return <EraseConfirm host={host} onErased={onErased} onCancel={leave} />;
 
   // Once almanac has these from what was logged, the usual lengths no longer change its guesses — and it says so.

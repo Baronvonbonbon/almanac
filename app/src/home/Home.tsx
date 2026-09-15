@@ -3,23 +3,28 @@ import { CycleGraphic } from "../cycle-graphic/CycleGraphic";
 import { t } from "../i18n";
 import { summary } from "../log/entry";
 import { useLook } from "../look";
+import { RequestCard } from "../sharing/RequestCard";
+import type { Opening } from "../sharing/times";
+import type { ShareRequest } from "../sharing/useShareRequests";
 import type { CycleData } from "../shell/useCycle";
 import { homeText } from "./text";
 import "./home.css";
 
 /**
- * docs/DESIGN.md §3: one cycle graphic and one button. Below it, once three days are logged and until
- * a backup is copied, the offer of one — and in the web tryout, until a few cycles are logged, an
- * offer of example months.
+ * docs/DESIGN.md §3: one cycle graphic and one button. Below it, a provider app's request waiting for
+ * an answer (§9); once three days are logged and until a backup is copied, the offer of one; and in
+ * the web tryout, until a few cycles are logged, an offer of example months.
  */
 export function Home({
   data,
   onLog,
+  request,
   onBackup,
   examples,
 }: {
   data: CycleData;
   onLog(date: ISODate): void;
+  request?: { request: ShareRequest; busy: boolean; onAnswer(opening: Opening | null): void } | null;
   onBackup?: (() => void) | null;
   examples?: { busy: boolean; onAdd(): void } | null;
 }) {
@@ -49,6 +54,7 @@ export function Home({
       <button type="button" className="button home-log" onClick={() => onLog(today)}>
         {logged ? t("home.editToday") : t("home.logToday")}
       </button>
+      {request && <RequestCard key={request.request.key} {...request} />}
       {onBackup && (
         <aside className="home-card" aria-labelledby="home-backup-title">
           <h2 id="home-backup-title">{t("backup.offerTitle")}</h2>

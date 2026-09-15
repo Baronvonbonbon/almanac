@@ -245,12 +245,17 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
       opened. Walked through 2026-09-15 in headless Chromium with a fake camera playing a provider's
       code, and the codes shown were read back and opened with the provider's keys — exactly what the
       preview showed
-- [ ] almanac: *Allow* for 15 minutes, an hour or the rest of the day, for requests waiting when
-      almanac opens — with the sharing statement, which carries the answers
+- [x] almanac: *Allow* for 15 minutes, an hour or the rest of the day, or *Not now*, for requests
+      waiting when almanac opens and arriving while it is open — on Today. Built 2026-09-15 on a
+      statement port in the host (the SDK's statement store in the Polkadot app; one in memory for
+      tests), and walked through over a stub SDK: a provider app's request, made from the share's own
+      codes, answered from Today, and the approval opened the share on the provider's side
 - [ ] `provider/` — the provider app, a Product of its own at `almanacappprovider.dot` (its first
       deploy registers the name, permanently): show a pairing code, read a share, view it with a countdown,
       forget it; ask to see it again; delete it at the end date or on *Stop sharing*
-- [ ] The sharing statement: approvals and stops for every provider, at one fixed size
+- [x] The sharing statement: approvals and stops for every provider, at one fixed size, sent again
+      on every change and kept due until it goes (2026-09-15). On a phone, it waits for the provider
+      app, and for P9b and P9c — delivery between two phones
 - [ ] Bulletin rails with the one-time notice, switched off until P6 works
 - [ ] WebRTC at the visit, if P13 shows it works
 - [ ] Then: the visit summary (copied as text), and live shares for family or a partner

@@ -30,11 +30,17 @@ export interface ShareRecord {
   /** Opens what was shared. Gone once the share stops. */
   shareKey?: string;
   stopped?: number;
-  /** Each opening allowed, and until when: the sharing history in Privacy. */
-  openings: { at: number; until: number }[];
+  /**
+   * Each opening allowed, and until when: the sharing history in Privacy. `key` is the one the
+   * provider app asked with — absent for the first, which went with the share.
+   */
+  openings: { at: number; until: number; key?: string }[];
+  /** The keys of requests answered, allowed or not — the last 32 — so none is asked about twice. */
+  answered?: string[];
 }
 
 const SHARES = "shares";
+const ANSWERED_KEPT = 32;
 
 export const readShares = async (vault: Vault): Promise<ShareRecord[]> => (await vault.readJSON<ShareRecord[]>(SHARES)) ?? [];
 
@@ -63,9 +69,16 @@ export const stopShare = (vault: Vault, id: string, now: number): Promise<void> 
     return next;
   });
 
-/** Notes an opening the patient allowed, for the sharing history. */
-export const recordOpening = (vault: Vault, id: string, at: number, until: number): Promise<void> =>
-  change(vault, id, (r) => ({ ...r, openings: [...r.openings, { at, until }] }));
+/**
+ * Answers the provider app's requests to open a share: with the opening allowed, or with none for
+ * "Not now". Either way they are not asked about again; the provider app can always ask anew.
+ */
+export const answerRequests = (vault: Vault, id: string, keys: string[], opening?: { at: number; until: number; key: string }): Promise<void> =>
+  change(vault, id, (r) => ({
+    ...r,
+    openings: opening ? [...r.openings, opening] : r.openings,
+    answered: [...(r.answered ?? []).filter((k) => !keys.includes(k)), ...keys].slice(-ANSWERED_KEPT),
+  }));
 
 /** Forgets shares past their end date, keys and all. */
 export const pruneShares = (vault: Vault, now: number): Promise<void> => vault.updateJSON<ShareRecord[]>(SHARES, (all) => (all ?? []).filter((r) => r.ends > now));

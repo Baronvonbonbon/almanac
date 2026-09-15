@@ -4,11 +4,15 @@ import type { DayEntry, ISODate } from "../cycle";
 import { saveDay, updateSettings, type Settings } from "../data";
 import { Home } from "../home/Home";
 import { t } from "../i18n";
+import { timeOf } from "../i18n/format";
 import { InsightsView } from "../insights/InsightsView";
 import { LogSheet } from "../log/LogSheet";
 import type { Host } from "../platform";
 import type { PrivacyFlow } from "../protect/PrivacySection";
 import { SettingsView } from "../settings/SettingsView";
+import type { ShareRecord } from "../sharing/records";
+import type { Opening } from "../sharing/times";
+import { useShareRequests, type ShareRequest } from "../sharing/useShareRequests";
 import { exampleDays } from "../tryout/examples";
 import { Toast } from "../ui/Toast";
 import type { Vault } from "../vault";
@@ -20,6 +24,7 @@ type Tab = (typeof TABS)[number];
 
 /** docs/DESIGN.md §3: the backup code is offered once this many days have been logged. */
 const BACKUP_AFTER_DAYS = 3;
+const NO_SHARES: ShareRecord[] = [];
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -31,11 +36,14 @@ export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault;
   const [toast, setToast] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [examples, setExamples] = useState<"offered" | "adding" | "added">("offered");
+  const [answering, setAnswering] = useState(false);
+  const [answerFailed, setAnswerFailed] = useState<string | null>(null);
   const settingsButton = useRef<HTMLButtonElement>(null);
   const cycle = useCycle(vault);
   const clearToast = useCallback(() => setToast(null), []);
   const data = cycle.data;
   const settingsOpen = settings !== false;
+  const requests = useShareRequests(vault, host, data?.privacy.shares ?? NO_SHARES);
 
   async function save(entry: DayEntry) {
     await saveDay(vault, entry);
@@ -51,6 +59,21 @@ export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault;
   function closeSettings() {
     setSettings(false);
     settingsButton.current?.focus();
+  }
+
+  // docs/DESIGN.md §9: a provider app's request, answered from Today.
+  async function answer(request: ShareRequest, opening: Opening | null) {
+    setAnswering(true);
+    setAnswerFailed(null);
+    try {
+      const until = await requests.answer(request, opening);
+      if (until) setToast(t("sharing.ask.allowed", { name: request.name, time: timeOf(until) }));
+    } catch (e) {
+      setAnswerFailed(t("sharing.ask.failed", { message: message(e) }));
+    } finally {
+      setAnswering(false);
+      cycle.reload();
+    }
   }
 
   // The web tryout only: example months, so a tester can see the calendar and insights filled in.
@@ -70,6 +93,7 @@ export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault;
   }
   const offerExamples = tryout && examples !== "added" && data?.prediction.status !== "ready" && !data?.settings.modes.pregnancy;
   const offerBackup = !!data && data.entries.length >= BACKUP_AFTER_DAYS && !data.privacy.backup?.copiedAt;
+  const request = requests.waiting[0];
 
   return (
     <div className="shell">
@@ -90,6 +114,7 @@ export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault;
       <main className="shell-main">
         {cycle.error && <p role="alert">{t("app.failed", { message: cycle.error })}</p>}
         {failure && <p role="alert">{t("app.failed", { message: failure })}</p>}
+        {answerFailed && <p role="alert">{answerFailed}</p>}
         {!data && !cycle.error && <p className="shell-soon">{t("app.starting")}</p>}
         {data && settingsOpen && (
           <SettingsView
@@ -110,6 +135,7 @@ export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault;
           <Home
             data={data}
             onLog={setEditing}
+            request={request ? { request, busy: answering, onAnswer: (opening) => void answer(request, opening) } : null}
             onBackup={offerBackup ? () => setSettings("backup") : null}
             examples={offerExamples ? { busy: examples === "adding", onAdd: () => void addExamples() } : null}
           />
