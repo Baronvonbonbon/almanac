@@ -7,7 +7,8 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-const DIST = resolve(import.meta.dirname, "../dist");
+// app/dist, or the dist/ named — the provider app's (provider/package.json), which keeps the same promise.
+const DIST = process.argv[2] ? resolve(process.argv[2]) : resolve(import.meta.dirname, "../dist");
 
 // Code and fonts have separate budgets (docs/DESIGN.md §4). The code index.html loads runs on every
 // open, so it has a budget of its own; code loaded only when a screen needs it — the QR reader, on a

@@ -1,4 +1,4 @@
-// The one place the published identity is written down, shared by app/ and probe/.
+// The one place the published identities are written down, shared by app/, probe/ and provider/.
 //
 // PRODUCT_ID must equal the DotNS label. The host derives product accounts and the local-storage
 // namespace from it, and allowances are looked up per product. If the two drift apart, every host
@@ -13,6 +13,11 @@
 // and refused it for a NoStatus signer on 2026-09-11. A base of 9+ letters is open to any account.
 export const PRODUCT_ID = "almanacapp";
 export const DOT_NAME = `${PRODUCT_ID}.dot`;
+
+// The provider app (docs/DESIGN.md §9) is a Product of its own, so its storage, product accounts and
+// statement allowance are apart from almanac's. Decided 2026-09-15; its first deploy registers it.
+export const PROVIDER_ID = "almanacappprovider";
+export const PROVIDER_DOT_NAME = `${PROVIDER_ID}.dot`;
 
 // Must equal the --env passed to pad. The SDK defaults cloud storage to "paseo", which a devnet host
 // build does not carry — createApp then throws "Chain … is not supported by the current host".

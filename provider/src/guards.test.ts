@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { BANNED } from "@app/i18n/banned";
 import { allMessages } from "./i18n";
-import { BANNED } from "./i18n/banned";
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {
@@ -17,9 +17,7 @@ describe("guards", () => {
     expect(hits).toEqual([]);
   });
 
-  it("never asks for the user's global Polkadot username", () => {
-    // It is readable by every Product and identical across all of them (docs/THREAT-MODEL.md). The
-    // SDK bundles the function itself, so this reads almanac's source rather than dist/.
+  it("never asks for the provider's global Polkadot username", () => {
     const needle = ["get", "User", "Id"].join("");
     const self = resolve(import.meta.dirname, "guards.test.ts");
     const hits = sourceFiles(resolve(import.meta.dirname))

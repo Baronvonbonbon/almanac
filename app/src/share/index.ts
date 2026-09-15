@@ -1,7 +1,7 @@
 /**
  * Provider shares (docs/DESIGN.md §9): the formats almanac and the provider app exchange, and the keys
- * behind them. Pure — no host, no vault, no screen — so the provider app can use the same code. It
- * moves to a workspace package of its own once `provider/` exists.
+ * behind them. Pure — no host, no vault, no screen — so the provider app (provider/) imports this
+ * very code, as "@app/share", and the two can never disagree about a format.
  */
 export { ShareError, type ShareProblem } from "./errors";
 export { FRAME_BYTES, FRAME_PREFIX, joinFrames, readFrame, toFrames, type Frame } from "./frames";

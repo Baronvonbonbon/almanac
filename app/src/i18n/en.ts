@@ -25,9 +25,9 @@ export const en = {
   qr: {
     point: "Point the camera at the code on the other screen.",
     part: "Code {n} of {of}",
-    noCamera: "almanac can't find a camera on this phone.",
-    denied: "almanac isn't allowed to use the camera. You can allow it for the Polkadot app in your phone's settings, then try again.",
-    unavailable: "The camera didn't start. Close almanac, open it again, and try once more.",
+    noCamera: "There's no camera on this phone that the app can use.",
+    denied: "The camera isn't allowed. You can allow it for the Polkadot app in your phone's settings, then try again.",
+    unavailable: "The camera didn't start. Close the app, open it again, and try once more.",
   },
   common: {
     today: "Today",

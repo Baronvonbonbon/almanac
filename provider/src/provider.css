@@ -1,0 +1,29 @@
+/* The provider app (provider/): almanac's shared styles — imported from app/src — and a few of its own. */
+@import "@app/shell/shell.css";
+@import "@app/settings/settings.css";
+@import "@app/sharing/sharing.css";
+
+.patient-status {
+  font-weight: 700;
+}
+
+/* The pairing code, as large as the screen allows: the patient's phone reads it from across a desk. */
+.pairing-code {
+  display: grid;
+  justify-items: center;
+}
+.pairing-code .qr {
+  width: min(100%, 21rem);
+}
+
+.scan-progress {
+  min-height: 1.5em;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.viewer-left {
+  font: 600 1.5rem/1.2 var(--body);
+  font-variant-numeric: tabular-nums;
+}

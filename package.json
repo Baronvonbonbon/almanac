@@ -4,10 +4,11 @@
   "license": "GPL-3.0-or-later",
   "workspaces": [
     "probe",
-    "app"
+    "app",
+    "provider"
   ],
   "scripts": {
-    "check": "npm run check -w app && npm run build -w probe && node tools/deploy-key.mjs --check",
+    "check": "npm run check -w app && npm run check -w provider && npm run build -w probe && node tools/deploy-key.mjs --check",
     "whois": "node tools/whois.mjs",
     "retention": "node tools/retention.mjs",
     "deploy-key": "node tools/deploy-key.mjs",

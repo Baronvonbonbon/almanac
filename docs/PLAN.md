@@ -237,8 +237,9 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
 
 **Produces**
 - [x] `share/` — the provider-share formats (pairing code, share, request, approval, stop), used by
-      both almanac and the provider app, with test vectors. In `app/src/share/` until `provider/`
-      exists, then a workspace package of its own (2026-09-14)
+      both almanac and the provider app, with test vectors (2026-09-14). In `app/src/share/`, which
+      the provider app imports as it is, as `@app/share`: decided 2026-09-15, instead of a workspace
+      package of its own
 - [x] almanac: *Share with a provider* — scan (or paste) their code, check the name and six digits,
       choose categories, dates and end date, preview, pick the first opening, show the codes; the
       shares listed in Privacy, each with its openings and *Stop sharing*. Loaded only when Sharing is
@@ -250,12 +251,17 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
       statement port in the host (the SDK's statement store in the Polkadot app; one in memory for
       tests), and walked through over a stub SDK: a provider app's request, made from the share's own
       codes, answered from Today, and the approval opened the share on the provider's side
-- [ ] `provider/` — the provider app, a Product of its own at `almanacappprovider.dot` (its first
-      deploy registers the name, permanently): show a pairing code, read a share, view it with a countdown,
-      forget it; ask to see it again; delete it at the end date or on *Stop sharing*
+- [x] `provider/` — the provider app, a Product of its own at `almanacappprovider.dot`: show a
+      pairing code, read a share, view it with a countdown, forget it; ask to see it again; delete it
+      at the end date or on *Stop sharing*. Built 2026-09-15, and walked through, light and dark, over
+      a stub SDK against almanac's own code. Its code was read off the screen and scanned; almanac's
+      six codes were read by a fake camera in about 2 s. The share closed when the first opening
+      ended; a request was answered with *Allow*; locking closed the opening; *Stop sharing* deleted
+      the patient; and a forgotten PIN started it again. Not yet on a phone, and its name is not
+      registered: its first deploy, `npm run deploy -w provider`, registers it, permanently
 - [x] The sharing statement: approvals and stops for every provider, at one fixed size, sent again
       on every change and kept due until it goes (2026-09-15). On a phone, it waits for the provider
-      app, and for P9b and P9c — delivery between two phones
+      app to be published, and for P9b and P9c — delivery between two phones
 - [ ] Bulletin rails with the one-time notice, switched off until P6 works
 - [ ] WebRTC at the visit, if P13 shows it works
 - [ ] Then: the visit summary (copied as text), and live shares for family or a partner

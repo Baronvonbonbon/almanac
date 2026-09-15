@@ -1,6 +1,6 @@
-// Publish app/ or probe/ to the product's .dot name with pad.
+// Publish app/, probe/ or provider/ to its product's .dot name with pad.
 //
-// Usage, from the repo root:  npm run deploy -w app   or   npm run deploy -w probe
+// Usage, from the repo root:  npm run deploy -w app,  npm run deploy -w probe  or  npm run deploy -w provider
 // Each workspace checks or builds first, then runs this from its own directory.
 //
 // Interactive on purpose. Once the name is owned, re-linking it needs a phone signature and pad reads
@@ -15,21 +15,30 @@ import { randomInt } from "node:crypto";
 import { readdirSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
-import { CLOUD_ENV, DOT_NAME } from "../product.mjs";
+import { CLOUD_ENV, DOT_NAME, PROVIDER_DOT_NAME } from "../product.mjs";
 import { KEY_FILE, accountOf, readKey } from "./deploy-key.mjs";
 
 const PAD = "@polkadot-community-foundation/polkadot-app-deploy@0.16.1";
 const repo = resolve(import.meta.dirname, "..");
 
-// Per workspace: what dist/ is built from (besides ../product.mjs, which both read), a check that must
-// pass on the built dist/ whatever way this was started, and what to say before publishing.
+// Per workspace: what dist/ is built from (besides ../product.mjs, which all read), a check that must
+// pass on the built dist/ whatever way this was started, the name it goes to, and what to say first.
 const TARGETS = {
-  probe: { sources: ["src", "index.html", "product.mjs"] },
+  probe: { sources: ["src", "index.html", "product.mjs"], dotName: DOT_NAME, shared: true },
   app: {
     sources: ["src", "index.html"],
     // The promise of no external requests and the bundle budget, enforced at the last step too.
     verify: ["node", ["scripts/guard-dist.mjs"]],
+    dotName: DOT_NAME,
+    shared: true,
     note: "If the probe is published there now, export its reports first.",
+  },
+  provider: {
+    // It bundles almanac's own code for the share formats, the vault and the rest.
+    sources: ["src", "index.html", "../app/src"],
+    verify: ["node", ["../app/scripts/guard-dist.mjs", "dist"]],
+    dotName: PROVIDER_DOT_NAME,
+    note: "The provider app has a name of its own: nothing of almanac's is replaced.",
   },
 };
 
@@ -37,9 +46,10 @@ const root = process.cwd();
 const name = basename(root);
 const target = dirname(root) === repo ? TARGETS[name] : undefined;
 if (!target) {
-  console.error("refusing: run `npm run deploy -w app` or `npm run deploy -w probe` from the repo root");
+  console.error("refusing: run `npm run deploy -w app`, `-w probe` or `-w provider` from the repo root");
   process.exit(1);
 }
+const dotName = target.dotName;
 
 function newest(path) {
   const s = statSync(path);
@@ -106,16 +116,16 @@ const git = (...args) => spawnSync("git", args, { cwd: repo, encoding: "utf8" })
 const commit = git("rev-parse", "--short", "HEAD") || "an unknown commit";
 const dirty = git("status", "--porcelain") !== "";
 
-console.log(`\nThis publishes ${name}/dist — ${commit}${dirty ? ", plus uncommitted changes" : ""} — to ${DOT_NAME} on ${CLOUD_ENV}.`);
+console.log(`\nThis publishes ${name}/dist — ${commit}${dirty ? ", plus uncommitted changes" : ""} — to ${dotName} on ${CLOUD_ENV}.`);
 // app/ and probe/ share the name, and a name serves one bundle at a time. What each keeps on the phone
 // survives the swap: host storage belongs to the name, not the bundle, and their keys do not overlap.
-console.log(`${DOT_NAME} serves one bundle at a time, so this replaces whichever of the app or the probe is there now.`);
+if (target.shared) console.log(`${dotName} serves one bundle at a time, so this replaces whichever of the app or the probe is there now.`);
 if (target.note) console.log(target.note);
-console.log(`If ${DOT_NAME} is not yours yet, pad will REGISTER it — permanently.\n`);
+console.log(`If ${dotName} is not yours yet, pad will REGISTER it — permanently.\n`);
 const rl = createInterface({ input: process.stdin, output: process.stdout });
-const typed = (await rl.question(`Type ${DOT_NAME} to continue: `)).trim();
+const typed = (await rl.question(`Type ${dotName} to continue: `)).trim();
 rl.close();
-if (typed !== DOT_NAME) {
+if (typed !== dotName) {
   console.error("aborted");
   process.exit(1);
 }
@@ -135,7 +145,7 @@ async function deployWithKey(mnemonic) {
   const uploader = pool[randomInt(pool.length)];
   console.log(`Upload signer: pad's pool account ${uploader.index} (${uploader.address})\n`);
   try {
-    const result = await deploy(join(root, "dist"), DOT_NAME, {
+    const result = await deploy(join(root, "dist"), dotName, {
       mnemonic,
       storageSigner: uploader.signer,
       storageSignerAddress: uploader.address,
@@ -156,7 +166,7 @@ if (key) process.exit(await deployWithKey(key));
 // No key: pad's CLI, signing with the login session. npx, not pnpm dlx: pad imports
 // @polkadot-api/json-rpc-provider without declaring it, which npm's flat node_modules satisfies and
 // pnpm's strict layout refuses.
-const r = spawnSync("npx", ["--yes", PAD, "./dist", DOT_NAME, "--env", CLOUD_ENV, "--js-merkle"], {
+const r = spawnSync("npx", ["--yes", PAD, "./dist", dotName, "--env", CLOUD_ENV, "--js-merkle"], {
   cwd: root,
   stdio: "inherit",
 });

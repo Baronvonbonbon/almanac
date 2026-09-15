@@ -161,7 +161,8 @@ Colours. Every text pair, in all six palettes, is checked to WCAG AA in Phase 2 
   640 KiB in all, counting code loaded only when a screen needs it (*raised 2026-09-15, for the QR
   reader*) — and a phone loads only the fonts of the look in use. Loaded only when needed: the QR
   reader (33 KiB, on a phone without its own) and the sharing screens with the share formats (34 KiB,
-  when Sharing is opened). *At 2026-09-15: 466 KiB at start, 538 KiB in all.*
+  when Sharing is opened). *At 2026-09-15: 472 KiB at start, 548 KiB in all. The provider app, under
+  the same budget: 446 KiB at start, 478 KiB in all.*
 - **Shape.** Generous space, one accent, hairline dividers; radii as in the table.
 - **Meaning is never colour alone.** Flow shows as fill level and a label; predictions use an
   outline; the fertile window uses a pattern.
@@ -437,8 +438,12 @@ an opening     the provider app makes a key E for each request; the answer carri
   A signature could: it would be evidence that someone sought care, which matters where cycle data
   has legal consequences. *Open question: if providers need a consent record they can show, the
   patient could choose to add a signature.*
-- **One opening, then forgotten.** The provider app keeps KS, E and the opened selection in memory
-  only, and drops them when the time is up, when the patient stops sharing, or when the app closes.
+- **One opening, then forgotten.** The provider app keeps KS and the opened selection in memory
+  only, and drops them when the time is up, when the patient stops sharing, or when the app locks or
+  closes. A request's key E waits in its vault, behind its PIN, until the request is answered or the
+  share ends, since the patient answers whenever they next open almanac. *Refined 2026-09-15,
+  building the provider app: E was to stay in memory too, which would have lost every answer that
+  came after the app closed.*
 
 | Message | From → to | Carried by | Size |
 |---|---|---|---|
@@ -455,9 +460,36 @@ an opening     the provider app makes a key E for each request; the answer carri
 - **What an observer sees:** statements of one size, under topics nobody else can compute, and when
   each was posted. That timing could suggest that a patient answered a provider (THREAT-MODEL R9).
 
-**The provider app — view only, then forget** (decided 2026-09-14). Until a share's end date it keeps
-the sealed selection, the pairing keys and a label the provider typed, all encrypted under its own
-device key — never the opened selection. No patient list beyond those labels, no export, no copy.
+**The provider app — view only, then forget** (decided 2026-09-14; built 2026-09-15 in `provider/`,
+a Product of its own at `almanacappprovider.dot`). Until a share's end date it keeps the sealed
+selection, the pairing keys, a waiting request's key and a label the provider typed, all in a vault
+like almanac's under its own device key — never KS or the opened selection. No patient list beyond
+those labels, no export, no copy.
+
+- It imports almanac's own code for the formats, the vault, the host, the codes and what a share
+  shows (`@app/…`), so the two apps cannot disagree about a format, and the provider sees a share
+  drawn by the same code as the patient's preview.
+- One clinician, one device. A 6-digit PIN, locking a minute after the app leaves the screen, as
+  almanac does. A forgotten PIN means erasing everything, and patients share again at their next
+  visit. No decoy PIN and no backup: nothing it holds outlives a share.
+- One look: Moonpaper, light or dark as the phone is.
+- Setup takes the provider's name as patients will see it (40 bytes at most, and nothing almanac
+  would refuse to show), then the PIN.
+- *New patient* takes an optional note to know them by, then shows the code as large as the screen
+  allows, with the name and the six digits. Then the camera reads almanac's codes, in any order,
+  counting them as it goes.
+- The share opens at once for the first opening, with a countdown. When the time is up, what it held
+  is gone from the screen.
+- *Ask to see it again* puts a request for that patient, with a new opening key, in the provider
+  app's one requests statement, replacing any earlier ask of theirs. A statement has four topics, so
+  it waits on four patients at most at once, and a fifth ask says so.
+- While open, it listens on each kept patient's answer topic, and hears answers that came while it
+  was closed. An approval opens the share only if it is for the request still waiting and its time
+  is not up. A stop deletes the patient, with a notice.
+- The tryout, outside the Polkadot app, keeps nothing: no PIN, and a share read at the visit is gone
+  when the page closes. Asking again needs the Polkadot app.
+- It keeps almanac's promise of no requests outside the app, under the same check and budget as
+  almanac.
 
 **Bulletin rails** — built, and switched off until P6 is fixed: the same sealed selection, padded
 and uploaded, so an updated share can reach the provider away from the visit. Before the first

@@ -4,7 +4,6 @@ import "./starting.css";
 
 /** When each message shows, in ms after the screen appears. The whole wait is at most HOST_WAIT_MS. */
 const STAGES = [0, 3000, 6500] as const;
-const MESSAGES = ["app.starting", "app.stillStarting", "app.slowStart"] as const;
 
 /** The 28 days of a usual cycle, round a circle, starting at the top. */
 const DAYS = Array.from({ length: 28 }, (_, i) => {
@@ -13,11 +12,17 @@ const DAYS = Array.from({ length: 28 }, (_, i) => {
 });
 
 /**
- * While almanac waits for the Polkadot app. It fades in after a moment, so a quick start shows
- * nothing; then a lit day goes round a ring of 28, and the words say what is happening, and, if the
- * wait runs long, what happens next.
+ * While almanac — or the provider app, with its own `name` and `messages` — waits for the Polkadot app.
+ * It fades in after a moment, so a quick start shows nothing; then a lit day goes round a ring of 28,
+ * and the words say what is happening, and, if the wait runs long, what happens next.
  */
-export function Starting() {
+export function Starting({
+  name = t("appName"),
+  messages = [t("app.starting"), t("app.stillStarting"), t("app.slowStart")],
+}: {
+  name?: string;
+  messages?: readonly [string, string, string];
+}) {
   const [stage, setStage] = useState(0);
   useEffect(() => {
     const timers = STAGES.slice(1).map((ms, i) => setTimeout(() => setStage(i + 1), ms));
@@ -30,9 +35,9 @@ export function Starting() {
           <circle key={i} cx={d.x} cy={d.y} r={3.2} style={{ "--i": i } as CSSProperties} />
         ))}
       </svg>
-      <p className="wordmark">{t("appName")}</p>
+      <p className="wordmark">{name}</p>
       <p className="starting-text" role="status">
-        {t(MESSAGES[stage])}
+        {messages[stage]}
       </p>
     </main>
   );
