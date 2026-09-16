@@ -1,6 +1,6 @@
 import type { Check } from "../types";
 import { gateway } from "./gateway";
-import { preimageSubmit, retention, uploadLadder } from "./bulletin";
+import { preimageLadder, preimageSubmit, retention, uploadLadder } from "./bulletin";
 import { camera, theme } from "./device";
 import { entropy } from "./entropy";
 import { EXPORT_CHECKS } from "./export";
@@ -21,6 +21,8 @@ export const CHECKS: Check[] = [
   deviceBackup,
   uploadLadder,
   preimageSubmit,
+  // After P6b: it reads the paying account P6b recorded, to measure what each upload costs.
+  preimageLadder,
   retention,
   statementLimits,
   send,

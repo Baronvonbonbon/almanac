@@ -233,15 +233,48 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
 
 ## Phase 4 — Encrypted Bulletin backups ⬜
 
-Depends on P6, P7, P8, P9.
+Depends on **P6c** (the size ladder, built 2026-09-16 and awaiting a device run), P7 (retention) and
+P9 (statement capacity). P6b proved the upload path at 256 bytes; the smallest bucket is 64× that, so
+nothing here is built until P6c has run on a phone.
+
+**What this is, and what it is not.** A Bulletin backup is a convenience layer over the copied
+backup, not the recovery path. Measured retention is about two weeks (P7), so it expires long before
+the failure it exists for — a phone lost and replaced months later. The copied backup stays the only
+backup that does not expire (DESIGN §8), and *restore from the backup code alone, on a new account*
+stays the gate. Nothing here may make recovery depend on an account or a device (R8).
 
 **Produces**
-- [ ] Scheduled, padded backups; the backup pointer statement; restore by backup code on a fresh
-      install; "Backed up 3 days ago" status
+- [ ] `app/src/backup/bulletin.ts` — upload a sealed backup through the host's own path,
+      `getPreimageManager().submit()` (P6b). Never `cloudStorage.upload`: it signs with the product
+      account, which holds no authorization, and is refused `Invalid: Payment` (P6)
+- [ ] The pointer — a statement on topic `TB` from `backupKeys().topic`, derived since Phase 3 and
+      still unused, on channel `H("almanac/backup")`, holding the CID and the time sealed under a key
+      from `KB`. Last-write-wins, so the newest pointer is the backup. Well under 512 bytes, at the
+      longest TTL P9 allows, and one of the two statements an account plans for (the other is the
+      sharing outbox)
+- [ ] Padding to the largest bucket P6c proves of 16 KiB, 64 KiB, 256 KiB, 1 MiB — and no larger, so
+      a backup that outgrows the proven bucket falls back to the copied backup rather than failing
+      silently
+- [ ] Schedule: on open, when the last backup is at least 5 days old, plus *Back up now*. Never on a
+      log, so neither timing nor size says how much was logged
+- [ ] Restore: backup code → `KB` and `TB` → newest pointer on `TB` → fetch the CID **through the
+      app** (BLAKE2b-256 only — the host's lookup finds nothing else, P7) → unwrap `BK` → decrypt.
+      No account, no device key, nothing but the code
+- [ ] The one-time notice before the first upload (DESIGN §8, R7): what goes to Bulletin, that nobody
+      can read it without the code, and that the copy may outlive the backup
+- [ ] Status wording: *Backed up 3 days ago*, and what P7's retention number means — *Backups stay
+      available while you open almanac at least once a week*
+- [ ] Quota failure is visible, not silent. Each upload spends a transaction and its bytes from the
+      slot account's claim (10 transactions / 4 MiB, expiring ~14 days, P6b). When there is not
+      enough left, almanac says so and leaves the copied backup's status untouched
 
 **Gate**
 - [ ] Reinstall → restore from the backup code alone, on a new account
 - [ ] Backup timing and size do not depend on how much was logged
+- [ ] A backup that cannot be paid for fails without moving the pointer, so the previous backup still
+      restores
+- [ ] A pointer written by the decoy vault is indistinguishable from the real one's (open question
+      below: whether the decoy backs up at all)
 
 ## Phase 5 — Sharing ⬜
 

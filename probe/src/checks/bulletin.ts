@@ -101,6 +101,38 @@ interface Payment {
   quota: string | null;
 }
 
+type BulletinApi = ReturnType<ReturnType<typeof createClient>["getUnsafeApi"]>;
+
+/** An account's Bulletin authorization as numbers, so one upload's cost can be read off two readings. */
+interface Quota {
+  transactions: number;
+  transactionsAllowance: number;
+  bytes: number;
+  bytesAllowance: number;
+  expiration: number;
+}
+
+async function quotaOf(api: BulletinApi, address: string): Promise<Quota | null> {
+  // The runtime API is untyped here, and the chain mixes the two: transaction counts come back as
+  // numbers, byte counts as bigints. Everything goes through Number().
+  const auth = (await withTimeout(api.apis.BulletinTransactionStorageApi.account_authorization(address), 30_000, "authorization")) as
+    | { extent: Record<string, bigint | number>; expiration: bigint | number }
+    | undefined;
+  if (!auth) return null;
+  return {
+    transactions: Number(auth.extent.transactions),
+    transactionsAllowance: Number(auth.extent.transactions_allowance),
+    bytes: Number(auth.extent.bytes),
+    bytesAllowance: Number(auth.extent.bytes_allowance),
+    expiration: Number(auth.expiration),
+  };
+}
+
+const quotaText = (q: Quota | null): string =>
+  q
+    ? `${q.transactions} of ${q.transactionsAllowance} transactions and ${q.bytes} of ${q.bytesAllowance} bytes used, expiring at block ${q.expiration}`
+    : "no authorization";
+
 /**
  * The account that signed extrinsic `index` in `block`.
  *
@@ -126,41 +158,36 @@ function signerOf(extrinsic: string): string | null {
  * had not moved yet when it looked (2026-09-16). So this asks the chain where the upload is, and
  * only then reads the payer.
  */
+async function paymentFor(
+  client: ReturnType<typeof createClient>,
+  api: BulletinApi,
+  contentHash: `0x${string}`,
+  deadline: number,
+): Promise<(Payment & { quotaNow: Quota | null }) | null> {
+  while (Date.now() < deadline) {
+    const at = (await withTimeout(
+      api.query.TransactionStorage.TransactionByContentHash.getValue(contentHash),
+      30_000,
+      "stored",
+    )) as [number, number] | undefined;
+    if (at) {
+      const [block, index] = at;
+      const hash = await client._request<string, [number]>("chain_getBlockHash", [block]);
+      const body = await client._request<{ block: { extrinsics: string[] } }, [string]>("chain_getBlock", [hash]);
+      const raw = body?.block?.extrinsics?.[index];
+      const signer = raw ? signerOf(raw) : null;
+      const quotaNow = signer ? await quotaOf(api, signer) : null;
+      return { block, signer, quota: signer ? quotaText(quotaNow) : null, quotaNow };
+    }
+    await new Promise((r) => setTimeout(r, 6_000)); // one Bulletin block
+  }
+  return null;
+}
+
 async function whoPaid(contentHash: `0x${string}`, ms: number): Promise<Payment | null> {
   const client = createClient(getWsProvider(BULLETIN_RPCS));
-  const deadline = Date.now() + ms;
   try {
-    const api = client.getUnsafeApi();
-    while (Date.now() < deadline) {
-      const at = (await withTimeout(
-        api.query.TransactionStorage.TransactionByContentHash.getValue(contentHash),
-        30_000,
-        "stored",
-      )) as [number, number] | undefined;
-      if (at) {
-        const [block, index] = at;
-        const hash = await client._request<string, [number]>("chain_getBlockHash", [block]);
-        const body = await client._request<{ block: { extrinsics: string[] } }, [string]>("chain_getBlock", [hash]);
-        const raw = body?.block?.extrinsics?.[index];
-        const signer = raw ? signerOf(raw) : null;
-        let quota: string | null = null;
-        if (signer) {
-          // The runtime API is untyped here, and the chain mixes the two: transaction counts come
-          // back as numbers, byte counts as bigints. Everything goes through Number().
-          const auth = (await withTimeout(
-            api.apis.BulletinTransactionStorageApi.account_authorization(signer),
-            30_000,
-            "authorization",
-          )) as { extent: Record<string, bigint | number>; expiration: bigint | number } | undefined;
-          quota = auth
-            ? `${Number(auth.extent.transactions)} of ${Number(auth.extent.transactions_allowance)} transactions and ${Number(auth.extent.bytes)} of ${Number(auth.extent.bytes_allowance)} bytes used, expiring at block ${Number(auth.expiration)}`
-            : "no authorization";
-        }
-        return { block, signer, quota };
-      }
-      await new Promise((r) => setTimeout(r, 6_000)); // one Bulletin block
-    }
-    return null;
+    return await paymentFor(client, client.getUnsafeApi(), contentHash, Date.now() + ms);
   } finally {
     client.destroy();
   }
@@ -293,6 +320,133 @@ export const preimageSubmit: Check = {
         payerQuota: paid?.quota ?? null,
       },
     };
+  },
+};
+
+/** DESIGN §8's padding buckets: the sizes a real backup is rounded up to. */
+const BUCKETS = [16, 64, 256, 1024].map((k) => k * 1024);
+
+export const preimageLadder: Check = {
+  id: "P6c",
+  title: "How large a backup can the host put on Bulletin?",
+  decides:
+    "DESIGN §8's padding buckets — which of 16 KiB, 64 KiB, 256 KiB and 1 MiB a backup may be, what each costs in quota, and whether the host splits one upload into several transactions.",
+  needsHost: true,
+  steps: [
+    "Run P6b first: it proves the path works at 256 bytes, grants PreimageSubmit, and records the paying account this check measures against.",
+    "This stores about 1.3 MiB in four uploads, out of a 4 MiB claim — it leaves room, but not much.",
+    "Each upload waits for a Bulletin block, so allow ten minutes. To stop earlier, type a size below.",
+  ],
+  input: { label: "Stop after this many KiB (optional)", placeholder: "1024" },
+  async run({ journal, input, log }) {
+    const allowance = await requestBulletinAllowance(log);
+    const permission = await withTimeout(requestPermission({ tag: "PreimageSubmit", value: undefined }), 120_000, "permission");
+    const permissionText = permission.ok ? (permission.value ? "granted" : "denied") : `unreadable — ${formatHostError(permission.error)}`;
+    log(`PreimageSubmit: ${permissionText}`);
+
+    const manager = await getPreimageManager();
+    if (!manager) return { status: "skip", summary: "The host offers no preimage manager to this product." };
+
+    const cap = Number(input.trim()) * 1024;
+    const sizes = BUCKETS.filter((b) => !(cap > 0) || b <= cap);
+    if (!sizes.length) return { status: "skip", summary: `Nothing to upload under ${input.trim()} KiB — the smallest bucket is ${kib(BUCKETS[0])}.` };
+
+    const client = createClient(getWsProvider(BULLETIN_RPCS));
+    const rows: Record<string, string> = {};
+    let largest = 0;
+    /** null until an upload's cost can be read: true if one upload cost more than one transaction. */
+    let splits: boolean | null = null;
+    let unindexed = false;
+
+    try {
+      const api = client.getUnsafeApi();
+
+      // The baseline. P6b recorded which account paid, so the first rung can be measured too rather
+      // than only the ones after it — the same trick P6 uses to find P9a's statement signer.
+      const known = journal.entries("P6b").at(-1)?.data?.payer;
+      let payer = typeof known === "string" ? known : null;
+      let last = payer ? await quotaOf(api, payer).catch(() => null) : null;
+      if (payer) log(`baseline for ${short(payer)}: ${quotaText(last)}`);
+
+      for (const size of sizes) {
+        // Encrypted random bytes under a key that is thrown away, the shape a real backup has: nothing
+        // readable ever leaves the phone. XChaCha adds 24 bytes of nonce and 16 of tag.
+        const payload = xchachaEncryptPacked(randomBytes(size - 40), randomBytes(32));
+        const t0 = performance.now();
+        let key: `0x${string}`;
+        try {
+          key = (await withTimeout(manager.submit(payload), 300_000, "submit")) as `0x${string}`;
+        } catch (e) {
+          // The first size that will not go up is the answer this check exists for.
+          rows[kib(size)] = `refused after ${since(t0)} ms — ${errText(e)}`;
+          log(`${kib(size)}: ${rows[kib(size)]}`);
+          break;
+        }
+        const ms = since(t0);
+        largest = size;
+
+        const digest = fromHex(key);
+        const isBlake2b = digest.length === 32 && hex(digest) === hex(blake2b(payload, { dkLen: 32 }));
+        const cid = isBlake2b ? CID.createV1(0x55, createDigest(0xb220, digest)).toString() : null;
+        // Recorded so P7 follows retention at the sizes a backup really is, not just at 256 bytes.
+        if (cid) await journal.addUpload({ cid, bytes: payload.length, at: Date.now(), build: __BUILD_ID__ });
+
+        const back = await lookupPreimage(manager, key, 120_000);
+        const identical = back?.length === payload.length && back.every((b, i) => b === payload[i]);
+
+        const paid = await paymentFor(client, api, key, Date.now() + 180_000).catch((e) => {
+          log(`${kib(size)}: payer unreadable — ${errText(e)}`);
+          return null;
+        });
+
+        let cost: string;
+        if (!paid) {
+          // TransactionByContentHash indexes whole transactions. An upload that never appears under
+          // its own content hash may have been split by the host into pieces with hashes of their own.
+          unindexed = true;
+          cost = "never appeared under its own content hash within 3 minutes — the host may have split it";
+        } else if (!paid.signer) {
+          cost = `stored in block ${paid.block} by an unsigned transaction, so no account paid`;
+        } else {
+          payer ??= paid.signer;
+          const now = paid.quotaNow;
+          if (now && last && paid.signer === payer) {
+            const tx = now.transactions - last.transactions;
+            const by = now.bytes - last.bytes;
+            cost = `block ${paid.block}, cost ${tx} transaction${tx === 1 ? "" : "s"} and ${by} bytes of quota`;
+            if (tx > 1) splits = true;
+            else if (splits === null) splits = false;
+          } else {
+            cost = `block ${paid.block}, paid by ${short(paid.signer)} — ${quotaText(now)}`;
+          }
+          last = now ?? last;
+        }
+
+        rows[kib(size)] = `stored in ${ms} ms, ${identical ? "identical bytes back" : back ? "DIFFERENT bytes back" : "not read back within 120 s"} — ${cost}`;
+        log(`${kib(size)}: ${rows[kib(size)]}`);
+      }
+
+      const headroom = last
+        ? `${last.transactionsAllowance - last.transactions} transactions and ${last.bytesAllowance - last.bytes} bytes left before block ${last.expiration}.`
+        : "";
+      const chunking = unindexed
+        ? " At least one upload never appeared under its own content hash, which is what splitting would look like."
+        : splits === null
+          ? ""
+          : splits
+            ? " The host splits one upload into several transactions."
+            : " One upload is one transaction, so the host does not split.";
+
+      return {
+        status: largest >= BUCKETS[BUCKETS.length - 1] ? "pass" : largest ? "info" : "fail",
+        summary: largest
+          ? `Stored up to ${kib(largest)}.${chunking} ${headroom}`.trim()
+          : `Not even ${kib(sizes[0])} went up. ${headroom}`.trim(),
+        data: { allowance, permission: permissionText, payer, results: rows, largest, splits, unindexed },
+      };
+    } finally {
+      client.destroy();
+    }
   },
 };
 

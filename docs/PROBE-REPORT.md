@@ -69,10 +69,14 @@ The Phase 0 gate needs every check on at least one Android and one iOS phone.
       2026-09-16 no longer waits on the app. The first check at 15 days or later falls on 2026-09-28
       for the older one
       and 2026-09-29 for the newer
-- [ ] P6b at the sizes a backup actually is — 16 KiB, 64 KiB, 256 KiB, 1 MiB (DESIGN §8's padding
-      buckets) — against 4 MiB a claim. P6b answered the question it was added for on 2026-09-16 at
-      256 bytes; what one upload may carry, whether the host chunks, and what happens when the quota
-      runs out mid-backup are all still unmeasured
+- [ ] **P6c** — the same path at the sizes a backup actually is: 16 KiB, 64 KiB, 256 KiB, 1 MiB
+      (DESIGN §8's padding buckets), about 1.3 MiB against a 4 MiB claim. Built 2026-09-16, not yet
+      run on a device. It measures each upload's cost against the account P6b recorded, so it answers
+      what one upload may carry, and whether the host splits one upload into several transactions —
+      either from the quota (more than one transaction charged) or from the upload never appearing
+      under its own content hash. It deliberately does **not** exhaust the quota: a spent claim blocks
+      real work for about 14 days, so it reports headroom instead. What happens when the quota runs
+      out mid-backup stays unmeasured by design
 - [ ] P9b and P9c on two phones
 - [ ] P10 in a phone browser, at `almanacprobe.dev-dot.li` — once the probe is published to its own
       name (2026-09-16: it has one, so this no longer waits for the app to give the label back)
