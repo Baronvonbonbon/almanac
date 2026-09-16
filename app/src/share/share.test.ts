@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { fromBase32, toBase32 } from "../lib/base32";
 import { fromHex, hex, text, utf8 } from "../lib/bytes";
 import { ShareError, type ShareProblem } from "./errors";
-import { almanacPair, checkDigits, keyPairFrom, newKeyPair, providerPair } from "./keys";
+import { almanacPair, checkDigits, keyPairFrom, newKeyPair, pairDigits, providerPair } from "./keys";
 import { ENTRY_BYTES, NO_CID, openEntry, openRequest, REQUEST_BYTES, sealApproval, sealRequest, sealStop, unmaskShareKey } from "./messages";
 import { newSigningKeyPair, signPairing } from "./attest";
 import { PAIRING_PREFIX, pairingCode, readPairingCode, verifyProvider } from "./pairing";
@@ -106,6 +106,26 @@ describe("whether to believe a provider's code", () => {
 
   it("says a registration has run out, which is not the same as never having had one", () => {
     expect(problem(() => believe(demoPairing(keys(), { expires: NOW - DAY })))).toBe("expired");
+  });
+});
+
+describe("the second check", () => {
+  it("is the same six digits on both screens, and not the digits on the provider's code", () => {
+    const { provider, bytes, share, pairing } = visit();
+    const mine = pairDigits(almanacPair(share.sender, pairing.providerKey));
+    const theirs = pairDigits(readShare(bytes, provider).pair);
+    expect(mine).toMatch(/^\d{6}$/);
+    expect(theirs).toBe(mine);
+    // The first check is over the provider's key alone, so it cannot catch almanac's own codes being
+    // swapped on the way back. These digits need both keys, which is the whole point of showing them.
+    expect(mine).not.toBe(pairing.check);
+  });
+
+  it("differs when the share came from somewhere else", () => {
+    const { provider, share, pairing } = visit();
+    const other = newShare(NOW + 7 * DAY, PAYLOAD);
+    const substituted = readShare(sealShare(other, pairing, NOW + 15 * MINUTE), provider);
+    expect(pairDigits(substituted.pair)).not.toBe(pairDigits(almanacPair(share.sender, pairing.providerKey)));
   });
 });
 

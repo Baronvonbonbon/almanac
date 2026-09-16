@@ -6,11 +6,13 @@ import type { Host } from "../platform";
 import { FlowBack, Heading, message } from "../protect/FlowParts";
 import { QrLoop, QrScanner } from "../qr";
 import {
+  almanacPair,
   CATEGORIES,
   decodeSelection,
   encodeSelection,
   MAX_PAYLOAD,
   newShare,
+  pairDigits,
   readPairingCode,
   REGISTRY_KEY,
   sealShare,
@@ -82,7 +84,7 @@ export function ShareFlow({
   const [picking, setPicking] = useState<"from" | "to" | null>(null);
   const [days, setDays] = useState<ShareDays>(DEFAULT_SHARE_DAYS);
   const [preview, setPreview] = useState<{ payload: Uint8Array; selection: Selection } | null>(null);
-  const [shown, setShown] = useState<{ id: string; codes: string[] } | null>(null);
+  const [shown, setShown] = useState<{ id: string; codes: string[]; check: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const earliest = data.entries[0]?.date ?? today;
@@ -161,7 +163,9 @@ export function ShareFlow({
       const record = shareRecord(share, pairing!, choice, now, until);
       await addShare(vault, record);
       onChanged();
-      setShown({ id: record.id, codes });
+      // The second check (share/keys.ts): over the pair key, which needs both phones' keys, so unlike
+      // the digits on the provider's code it catches almanac's own codes being substituted too.
+      setShown({ id: record.id, codes, check: pairDigits(almanacPair(share.sender, pairing!.providerKey)) });
       go("show");
     } catch (e) {
       setError(message(e));
@@ -361,6 +365,15 @@ export function ShareFlow({
           <Heading>{t("sharing.show.title")}</Heading>
           <p className="flow-note">{t("sharing.show.note")}</p>
           <QrLoop codes={shown.codes} label={t("sharing.show.codes", { name })} />
+          <section className="share-group" aria-labelledby="share-confirm">
+            <h2 id="share-confirm">{t("sharing.show.confirm")}</h2>
+            <div className="share-who">
+              <p className="share-digits" role="img" aria-label={t("sharing.show.confirmDigits", { digits: shown.check.split("").join(" ") })}>
+                {spaced(shown.check)}
+              </p>
+            </div>
+            <p className="flow-note">{t("sharing.show.confirmNote")}</p>
+          </section>
           {error && <p role="alert">{error}</p>}
           <div className="flow-actions">
             <button type="button" className="button" onClick={() => onDone(t("sharing.show.shared", { name }))}>

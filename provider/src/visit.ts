@@ -5,6 +5,7 @@ import {
   joinFrames,
   newKeyPair,
   openStored,
+  pairDigits,
   pairingCode,
   readFrame,
   readShare,
@@ -85,8 +86,14 @@ export interface Opening {
   until: number;
 }
 
-/** Reads a share at the visit: the patient to keep, and the first opening. Throws ShareError when it can't. */
-export function readVisit(bytes: Uint8Array, pairing: Pairing, label: string, now: number): { patient: Patient; opening: Opening } {
+/**
+ * Reads a share at the visit: the patient to keep, the first opening, and the six digits of the
+ * second check — over the pair key, which only exists once this app holds almanac's key and almanac
+ * holds this app's. Both screens show it, and they differ if anything came between them.
+ *
+ * Throws ShareError when it can't.
+ */
+export function readVisit(bytes: Uint8Array, pairing: Pairing, label: string, now: number): { patient: Patient; opening: Opening; check: string } {
   const received = readShare(bytes, pairing.provider);
   if (received.header.ends <= now) throw new ShareError("format", "a share that has ended");
   const shareKey = unmaskShareKey(received.firstApproval, pairing.firstOpening, received.header.senderKey);
@@ -103,6 +110,7 @@ export function readVisit(bytes: Uint8Array, pairing: Pairing, label: string, no
       stored: hex(received.stored),
     },
     opening: { shareKey, until: received.firstApproval.until },
+    check: pairDigits(received.pair),
   };
 }
 

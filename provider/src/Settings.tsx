@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { dateOf } from "@app/i18n/format";
 import type { Host } from "@app/platform";
 import { FlowBack, Heading } from "@app/protect/FlowParts";
 import { PinPad } from "@app/protect/PinPad";
@@ -7,7 +8,25 @@ import { Row } from "@app/ui/Row";
 import type { Vault } from "@app/vault";
 import { ConfirmErase } from "./ConfirmErase";
 import { t } from "./i18n";
-import { nameProblem, writeMe, type Me } from "./me";
+import { meAttestation, nameProblem, writeMe, type Me } from "./me";
+
+/**
+ * What the registry vouched for, in words. Shown rather than hidden because a clinic should be able
+ * to see a lapse coming: a run-out registration stops new patients pairing, and the only place that
+ * is visible before it bites is here.
+ */
+function registrationText(me: Me, now: number): string {
+  let tier: string;
+  let expires: number;
+  try {
+    const attestation = meAttestation(me);
+    tier = t(attestation.tier === "licensed" ? "settings.registrationLicensed" : "settings.registrationFree");
+    expires = attestation.expires;
+  } catch {
+    return t("settings.registrationUnreadable");
+  }
+  return expires <= now ? t("settings.registrationRanOut", { tier, date: dateOf(expires) }) : t("settings.registrationUntil", { tier, date: dateOf(expires) });
+}
 
 type Step = "list" | "current" | "new" | "again" | "erase";
 
@@ -136,6 +155,12 @@ export function Settings({
           {t("settings.save")}
         </button>
       </form>
+      <div className="settings-group">
+        <span className="row-text">
+          <span className="row-label">{t("settings.registration")}</span>
+          <span className="row-value">{registrationText(me, Date.now())}</span>
+        </span>
+      </div>
       <div className="rows">
         {!tryout && vault.locked && <Row label={t("settings.changePin")} value="" onClick={() => setStep("current")} />}
         <Row label={t("settings.erase")} value={t("settings.eraseNote")} onClick={() => setStep("erase")} />

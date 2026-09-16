@@ -368,6 +368,10 @@ export const en = {
       title: "Let their app scan these codes",
       note: "Hold your phone up to their camera, with the screen bright. The codes take turns until their app has them all.",
       codes: "Codes for {name}'s app to scan",
+      confirm: "Then check six digits again",
+      confirmNote:
+        "Once their app has read your codes, it shows six digits — worked out from both phones' keys, so they differ if anything came between you. Check they match before you leave.",
+      confirmDigits: "Six digits: {digits}",
       done: "Their app has it",
       shared: "Shared with {name}",
       cancel: "Stop, don't share this",

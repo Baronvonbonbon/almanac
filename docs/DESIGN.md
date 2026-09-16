@@ -435,8 +435,11 @@ an opening     the provider app makes a key E for each request; the answer carri
   swapped for another, and nothing else. Once almanac has made the share and the provider app has
   read it, both hold both keys, and six more digits come from the pair key itself: the same on both
   screens unless something came between them, in either direction. The first is scanned at the
-  start, the second compared at the end. *Added 2026-09-16 to the formats (`pairDigits`); the
-  screens do not show the second one yet.*
+  start, the second compared at the end: almanac shows it beside the codes it is displaying
+  (`sharing/ShareFlow.tsx`), and the provider app shows it once it has read them — **before anything
+  is kept** (`provider/src/NewPatient.tsx`). A provider app whose digits differ keeps no patient and
+  no opening; the patient is asked to share again. *Added 2026-09-16 to the formats (`pairDigits`)
+  and to both screens.*
 - **The provider gets the sealed selection at once, but not KS.** Only an approval carries it,
   sealed to that opening's key. The first approval comes with the share, for E0 — a key of its own
   rather than P, which the provider app keeps to ask again — so it opens nothing once that first

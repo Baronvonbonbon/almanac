@@ -8,7 +8,7 @@ import type { Me } from "./me";
 import type { Patient } from "./patients";
 import { CodeCollector, newPairing, readVisit, type Opening } from "./visit";
 
-type Step = "label" | "code" | "scan";
+type Step = "label" | "code" | "scan" | "confirm";
 
 const problemText = (e: unknown): string =>
   e instanceof ShareError
@@ -23,8 +23,11 @@ const problemText = (e: unknown): string =>
 
 /**
  * A new patient, at the visit (docs/DESIGN.md §9): a note to know them by, the code made for them —
- * with the six digits their phone shows too — then the camera, reading the share almanac shows back.
- * The pairing is made when this screen opens and lives only as long as it does.
+ * with the six digits their phone shows too — then the camera, reading the share almanac shows back,
+ * and a second six digits once both phones hold each other's keys.
+ *
+ * The pairing is made when this screen opens and lives only as long as it does. Nothing is kept until
+ * the second check passes: a share that came from somewhere else should leave nothing behind.
  */
 export function NewPatient({ me, onBack, onRead }: { me: Me; onBack(): void; onRead(patient: Patient, opening: Opening): Promise<void> }) {
   const [step, setStep] = useState<Step>("label");
@@ -33,6 +36,7 @@ export function NewPatient({ me, onBack, onRead }: { me: Me; onBack(): void; onR
   const collector = useRef(new CodeCollector());
   const [progress, setProgress] = useState<{ read: number; of: number } | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [read, setRead] = useState<{ patient: Patient; opening: Opening; check: string } | null>(null);
   const [done, setDone] = useState(false);
 
   function heard(code: string) {
@@ -51,17 +55,33 @@ export function NewPatient({ me, onBack, onRead }: { me: Me; onBack(): void; onR
       return;
     }
     try {
-      const read = readVisit(result.bytes, pairing, label, Date.now());
+      setRead(readVisit(result.bytes, pairing, label, Date.now()));
       setDone(true);
-      void onRead(read.patient, read.opening).catch((e: unknown) => {
-        setDone(false);
-        setProblem(problemText(e));
-      });
+      setProblem(null);
+      setStep("confirm");
     } catch (e) {
       collector.current = new CodeCollector();
       setProgress(null);
       setProblem(e instanceof ShareError && e.message === "a share that has ended" ? t("newPatient.ended") : problemText(e));
     }
+  }
+
+  function keep() {
+    if (!read) return;
+    void onRead(read.patient, read.opening).catch((e: unknown) => {
+      setDone(false);
+      setProblem(problemText(e));
+    });
+  }
+
+  /** The digits differed: keep nothing, and start the whole exchange again from the code. */
+  function startOver() {
+    collector.current = new CodeCollector();
+    setRead(null);
+    setDone(false);
+    setProgress(null);
+    setProblem(t("newPatient.confirmNoMatchNote"));
+    setStep("code");
   }
 
   return (
@@ -107,6 +127,7 @@ export function NewPatient({ me, onBack, onRead }: { me: Me; onBack(): void; onR
             </p>
           </div>
           <p className="flow-note">{t("newPatient.codeNote")}</p>
+          {problem && <p role="alert">{problem}</p>}
           <div className="flow-actions">
             <button type="button" className="button" onClick={() => setStep("scan")}>
               {t("newPatient.ready")}
@@ -125,6 +146,27 @@ export function NewPatient({ me, onBack, onRead }: { me: Me; onBack(): void; onR
             {progress ? t("newPatient.progress", { n: progress.read, of: progress.of }) : ""}
           </p>
           {problem && <p role="alert">{problem}</p>}
+        </>
+      )}
+
+      {step === "confirm" && read && (
+        <>
+          <Heading>{t("newPatient.confirmTitle")}</Heading>
+          <div className="share-who">
+            <p className="share-digits" role="img" aria-label={t("newPatient.confirmDigits", { digits: read.check.split("").join(" ") })}>
+              {spaced(read.check)}
+            </p>
+          </div>
+          <p className="flow-note">{t("newPatient.confirmNote")}</p>
+          {problem && <p role="alert">{problem}</p>}
+          <div className="flow-actions">
+            <button type="button" className="button" onClick={keep}>
+              {t("newPatient.confirmMatch")}
+            </button>
+            <button type="button" className="button secondary" onClick={startOver}>
+              {t("newPatient.confirmNoMatch")}
+            </button>
+          </div>
         </>
       )}
     </section>

@@ -262,6 +262,12 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
 - [x] The sharing statement: approvals and stops for every provider, at one fixed size, sent again
       on every change and kept due until it goes (2026-09-15). On a phone, it waits for the provider
       app to be published, and for P9b and P9c — delivery between two phones
+- [x] The second check, on both screens (2026-09-16): six digits from the pair key, which exists only
+      once each side holds the other's key — so unlike the digits on the provider's code, they catch
+      almanac's own codes being substituted on the way back. almanac shows them beside the codes it is
+      displaying; the provider app shows them after reading and keeps nothing until they are confirmed
+- [x] The provider app's settings say what the registry vouched for — free or licensed, and until when
+      — so a clinic can see a lapse coming instead of meeting it at a visit (2026-09-16)
 - [ ] Bulletin rails with the one-time notice. Unblocked 2026-09-16 (P6b): upload through the host's
       preimage call, not `cloudStorage.upload`. A fresh `KS` for each upload, the CID in the approval
       that opens it (three openings a statement, not four), and the pairing still in person only —
