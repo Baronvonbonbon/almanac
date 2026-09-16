@@ -1,7 +1,7 @@
 import { concatBytes, randomBytes, xchachaDecryptPacked, xchachaEncryptPacked } from "@parity/product-sdk-crypto";
 import { ShareError } from "./errors";
 import { almanacPair, newKeyPair, providerPair, type KeyPair, type PairKeys } from "./keys";
-import { ENTRY_BYTES, openEntry, sealApproval, type Approval } from "./messages";
+import { ENTRY_BYTES, NO_CID, openEntry, sealApproval, type Approval } from "./messages";
 import type { Pairing } from "./pairing";
 import { equal, getU32, ID_BYTES, KEY_BYTES, KIND, putU32, SEAL_OVERHEAD, seconds, VERSION } from "./wire";
 
@@ -60,7 +60,8 @@ export function sealShare(share: NewShare, pairing: Pairing, until: number): Uin
   plain.set(header);
   putU32(plain, HEADER, share.payload.length);
   plain.set(share.payload, HEADER + 4);
-  const approval = sealApproval(almanacPair(share.sender, pairing.providerKey), share.sender, share.id, pairing.firstOpeningKey, until, share.shareKey);
+  // NO_CID: at the visit the payload is in this very share, carried by codes — there is no blob yet.
+  const approval = sealApproval(almanacPair(share.sender, pairing.providerKey), share.sender, share.id, pairing.firstOpeningKey, until, share.shareKey, NO_CID);
   return concatBytes(header, approval, xchachaEncryptPacked(plain, share.shareKey));
 }
 

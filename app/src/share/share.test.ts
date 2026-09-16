@@ -3,7 +3,7 @@ import { fromBase32, toBase32 } from "../lib/base32";
 import { fromHex, hex, text, utf8 } from "../lib/bytes";
 import { ShareError, type ShareProblem } from "./errors";
 import { almanacPair, checkDigits, keyPairFrom, newKeyPair, providerPair } from "./keys";
-import { ENTRY_BYTES, openEntry, openRequest, REQUEST_BYTES, sealApproval, sealRequest, sealStop, unmaskShareKey } from "./messages";
+import { ENTRY_BYTES, NO_CID, openEntry, openRequest, REQUEST_BYTES, sealApproval, sealRequest, sealStop, unmaskShareKey } from "./messages";
 import { PAIRING_PREFIX, pairingCode, readPairingCode } from "./pairing";
 import { MAX_PAYLOAD, newShare, openStored, readShare, sealShare, SHARE_BUCKETS } from "./share";
 import vectors from "./vectors.json";
@@ -144,6 +144,23 @@ describe("a share", () => {
     expect(openEntry(readB.pair, forA)).toBeNull();
   });
 
+  it("names the blob an opening is for, and names none where the share went by codes", () => {
+    const { share, pairing, provider, bytes } = visit();
+    const almanac = almanacPair(share.sender, pairing.providerKey);
+    const read = readShare(bytes, provider);
+    // At the visit the payload is in the share itself: there is no blob to name.
+    expect(hex(read.firstApproval.cid)).toBe(hex(NO_CID));
+
+    // On the rails every upload has a CID, and the approval that opens it carries that one.
+    const opening = newKeyPair();
+    const cid = new Uint8Array(32).fill(7);
+    const entry = openEntry(read.pair, sealApproval(almanac, share.sender, share.id, opening.publicKey, NOW + MINUTE, share.shareKey, cid));
+    if (entry?.kind !== "approval") throw new Error("expected an approval");
+    expect(hex(entry.cid)).toBe(hex(cid));
+    expect(hex(unmaskShareKey(entry, opening, read.header.senderKey))).toBe(hex(share.shareKey));
+    expect(problem(() => sealApproval(almanac, share.sender, share.id, opening.publicKey, NOW, share.shareKey, new Uint8Array(31)))).toBe("format");
+  });
+
   it("does not open once changed on the way", () => {
     const { bytes, provider, first } = visit();
     const opened = (changed: Uint8Array) => {
@@ -167,7 +184,7 @@ describe("requests, approvals and stops", () => {
     expect(stop.length).toBe(ENTRY_BYTES);
     expect(sealApproval(almanac, share.sender, share.id, newKeyPair().publicKey, NOW, share.shareKey).length).toBe(ENTRY_BYTES);
     expect(sealRequest(providerPair(provider, share.sender.publicKey), share.id, newKeyPair().publicKey, NOW).length).toBe(REQUEST_BYTES);
-    expect([ENTRY_BYTES, REQUEST_BYTES]).toEqual([125, 93]);
+    expect([ENTRY_BYTES, REQUEST_BYTES]).toEqual([157, 93]);
     expect(openEntry(providerPair(provider, share.sender.publicKey), stop)).toMatchObject({ kind: "stop", at: NOW });
   });
 

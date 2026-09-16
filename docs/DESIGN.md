@@ -425,10 +425,18 @@ provider app   P    X25519 key pair, new for each pairing           (its public 
                E0   X25519 key pair for the first opening           (in the code too; dropped when it ends)
 almanac        S    X25519 key pair, new for each share             (its public half is in the share)
                KS   random 32 bytes per share; seals the selection  (XChaCha20-Poly1305)
-pair key       X25519(S, P) ──HKDF──►  the request and answer topics, and the keys that seal them
+pair key       X25519(S, P) ──HKDF──►  the request and answer topics, the keys that seal them,
+                                       and the six digits of the second check
 an opening     the provider app makes a key E for each request; the answer carries KS sealed to E
 ```
 
+- **Two checks, not one.** The six digits on the provider's code are of their pairing key alone —
+  all either side knows while that code is still the only thing exchanged — so they catch a code
+  swapped for another, and nothing else. Once almanac has made the share and the provider app has
+  read it, both hold both keys, and six more digits come from the pair key itself: the same on both
+  screens unless something came between them, in either direction. The first is scanned at the
+  start, the second compared at the end. *Added 2026-09-16 to the formats (`pairDigits`); the
+  screens do not show the second one yet.*
 - **The provider gets the sealed selection at once, but not KS.** Only an approval carries it,
   sealed to that opening's key. The first approval comes with the share, for E0 — a key of its own
   rather than P, which the provider app keeps to ask again — so it opens nothing once that first

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fromBase32, toBase32 } from "../lib/base32";
 import { fromHex, hex } from "../lib/bytes";
-import { checkDigits, dh, keyPairFrom, openingMask, pairKeys } from "./keys";
+import { checkDigits, dh, keyPairFrom, openingMask, pairDigits, pairKeys } from "./keys";
 import { pairingCode, readPairingCode } from "./pairing";
 import { REQUESTS_CHANNEL, SHARING_CHANNEL } from "./statement";
 import vectors from "./vectors.json";
@@ -26,6 +26,10 @@ describe("share keys", () => {
     expect(hex(pair.requestTopic)).toBe(v.requestTopic);
     expect(hex(pair.answerTopic)).toBe(v.answerTopic);
     expect(checkDigits(provider.publicKey)).toBe(v.check);
+    // The second check, once both sides hold both keys: over the pair key, not the provider's alone.
+    expect(hex(pair.confirm)).toBe(v.confirm);
+    expect(pairDigits(pair)).toBe(v.pairCheck);
+    expect(pairDigits(pair)).not.toBe(checkDigits(provider.publicKey));
 
     const openingShared = dh(sender.secretKey, opening.publicKey);
     expect(hex(openingShared)).toBe(v.openingShared);

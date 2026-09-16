@@ -36,6 +36,11 @@ export interface PairKeys {
   requestTopic: Uint8Array;
   /** The topic almanac's answers go out on, which the provider app listens to. */
   answerTopic: Uint8Array;
+  /**
+   * What the six digits of the second check are made from — see {@link pairDigits}. Both sides can
+   * work it out only once each holds the other's key, which is what makes it worth comparing.
+   */
+  confirm: Uint8Array;
 }
 
 /** From the shared secret and both public keys: each side derives the same, and nobody else can. */
@@ -46,6 +51,7 @@ export function pairKeys(shared: Uint8Array, senderKey: Uint8Array, providerKey:
     toAlmanac: deriveKey(ikm, SALT, "share/to-almanac"),
     requestTopic: deriveKey(ikm, SALT, "share/request-topic"),
     answerTopic: deriveKey(ikm, SALT, "share/answer-topic"),
+    confirm: deriveKey(ikm, SALT, "share/confirm"),
   };
 }
 
@@ -60,6 +66,22 @@ export const providerPair = (provider: KeyPair, senderKey: Uint8Array): PairKeys
 /** Six digits from the provider's key, shown on both screens: a swapped code shows others. */
 export function checkDigits(providerKey: Uint8Array): string {
   const h = deriveKey(providerKey, SALT, "share/check");
+  return digits(h);
+}
+
+/**
+ * Six digits from the pair key, for the second check — after the provider app has read the share.
+ *
+ * The first check ({@link checkDigits}) is over the provider's key alone, because that is all either
+ * side knows while the provider's code is still on screen: it catches a code swapped for another,
+ * and nothing else. Once almanac has made its share and the provider app has read it, both hold both
+ * keys, and these digits are of the pair key — so they differ if anything came between them, whether
+ * the provider's code was substituted or almanac's codes were. Same on both screens or the share is
+ * not the one that was made. *Added 2026-09-16.*
+ */
+export const pairDigits = (pair: PairKeys): string => digits(pair.confirm);
+
+function digits(h: Uint8Array): string {
   const n = ((h[0] << 24) | (h[1] << 16) | (h[2] << 8) | h[3]) >>> 0;
   return String(n % 1_000_000).padStart(6, "0");
 }

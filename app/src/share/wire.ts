@@ -4,6 +4,8 @@ export const VERSION = 1;
 export const KIND = { pairing: 1, share: 2, approval: 3, request: 4, stop: 5 } as const;
 export const ID_BYTES = 16;
 export const KEY_BYTES = 32;
+/** A blob's content hash on Bulletin: the 32 bytes a BLAKE2b-256 CID carries, without its prefix. */
+export const CID_BYTES = 32;
 /** A nonce and a tag: what XChaCha20-Poly1305 adds to what it seals. */
 export const SEAL_OVERHEAD = 24 + 16;
 

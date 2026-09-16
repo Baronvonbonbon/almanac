@@ -1,13 +1,13 @@
 import { fromHex, hex } from "../lib/bytes";
 import type { Host } from "../platform";
-import { almanacPair, APPROVAL_SLOTS, ENTRY_BYTES, packSlots, sealApproval, sealStop, SHARING_CHANNEL, topicsFor } from "../share";
+import { almanacPair, APPROVAL_SLOTS, ENTRY_BYTES, NO_CID, packSlots, sealApproval, sealStop, SHARING_CHANNEL, topicsFor } from "../share";
 import type { Vault } from "../vault";
 import { shareKeys } from "./keys";
 import { isLive, readShares, type ShareRecord } from "./records";
 
 /**
  * almanac's one sharing statement (docs/DESIGN.md §9): an approval for each opening a provider app
- * asked for that is still open, and a stop for each share stopped before its end date — four at most,
+ * asked for that is still open, and a stop for each share stopped before its end date — three at most,
  * always 512 bytes, on the topics of the providers they are for, so each provider app hears only its
  * own. It is sent again, whole, whenever one changes, and stays due until it has gone: a stop made
  * with no connection reaches the provider app the next time almanac opens.
@@ -32,7 +32,8 @@ function entries(records: ShareRecord[], now: number): Entry[] {
     if (isLive(r, now)) {
       for (const o of r.openings)
         if (o.key && o.until > now)
-          out.push({ topic: pair.answerTopic, sealed: sealApproval(pair, keys.sender, keys.id, fromHex(o.key), o.until, keys.shareKey!), approval: true, at: o.at });
+          // NO_CID until the Bulletin rails upload a blob to point at (DESIGN §9, PLAN Phase 5).
+          out.push({ topic: pair.answerTopic, sealed: sealApproval(pair, keys.sender, keys.id, fromHex(o.key), o.until, keys.shareKey!, NO_CID), approval: true, at: o.at });
     } else if (r.stopped !== undefined && r.ends > now) {
       out.push({ topic: pair.answerTopic, sealed: sealStop(pair, keys.id, r.stopped), approval: false, at: r.stopped });
     }

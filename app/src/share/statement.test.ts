@@ -26,11 +26,12 @@ function paired() {
 const approve = (p: ReturnType<typeof paired>) => sealApproval(p.almanac, p.share.sender, p.share.id, newKeyPair().publicKey, 0, p.share.shareKey);
 
 describe("the statements", () => {
-  it("almanac's sharing statement is 512 bytes, with room for four, and each provider app finds only its own", () => {
+  it("almanac's sharing statement is 512 bytes, with room for three, and each provider app finds only its own", () => {
     const [a, b, c] = [paired(), paired(), paired()];
     const data = packSlots([approve(a), sealStop(b.almanac, b.share.id, 0), approve(b)], ENTRY_BYTES);
     expect(data.length).toBe(STATEMENT_BYTES);
-    expect(APPROVAL_SLOTS).toBe(4);
+    // Three since an approval grew a CID: 157 bytes into the 511 a statement has for slots.
+    expect(APPROVAL_SLOTS).toBe(3);
     const found = (p: ReturnType<typeof paired>) =>
       slots(data, ENTRY_BYTES)
         .map((s) => openEntry(p.app, s)?.kind)

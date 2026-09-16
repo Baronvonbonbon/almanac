@@ -5,9 +5,10 @@
  */
 export { ShareError, type ShareProblem } from "./errors";
 export { FRAME_BYTES, FRAME_PREFIX, joinFrames, readFrame, toFrames, type Frame } from "./frames";
-export { almanacPair, checkDigits, keyPairFrom, newKeyPair, providerPair, type KeyPair, type PairKeys } from "./keys";
+export { almanacPair, checkDigits, keyPairFrom, newKeyPair, pairDigits, providerPair, type KeyPair, type PairKeys } from "./keys";
 export {
   ENTRY_BYTES,
+  NO_CID,
   openEntry,
   openRequest,
   REQUEST_BYTES,

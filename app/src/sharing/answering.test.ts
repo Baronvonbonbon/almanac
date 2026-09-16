@@ -115,7 +115,7 @@ describe("a provider app asks, the patient answers", () => {
     // The other provider app hears nothing on its topic, and could open nothing in the statement if it did.
     expect(await hears(riverside)).toEqual([]);
     const statement = a.store.heldBy("almanac", SHARING_CHANNEL)!;
-    expect(slots(statement.data, ENTRY_BYTES).map((slot) => openEntry(riverside.received.pair, slot))).toEqual([null, null, null, null]);
+    expect(slots(statement.data, ENTRY_BYTES).map((slot) => openEntry(riverside.received.pair, slot))).toEqual([null, null, null]);
     // The approval takes the key the provider app asked with, and no other: another is refused, and even
     // passed off as the one asked with, it unmasks nothing that opens the share.
     const [approval] = (await hears(okafor)) as Approval[];
@@ -162,7 +162,7 @@ describe("a provider app asks, the patient answers", () => {
     expect(await waitingIn(a)).toEqual([]);
   });
 
-  it("the statement is always 512 bytes on four topics, four entries at most — approvals first", async () => {
+  it("the statement is always 512 bytes on four topics, three entries at most — approvals first", async () => {
     const a = await almanac();
     const providers: Provider[] = [];
     for (const name of ["Dr A", "Dr B", "Dr C", "Dr D", "Dr E"]) providers.push(await visit(a, name));
@@ -175,9 +175,13 @@ describe("a provider app asks, the patient answers", () => {
     const entriesFor = (data: Uint8Array) => providers.map((p) => slots(data, ENTRY_BYTES).flatMap((slot) => openEntry(p.received.pair, slot) ?? []).map((e) => e.kind));
     const full = sharingStatement(await readShares(a.vault), NOW + 10 * MINUTE);
     expect(full.data).toHaveLength(STATEMENT_BYTES);
-    expect(new Set(full.topics.map(hex))).toEqual(new Set(providers.slice(0, 4).map((p) => hex(p.received.pair.answerTopic))));
-    // Four open approvals fill it; the stop goes once they end — its share can't be opened meanwhile.
-    expect(entriesFor(full.data)).toEqual([["approval"], ["approval"], ["approval"], ["approval"], []]);
+    // Three real topics, filled out to four with random ones, so the count says nothing.
+    expect(full.topics).toHaveLength(4);
+    const carried = new Set(full.topics.map(hex));
+    for (const p of providers.slice(1, 4)) expect(carried.has(hex(p.received.pair.answerTopic))).toBe(true);
+    // Three open approvals fill it, where four did before an approval carried a CID: the oldest
+    // opening is squeezed out, and the stop still waits — neither share can be opened meanwhile.
+    expect(entriesFor(full.data)).toEqual([[], ["approval"], ["approval"], ["approval"], []]);
     const later = sharingStatement(await readShares(a.vault), NOW + 2 * HOUR);
     expect(later.data).toHaveLength(STATEMENT_BYTES);
     expect(later.topics).toHaveLength(4);

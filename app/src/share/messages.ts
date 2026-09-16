@@ -1,7 +1,7 @@
 import { xchachaDecryptPacked, xchachaEncryptPacked } from "@parity/product-sdk-crypto";
 import { ShareError } from "./errors";
 import { dh, openingMask, type KeyPair, type PairKeys } from "./keys";
-import { equal, getU32, ID_BYTES, KEY_BYTES, KIND, putU32, SEAL_OVERHEAD, seconds, xor } from "./wire";
+import { CID_BYTES, equal, getU32, ID_BYTES, KEY_BYTES, KIND, putU32, SEAL_OVERHEAD, seconds, xor } from "./wire";
 
 /**
  * What passes between almanac and a provider app after the visit (docs/DESIGN.md §9): requests one
@@ -11,9 +11,15 @@ import { equal, getU32, ID_BYTES, KEY_BYTES, KIND, putU32, SEAL_OVERHEAD, second
  * which.
  */
 
-// kind | share id | opening key | until | the share's key, masked
-const ENTRY_PLAIN = 1 + ID_BYTES + KEY_BYTES + 4 + KEY_BYTES;
+// kind | share id | opening key | until | the share's key, masked | the CID it opens
+const ENTRY_PLAIN = 1 + ID_BYTES + KEY_BYTES + 4 + KEY_BYTES + CID_BYTES;
 export const ENTRY_BYTES = ENTRY_PLAIN + SEAL_OVERHEAD;
+
+/**
+ * No blob to point at: the share went by codes at the visit, or the rails have not uploaded one.
+ * Zeros rather than an absent field, so an approval and a stop stay the same size (DESIGN §9).
+ */
+export const NO_CID = new Uint8Array(CID_BYTES);
 
 // kind | share id | opening key | asked at
 const REQUEST_PLAIN = 1 + ID_BYTES + KEY_BYTES + 4;
@@ -22,6 +28,7 @@ export const REQUEST_BYTES = REQUEST_PLAIN + SEAL_OVERHEAD;
 const AT_OPENING = 1 + ID_BYTES;
 const AT_TIME = AT_OPENING + KEY_BYTES;
 const AT_KEY = AT_TIME + 4;
+const AT_CID = AT_KEY + KEY_BYTES;
 
 export interface Approval {
   kind: "approval";
@@ -30,6 +37,12 @@ export interface Approval {
   /** When this opening ends, as the patient chose. */
   until: number;
   maskedKey: Uint8Array;
+  /**
+   * The blob this opening is for, on Bulletin — or `NO_CID` when the share travelled by codes. Each
+   * upload gets a key of its own (DESIGN §9), so the CID and the key it needs travel together: an
+   * approval names the one blob it opens, and opens no other.
+   */
+  cid: Uint8Array;
 }
 
 export interface Stop {
@@ -44,8 +57,12 @@ export interface Request {
   asked: number;
 }
 
-/** almanac: allows one opening of a share, until a time the patient chose, for the key the provider app asked with. */
-export function sealApproval(pair: PairKeys, sender: KeyPair, share: Uint8Array, openingKey: Uint8Array, until: number, shareKey: Uint8Array): Uint8Array {
+/**
+ * almanac: allows one opening of a share, until a time the patient chose, for the key the provider app
+ * asked with — and names the blob it opens, or `NO_CID` for a share that went by codes.
+ */
+export function sealApproval(pair: PairKeys, sender: KeyPair, share: Uint8Array, openingKey: Uint8Array, until: number, shareKey: Uint8Array, cid: Uint8Array = NO_CID): Uint8Array {
+  if (cid.length !== CID_BYTES) throw new ShareError("format", "not a content hash");
   const mask = openingMask(dh(sender.secretKey, openingKey), sender.publicKey, openingKey);
   const plain = new Uint8Array(ENTRY_PLAIN);
   plain[0] = KIND.approval;
@@ -53,6 +70,7 @@ export function sealApproval(pair: PairKeys, sender: KeyPair, share: Uint8Array,
   plain.set(openingKey, AT_OPENING);
   putU32(plain, AT_TIME, seconds(until));
   plain.set(xor(shareKey, mask), AT_KEY);
+  plain.set(cid, AT_CID);
   return xchachaEncryptPacked(plain, pair.toProvider);
 }
 
@@ -75,7 +93,14 @@ export function openEntry(pair: PairKeys, sealed: Uint8Array): Approval | Stop |
   if (plain.length !== ENTRY_PLAIN) throw new ShareError("damaged", "an entry of the wrong size");
   const share = plain.slice(1, AT_OPENING);
   if (plain[0] === KIND.approval) {
-    return { kind: "approval", share, openingKey: plain.slice(AT_OPENING, AT_TIME), until: getU32(plain, AT_TIME) * 1000, maskedKey: plain.slice(AT_KEY) };
+    return {
+      kind: "approval",
+      share,
+      openingKey: plain.slice(AT_OPENING, AT_TIME),
+      until: getU32(plain, AT_TIME) * 1000,
+      maskedKey: plain.slice(AT_KEY, AT_CID),
+      cid: plain.slice(AT_CID),
+    };
   }
   if (plain[0] === KIND.stop) return { kind: "stop", share, at: getU32(plain, AT_OPENING) * 1000 };
   throw new ShareError("newer", "an entry from a newer almanac");
