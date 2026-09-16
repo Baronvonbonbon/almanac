@@ -302,10 +302,12 @@ Everything runs on the phone.
 
 ## 8. Backups
 
-*Blocked as of 2026-09-14 (P6): the Bulletin allowance comes back `Allocated`, but no account a
-Product can sign with is authorized to upload, so every upload is refused. Reported upstream
-([PROBE-REPORT](PROBE-REPORT.md#upstream)). Until it is fixed, the copied backup below is the only
-backup.*
+*Unblocked 2026-09-16 (P6b), having been blocked since 2026-09-14 (P6): the SDK's `cloudStorage.upload`
+still fails, because it signs with the product account, which holds no authorization. But the host has
+an upload path of its own — `getPreimageManager().submit()` — and it stores for us, paid out of a slot
+account the host keeps the key for. The bytes come back through both the app and the gateway. So
+Bulletin backups can be built; the copied backup below stays the fallback, and is still the only
+backup that does not expire.*
 
 **Format** — the same for Bulletin backups and the export file:
 
