@@ -531,6 +531,25 @@ provider this patient is sitting with. A light client would not fix that — it 
 keys it asks about — and would not fit either: smoldot is some 6.5 MB against a 640 KiB code budget,
 every byte of which is uploaded to Bulletin and renewed.
 
+**What the code carries, and what it costs.** The pairing code is
+`provider key | first opening key | attestation (110 bytes) | the clinic's signature (64) | name` —
+281 bytes against 93 before. The clinic's signature is what stops a real attestation being lifted out
+of one clinic's code and shown inside another's: it ties one vouched-for clinic to the one pair of keys
+in front of this patient. The cost is the QR code, which goes from version 7 to 13, 45×45 modules to
+69×69. *Decided 2026-09-16:* one still code, denser, rather than splitting it into a two-code loop —
+the code held up at a visit stays one thing to scan. Measured, not guessed: nothing below version 12 is
+reachable while the attestation travels in the code, and dropping error correction only reaches 11 by
+making a screen-to-screen scan less forgiving. So if it ever needs to grow again it must be split
+rather than squeezed, and `app/src/qr/encode.test.ts` holds 13 as a ceiling against creep.
+
+**A clinic registers before it can show a code at all.** The provider app makes the clinic an identity
+key on first launch and shows the public half; the registry issues an attestation *for that key and that
+name* (`tools/issue-attestation.mjs`), and the clinic pastes it back. The app checks it against the same
+registry key almanac uses — it can check one, never sign one — so a registration issued under the wrong
+name, or for another device's key, is caught at setup instead of in front of a patient. An app holding
+no attestation can render no pairing code, which is the behaviour the rule above describes from the
+patient's side.
+
 **Revocation is an expiry.** An attestation lasts weeks, not years. The provider app renews it while it
 is online, **through the host's chain client** — no new outbound requests, no allowlist entry, no bundle
 cost. A clinic that is revoked simply stops being renewed, and stops being able to pair when what it

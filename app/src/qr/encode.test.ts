@@ -2,6 +2,7 @@ import { randomBytes } from "@parity/product-sdk-crypto";
 import decodeQR from "qr/decode.js";
 import { describe, expect, it } from "vitest";
 import { newKeyPair, pairingCode, toFrames } from "../share";
+import { demoPairing } from "../share/testing";
 import { QUIET_ZONE, qrModules, qrPath } from "./encode";
 
 /** The code as a camera would see it: RGBA pixels, `scale` to a module. */
@@ -24,7 +25,7 @@ function photograph(modules: boolean[][], scale = 4) {
 /** QR versions are 17 + 4v modules across, without the quiet zone. */
 const version = (modules: boolean[][]) => (modules.length - 2 * QUIET_ZONE - 17) / 4;
 
-const PAIRING = pairingCode({ providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Dr Okafor, Riverside Clinic" });
+const PAIRING = pairingCode(demoPairing({ providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Dr Okafor, Riverside Clinic" }));
 const FRAME = toFrames(randomBytes(2048))[0];
 
 describe("QR codes", () => {
@@ -33,7 +34,13 @@ describe("QR codes", () => {
   });
 
   it("stay small enough for one phone to read off another's screen", () => {
-    expect(version(qrModules(PAIRING))).toBeLessThanOrEqual(8);
+    // 13, not the 8 this was: the provider's code carries the registry's attestation and the clinic's
+    // signature (241 fixed bytes, share/pairing.ts), which took it from 45×45 modules to 69×69. That
+    // is a denser code to read off a screen, and it was chosen deliberately over splitting it into a
+    // two-code loop — one still code stays the simpler thing to hold up at a visit. *Decided
+    // 2026-09-16.* Nothing below 12 is reachable while the attestation is in the code, so this is a
+    // ceiling against creep rather than a target: if it needs raising again, the code needs splitting.
+    expect(version(qrModules(PAIRING))).toBeLessThanOrEqual(13);
     expect(version(qrModules(FRAME))).toBeLessThanOrEqual(20);
   });
 

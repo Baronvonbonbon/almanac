@@ -24,6 +24,7 @@ import {
   type KeyPair,
   type ReceivedShare,
 } from "../share";
+import { demoPairing } from "../share/testing";
 import { Vault, type KdfParams } from "../vault";
 import { answer, listenForRequests } from "./answering";
 import { sendIfDue, sendSharing, sharingStatement } from "./outbox";
@@ -54,7 +55,7 @@ async function almanac(store = new MemoryStatements(() => NOW), port: StatementP
 /** A visit: almanac shares with a provider app, which keeps what it read from the codes. */
 async function visit(a: Almanac, name: string): Promise<Provider> {
   const provider = newKeyPair();
-  const pairing = readPairingCode(pairingCode({ providerKey: provider.publicKey, firstOpeningKey: newKeyPair().publicKey, name }));
+  const pairing = readPairingCode(pairingCode(demoPairing({ providerKey: provider.publicKey, firstOpeningKey: newKeyPair().publicKey, name })));
   const share = newShare(NOW + 7 * DAY, utf8(`shared with ${name}`));
   const bytes = sealShare(share, pairing, NOW + 15 * MINUTE);
   await addShare(a.vault, shareRecord(share, pairing, CHOICE, NOW, NOW + 15 * MINUTE));

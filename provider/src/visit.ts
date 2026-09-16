@@ -9,11 +9,13 @@ import {
   readFrame,
   readShare,
   ShareError,
+  signPairing,
   unmaskShareKey,
   type Frame,
   type KeyPair,
   type Selection,
 } from "@app/share";
+import { meKeys, type Me } from "./me";
 import type { Patient } from "./patients";
 
 /**
@@ -30,13 +32,25 @@ export interface Pairing {
   check: string;
 }
 
-export function newPairing(name: string): Pairing {
+/**
+ * A code for the patient in front of us, signed with the clinic's identity key and carrying the
+ * registry's attestation for it. Both are needed: almanac will not make a share for a clinic it
+ * cannot verify, so an app with no attestation can show no code.
+ */
+export function newPairing(me: Me): Pairing {
   const provider = newKeyPair();
   const firstOpening = newKeyPair();
+  const { identitySecret, attestation } = meKeys(me);
   return {
     provider,
     firstOpening,
-    code: pairingCode({ providerKey: provider.publicKey, firstOpeningKey: firstOpening.publicKey, name }),
+    code: pairingCode({
+      providerKey: provider.publicKey,
+      firstOpeningKey: firstOpening.publicKey,
+      attestation,
+      signature: signPairing(identitySecret, provider.publicKey, firstOpening.publicKey),
+      name: me.name,
+    }),
     check: checkDigits(provider.publicKey),
   };
 }

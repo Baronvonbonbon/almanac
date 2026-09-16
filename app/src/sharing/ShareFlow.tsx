@@ -12,9 +12,11 @@ import {
   MAX_PAYLOAD,
   newShare,
   readPairingCode,
+  REGISTRY_KEY,
   sealShare,
   ShareError,
   toFrames,
+  verifyProvider,
   type Category,
   type Pairing,
   type Selection,
@@ -36,6 +38,19 @@ type Step = "scan" | "check" | "choose" | "preview" | "show";
 export const spaced = (check: string): string => `${check.slice(0, 3)} ${check.slice(3)}`;
 
 const isEmpty = (s: Selection) => !Object.keys(s.days).length && !s.cycles?.length && !s.fertile && !s.pregnancy;
+
+/**
+ * Why a scanned code was refused. "Nobody vouched for them" and "their registration has run out" are
+ * kept apart on purpose: the first is a reason to stop, the second is something their clinic can fix
+ * in a minute, and telling a patient the wrong one of the two sends them away for no reason.
+ */
+function scanNoteFor(e: unknown): "sharing.scan.notProvider" | "sharing.scan.newer" | "sharing.scan.untrusted" | "sharing.scan.expired" {
+  if (!(e instanceof ShareError)) return "sharing.scan.notProvider";
+  if (e.problem === "newer") return "sharing.scan.newer";
+  if (e.problem === "untrusted") return "sharing.scan.untrusted";
+  if (e.problem === "expired") return "sharing.scan.expired";
+  return "sharing.scan.notProvider";
+}
 
 /**
  * A share with a provider, at the visit (docs/DESIGN.md §9): scan their code, check the name and six
@@ -80,11 +95,16 @@ export function ShareFlow({
 
   function heard(code: string) {
     try {
-      setPairing(readPairingCode(code));
+      const read = readPairingCode(code);
+      // Before the name and digits are shown, and so before the patient is asked to vouch for them
+      // by eye: almanac makes no share for a provider no registry has vouched for. Nothing leaves
+      // the phone to check it — the registry's key is in this bundle (share/attest.ts).
+      verifyProvider(read, { registryKey: REGISTRY_KEY, now: Date.now() });
+      setPairing(read);
       setScanNote(null);
       go("check");
     } catch (e) {
-      setScanNote(e instanceof ShareError && e.problem === "newer" ? t("sharing.scan.newer") : t("sharing.scan.notProvider"));
+      setScanNote(t(scanNoteFor(e)));
     }
   }
 

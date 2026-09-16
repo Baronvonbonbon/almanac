@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hex, utf8 } from "../lib/bytes";
 import { memoryHost } from "../platform";
 import { almanacPair, newKeyPair, newShare, pairingCode, readPairingCode } from "../share";
+import { demoPairing } from "../share/testing";
 import { Vault, type KdfParams } from "../vault";
 import { shareKeys } from "./keys";
 import { addShare, answerRequests, isLive, keptShares, openUntil, pruneShares, readShares, shareRecord, stopShare, type ShareChoice } from "./records";
@@ -15,7 +16,7 @@ async function made() {
   const host = memoryHost("sharing");
   const vault = await Vault.create(host, FAST);
   const provider = newKeyPair();
-  const pairing = readPairingCode(pairingCode({ providerKey: provider.publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Dr Okafor" }));
+  const pairing = readPairingCode(pairingCode(demoPairing({ providerKey: provider.publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Dr Okafor" })));
   const share = newShare(NOW + 7 * DAY, utf8("{}"));
   const record = shareRecord(share, pairing, CHOICE, NOW, NOW + 15 * 60_000);
   await addShare(vault, record);
@@ -76,7 +77,7 @@ describe("shares in the vault", () => {
 
   it("are forgotten as almanac reads them, once past their end date", async () => {
     const { vault, record } = await made();
-    const later = shareRecord(newShare(NOW + 30 * DAY, utf8("{}")), readPairingCode(pairingCode({ providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Riverside Midwives" })), CHOICE, NOW, NOW + 3600_000);
+    const later = shareRecord(newShare(NOW + 30 * DAY, utf8("{}")), readPairingCode(pairingCode(demoPairing({ providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Riverside Midwives" }))), CHOICE, NOW, NOW + 3600_000);
     await addShare(vault, later);
     expect(await keptShares(vault, NOW + DAY)).toEqual([record, later]);
     expect(await keptShares(vault, NOW + 7 * DAY)).toEqual([later]);

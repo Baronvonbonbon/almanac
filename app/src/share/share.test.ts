@@ -4,7 +4,9 @@ import { fromHex, hex, text, utf8 } from "../lib/bytes";
 import { ShareError, type ShareProblem } from "./errors";
 import { almanacPair, checkDigits, keyPairFrom, newKeyPair, providerPair } from "./keys";
 import { ENTRY_BYTES, NO_CID, openEntry, openRequest, REQUEST_BYTES, sealApproval, sealRequest, sealStop, unmaskShareKey } from "./messages";
-import { PAIRING_PREFIX, pairingCode, readPairingCode } from "./pairing";
+import { newSigningKeyPair, signPairing } from "./attest";
+import { PAIRING_PREFIX, pairingCode, readPairingCode, verifyProvider } from "./pairing";
+import { demoClinic, demoPairing, demoRegistry } from "./testing";
 import { MAX_PAYLOAD, newShare, openStored, readShare, sealShare, SHARE_BUCKETS } from "./share";
 import vectors from "./vectors.json";
 
@@ -27,7 +29,7 @@ function problem(fn: () => unknown): ShareProblem | null {
 function visit(payload: Uint8Array = PAYLOAD) {
   const provider = newKeyPair();
   const first = newKeyPair();
-  const pairing = readPairingCode(pairingCode({ providerKey: provider.publicKey, firstOpeningKey: first.publicKey, name: "Dr Okafor" }));
+  const pairing = readPairingCode(pairingCode(demoPairing({ providerKey: provider.publicKey, firstOpeningKey: first.publicKey, name: "Dr Okafor" })));
   const share = newShare(NOW + 7 * DAY, payload);
   return { provider, first, pairing, share, bytes: sealShare(share, pairing, NOW + 15 * MINUTE) };
 }
@@ -36,10 +38,12 @@ describe("a provider's code", () => {
   it("carries both keys and the name, in the characters a QR code packs most tightly, with six digits to compare", () => {
     const provider = newKeyPair();
     const first = newKeyPair();
-    const code = pairingCode({ providerKey: provider.publicKey, firstOpeningKey: first.publicKey, name: "Dr Okafor, Riverside Clinic" });
+    const code = pairingCode(demoPairing({ providerKey: provider.publicKey, firstOpeningKey: first.publicKey, name: "Dr Okafor, Riverside Clinic" }));
     expect(code.startsWith(PAIRING_PREFIX)).toBe(true);
     expect(code).toMatch(/^[0-9A-Z $%*+\-./:]+$/);
-    expect(code.length).toBeLessThan(200);
+    // The attestation and the clinic's signature put 174 bytes more in the code than the keys alone.
+    // Still one frame: a QR code in these characters holds 640, and the camera reads it in one go.
+    expect(code.length).toBeLessThan(640);
     const read = readPairingCode(code);
     expect(hex(read.providerKey)).toBe(hex(provider.publicKey));
     expect(hex(read.firstOpeningKey)).toBe(hex(first.publicKey));
@@ -58,13 +62,50 @@ describe("a provider's code", () => {
     expect(problem(() => readPairingCode("https://example.com"))).toBe("format");
     expect(problem(() => readPairingCode(`${PAIRING_PREFIX}NOT-BASE32`))).toBe("format");
     const keys = { providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey };
-    const bytes = fromBase32(pairingCode({ ...keys, name: "Dr Okafor" }).slice(PAIRING_PREFIX.length));
+    const bytes = fromBase32(pairingCode(demoPairing({ ...keys, name: "Dr Okafor" })).slice(PAIRING_PREFIX.length));
     bytes[0] = 2;
     expect(problem(() => readPairingCode(PAIRING_PREFIX + toBase32(bytes)))).toBe("newer");
     // A right-to-left override: the name would read differently on screen from what it is.
-    expect(problem(() => pairingCode({ ...keys, name: "Dr ‮rofako" }))).toBe("format");
-    expect(problem(() => pairingCode({ ...keys, name: "x".repeat(41) }))).toBe("format");
-    expect(problem(() => pairingCode({ ...keys, name: "   " }))).toBe("format");
+    expect(problem(() => pairingCode(demoPairing({ ...keys, name: "Dr ‮rofako" })))).toBe("format");
+    expect(problem(() => pairingCode(demoPairing({ ...keys, name: "x".repeat(41) })))).toBe("format");
+    expect(problem(() => pairingCode(demoPairing({ ...keys, name: "   " })))).toBe("format");
+  });
+});
+
+describe("whether to believe a provider's code", () => {
+  const keys = () => ({ providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Dr Okafor" });
+  const registryKey = demoRegistry.publicKey;
+
+  const believe = (pairing: ReturnType<typeof demoPairing>, now = NOW) =>
+    verifyProvider(readPairingCode(pairingCode(pairing)), { registryKey, now });
+
+  it("believes a clinic the registry vouched for, and says which tier it is", () => {
+    expect(believe(demoPairing(keys())).tier).toBe("licensed");
+    expect(believe(demoPairing(keys(), { tier: "free" })).tier).toBe("free");
+  });
+
+  it("refuses a clinic no registry vouched for", () => {
+    const stranger = newSigningKeyPair();
+    expect(problem(() => believe(demoPairing(keys(), { registrySecret: stranger.secretKey })))).toBe("untrusted");
+  });
+
+  it("refuses an attestation shown under a name it was not issued for", () => {
+    expect(problem(() => believe(demoPairing(keys(), { vouchedName: "Riverside Midwives" })))).toBe("untrusted");
+  });
+
+  it("refuses an attestation lifted out of a real clinic's code into someone else's", () => {
+    // The attestation verifies — it is a real one — but the keys in front of the patient are not the
+    // ones the vouched-for clinic signed, so the share would go to whoever made this code.
+    const of = keys();
+    const thief = newSigningKeyPair();
+    const lifted = { ...demoPairing(of), signature: signPairing(thief.secretKey, of.providerKey, of.firstOpeningKey) };
+    expect(problem(() => believe(lifted))).toBe("untrusted");
+    // And it is the signature that catches it, not the attestation: the same code is fine as itself.
+    expect(believe(demoPairing(of)).identityKey).toEqual(demoClinic.publicKey);
+  });
+
+  it("says a registration has run out, which is not the same as never having had one", () => {
+    expect(problem(() => believe(demoPairing(keys(), { expires: NOW - DAY })))).toBe("expired");
   });
 });
 

@@ -274,9 +274,13 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
       reopen, never an opening already allowed
   - [x] `share/attest.ts` — the attestation the registry signs and almanac checks offline, and the
         clinic's signature over its own pairing code, with tests (2026-09-16)
-  - [ ] The registry public key in `product.mjs`, from `tools/registry-key.mjs`
-  - [ ] The pairing code carries the identity key, the attestation and that signature; almanac refuses
-        an unregistered or expired provider in words that say which it is
+  - [x] The registry public key in `product.mjs`, from `tools/registry-key.mjs` (2026-09-16)
+  - [x] The pairing code carries the attestation and that signature; almanac refuses an unregistered or
+        expired provider in words that say which it is. Its QR goes from version 7 to 13 — one still
+        code, chosen over a two-code loop, with 13 held as a ceiling in `qr/encode.test.ts` (2026-09-16)
+  - [x] The provider app makes its identity key at setup and takes the registration issued for it,
+        checking it against the same registry key almanac uses; `tools/issue-attestation.mjs` is the
+        registry issuing one (2026-09-16)
   - [ ] `ProviderRegistry` — approve, revoke, buy and extend a licence, read status. **Gated on
         [devnet #10](https://github.com/Polkadot-Community-Foundation/products-devnet-issues/issues/10):
         deploying a new contract name traps on an outdated CDM registry, open and untouched since

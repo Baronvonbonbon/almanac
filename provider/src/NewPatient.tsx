@@ -29,7 +29,7 @@ const problemText = (e: unknown): string =>
 export function NewPatient({ me, onBack, onRead }: { me: Me; onBack(): void; onRead(patient: Patient, opening: Opening): Promise<void> }) {
   const [step, setStep] = useState<Step>("label");
   const [label, setLabel] = useState("");
-  const pairing = useMemo(() => newPairing(me.name), [me.name]);
+  const pairing = useMemo(() => newPairing(me), [me]);
   const collector = useRef(new CodeCollector());
   const [progress, setProgress] = useState<{ read: number; of: number } | null>(null);
   const [problem, setProblem] = useState<string | null>(null);

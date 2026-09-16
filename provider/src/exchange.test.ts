@@ -6,6 +6,7 @@ import { answer, listenForRequests } from "@app/sharing/answering";
 import { sendSharing } from "@app/sharing/outbox";
 import { addShare, readShares, shareRecord, stopShare } from "@app/sharing/records";
 import type { ShareRequest } from "@app/sharing/useShareRequests";
+import { demoMe } from "@app/share/testing";
 import { Vault, type KdfParams } from "@app/vault";
 import { listenForAnswers, type Heard } from "./answers";
 import { ask, requestsStatement, TooManyWaiting } from "./asking";
@@ -45,7 +46,7 @@ async function both(): Promise<{ store: MemoryStatements; almanac: Side; provide
 
 /** At the visit: the provider app shows its code, almanac scans it and makes the share, and shows it as codes. */
 async function visit(almanac: Side, name = "Dr Okafor") {
-  const pairing = newPairing(name);
+  const pairing = newPairing(demoMe(name));
   const scanned = readPairingCode(pairing.code);
   const share = newShare(NOW + 7 * DAY, await encodeSelection(SELECTION));
   const codes = toFrames(sealShare(share, scanned, NOW + 15 * MINUTE));
@@ -113,7 +114,7 @@ describe("the provider app, with almanac", () => {
     // Read with a code the patient didn't scan: not for this provider.
     let problem: string | undefined;
     try {
-      readVisit(readAll(v.codes), newPairing("Dr Okafor"), "", NOW);
+      readVisit(readAll(v.codes), newPairing(demoMe("Dr Okafor")), "", NOW);
     } catch (e) {
       problem = (e as ShareError).problem;
     }

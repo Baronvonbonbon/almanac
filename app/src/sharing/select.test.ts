@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { DayEntry } from "../cycle";
 import { DEFAULT_SETTINGS, type Settings } from "../data";
 import { decodeSelection, encodeSelection, newKeyPair, newShare, pairingCode, readPairingCode, sealShare } from "../share";
+import { demoPairing } from "../share/testing";
 import { defaultChoice, offeredCategories, selectForShare } from "./select";
 
 const TODAY = "2026-09-14";
@@ -97,7 +98,7 @@ describe("what a share holds", () => {
 
   it("goes into a share and comes back out whole", async () => {
     const s = selectForShare(ENTRIES, everything, { ...defaultChoice(TODAY), categories: ["periods", "symptoms", "mood", "notes"] }, TODAY);
-    const pairing = readPairingCode(pairingCode({ providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Dr Okafor" }));
+    const pairing = readPairingCode(pairingCode(demoPairing({ providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey, name: "Dr Okafor" })));
     const packed = await encodeSelection(s);
     expect(sealShare(newShare(Date.UTC(2026, 8, 21), packed), pairing, Date.UTC(2026, 8, 14, 10)).length).toBe(2048);
     expect(await decodeSelection(packed)).toEqual(s);

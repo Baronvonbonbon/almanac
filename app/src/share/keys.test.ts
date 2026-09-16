@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { fromBase32, toBase32 } from "../lib/base32";
 import { fromHex, hex } from "../lib/bytes";
 import { checkDigits, dh, keyPairFrom, openingMask, pairDigits, pairKeys } from "./keys";
-import { pairingCode, readPairingCode } from "./pairing";
+import { pairingCode, readPairingCode, verifyProvider } from "./pairing";
+import { demoPairing, demoRegistry } from "./testing";
 import { REQUESTS_CHANNEL, SHARING_CHANNEL } from "./statement";
 import vectors from "./vectors.json";
 
@@ -41,9 +42,20 @@ describe("share keys", () => {
   });
 
   it("write the provider's code as an independent encoder does", () => {
-    const code = pairingCode({ providerKey: fromHex(v.providerPublic), firstOpeningKey: fromHex(v.openingPublic), name: vectors.pairing.name });
+    // The expiry is pinned, not "a year from now", or the code would differ on every run.
+    const pairing = demoPairing(
+      { providerKey: fromHex(v.providerPublic), firstOpeningKey: fromHex(v.openingPublic), name: vectors.pairing.name },
+      { expires: vectors.pairing.expires },
+    );
+    expect(hex(pairing.attestation)).toBe(vectors.pairing.attestation);
+    expect(hex(pairing.signature)).toBe(vectors.pairing.signature);
+    expect(hex(demoRegistry.publicKey)).toBe(vectors.pairing.registryPublic);
+    const code = pairingCode(pairing);
     expect(code).toBe(vectors.pairing.code);
     expect(readPairingCode(code).check).toBe(v.check);
+    // And the whole thing verifies the way almanac verifies it at a visit.
+    const believed = verifyProvider(readPairingCode(code), { registryKey: demoRegistry.publicKey, now: vectors.pairing.expires - 1000 });
+    expect(believed.tier).toBe(vectors.pairing.tier);
   });
 
   it("refuses a key that would make every shared secret the same", () => {

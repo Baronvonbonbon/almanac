@@ -325,6 +325,8 @@ export const en = {
       camera: "The camera, looking for your provider's code",
       notProvider: "That isn't a provider's code. Scan the code their provider app shows.",
       newer: "That code is from a newer provider app. Update almanac, then try again.",
+      untrusted: "That code isn't from a registered provider. almanac only shares with providers a registry has vouched for.",
+      expired: "That provider's registration has run out. Ask them to renew it, then show you a new code.",
       paste: "Paste their code instead",
       pasteLabel: "Their code",
       use: "Use this code",

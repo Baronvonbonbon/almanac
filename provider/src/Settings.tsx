@@ -45,8 +45,10 @@ export function Settings({
     const problem = nameProblem(name);
     if (problem) return setError(t(`setup.${problem}`));
     setError(null);
-    await writeMe(vault, { name });
-    onMe({ name: name.trim() });
+    // Only the name changes here. The identity key and the attestation are what the registry vouched
+    // for, and rewriting `me` without them would unregister the clinic by way of renaming it.
+    await writeMe(vault, { ...me, name });
+    onMe({ ...me, name: name.trim() });
     onNotice(t("settings.saved"));
   }
 

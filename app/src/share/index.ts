@@ -33,7 +33,7 @@ export {
   type Request,
   type Stop,
 } from "./messages";
-export { NAME_BYTES, PAIRING_PREFIX, pairingCode, readPairingCode, type Pairing } from "./pairing";
+export { checkName, NAME_BYTES, PAIRING_PREFIX, pairingCode, readPairingCode, verifyProvider, type Pairing } from "./pairing";
 export { MAX_PAYLOAD, newShare, openStored, readShare, sealShare, SHARE_BUCKETS, type NewShare, type ReceivedShare, type ShareHeader } from "./share";
 export {
   CATEGORIES,
