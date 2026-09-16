@@ -262,7 +262,11 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
 - [x] The sharing statement: approvals and stops for every provider, at one fixed size, sent again
       on every change and kept due until it goes (2026-09-15). On a phone, it waits for the provider
       app to be published, and for P9b and P9c — delivery between two phones
-- [ ] Bulletin rails with the one-time notice, switched off until P6 works
+- [ ] Bulletin rails with the one-time notice. Unblocked 2026-09-16 (P6b): upload through the host's
+      preimage call, not `cloudStorage.upload`. A fresh `KS` for each upload, the CID in the approval
+      that opens it (three openings a statement, not four), and the pairing still in person only —
+      [DESIGN §9](DESIGN.md#provider-shares), decided 2026-09-16. Needs P6b at a share's real size
+      first: a share is 2–16 KiB, and only 256 bytes has been measured works
 - [ ] WebRTC at the visit, if P13 shows it works
 - [ ] Then: the visit summary (copied as text), and live shares for family or a partner
 

@@ -452,7 +452,7 @@ an opening     the provider app makes a key E for each request; the answer carri
 | Pairing code | provider app → almanac | a code on screen | about 100 bytes |
 | Share, with the first approval | almanac → provider app | a short loop of codes; WebRTC after P13; Bulletin after P6 | padded to 2, 4, 8 or 16 KiB |
 | Request | provider app → almanac | the provider app's one requests statement | 93 bytes; five fit |
-| Approval, or stop | almanac → provider app | almanac's one sharing statement, replaced each time | 125 bytes; four fit |
+| Approval, or stop | almanac → provider app | almanac's one sharing statement, replaced each time | 157 bytes; three fit. *Changed 2026-09-16: 125 bytes and four, before an approval carried the CID of the blob it opens* |
 
 - **The statement budget.** almanac keeps one sharing statement — approvals and stops for every
   provider, always padded to 512 bytes, and later the live-share outbox pointer — and one backup
@@ -493,11 +493,32 @@ those labels, no export, no copy.
 - It keeps almanac's promise of no requests outside the app, under the same check and budget as
   almanac.
 
-**Bulletin rails** — built, and switched off until P6 is fixed: the same sealed selection, padded
-and uploaded, so an updated share can reach the provider away from the visit. Before the first
-upload almanac says, once: *To let your provider see this away from the visit, almanac puts an
-encrypted copy on a public storage network run by many computers. Nobody can read it without your
-OK, and the copy may stay there after the share ends* (R7).
+**Bulletin rails** — designed, not yet built; unblocked 2026-09-16 by P6b, which found an upload path
+that works (the host's, not the SDK's). The same sealed selection, padded and uploaded, so an updated
+share can reach the provider away from the visit. Before the first upload almanac says, once: *To let
+your provider see this away from the visit, almanac puts an encrypted copy on a public storage network
+run by many computers. Nobody can read it without your OK, and the copy may stay there after the share
+ends* (R7).
+
+*Decided 2026-09-16, once the payload could be public:*
+
+- **A fresh `KS` for every upload.** At the visit one key seals one share; on the rails each upload is
+  a new blob under a new key, and the approval that opens it carries that key, masked to the opening
+  as approvals already are. So *stop sharing* keeps its meaning exactly: the next key is never
+  released, and they get nothing new. What they opened before, they keep — as they always could
+  (R2) — but on public storage they keep the object itself, not a memory of it (R10).
+- **Retention is the only hard deletion almanac has.** A stopped share becomes unreadable to
+  everyone, the provider included, within about a fortnight, because nobody renews it. The Sharing
+  screen may say so; nothing else almanac does can promise that.
+- **The approval carries the CID**, which is why three openings now fit a statement where four did.
+- **Nothing about trust changes.** `KS` never travels with the ciphertext, and never has: only an
+  approval carries it, masked to one opening. That is what makes a public blob safe to publish at
+  all, and it is the same choreography the visit already uses.
+- **The pairing stays in person** (decided 2026-09-16). The two scans remain the only root of trust:
+  no remote first contact, and no re-pairing a new device from an old pair key. A provider who
+  changes device pairs again at the next visit. This is what lets almanac authenticate a provider
+  without either side holding an identity, and it is why a stolen provider vault cannot become a new
+  relationship (R11).
 
 **WebRTC** — after P13: for a larger share at the visit, the two codes carry the connection details
 instead, and the share goes over a direct connection on the same Wi-Fi, with no server. If the
@@ -534,11 +555,14 @@ could have written down or photographed.* It heads the Sharing screen in Privacy
   answer is kept with the share (the last 32 requests' keys), so a request still sitting in the
   provider app's statement is not asked about again; the provider app can always ask anew.
 - The sharing statement holds an approval for each opening asked for that is still open, then a stop
-  for each share stopped before its end date — the newest of each first, four at most. It is sealed
+  for each share stopped before its end date — the newest of each first, three at most. It is sealed
   afresh and sent whole on every change, living 90 days, with the statement allowance asked for once
-  a session before the first. If four open approvals fill it, a stop waits until they end; that share
-  cannot be opened meanwhile. A change that could not go out stays due, and goes the next time
-  almanac opens. Stopping takes effect at once either way: the share's key is gone.
+  a session before the first. If three open approvals fill it, a stop waits until they end; that share
+  cannot be opened meanwhile. A change that could not go out stays due, and goes the next time almanac
+  opens. Stopping takes effect at once either way: the share's key is gone. *Changed 2026-09-16: four
+  at most, until an approval had to carry a CID as well — 157 bytes into 511 leaves three. Three
+  openings at once, across every provider, is the ceiling that buys Bulletin rails; if it ever binds,
+  the CID moves to an index blob behind one pointer entry.*
 - The listening and the statement load only when there are shares (7 KiB).
 
 **How live shares work underneath:**
