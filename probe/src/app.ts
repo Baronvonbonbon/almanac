@@ -1,6 +1,6 @@
 import { createApp, type App } from "@parity/product-sdk";
 import { formatHostError, requestResourceAllocation } from "@parity/product-sdk-host";
-import { CLOUD_ENV, PRODUCT_ID } from "../product.mjs";
+import { CLOUD_ENV, PROBE_ID } from "../product.mjs";
 import { withTimeout } from "./util";
 
 let app: App | null = null;
@@ -12,7 +12,9 @@ export async function getApp(): Promise<App> {
 }
 
 async function build(): Promise<App> {
-  const a = await withTimeout(createApp({ name: PRODUCT_ID, cloudStorage: { environment: CLOUD_ENV } }), 60_000, "createApp");
+  // PROBE_ID, not the app's: the probe is its own Product, and the name here must equal the DotNS
+  // label it was published to, or every host call exercises an identity that published nothing.
+  const a = await withTimeout(createApp({ name: PROBE_ID, cloudStorage: { environment: CLOUD_ENV } }), 60_000, "createApp");
   const { accounts } = await withTimeout(a.wallet.connect(), 90_000, "wallet.connect");
   if (!a.wallet.getSelectedAccount() && accounts[0]) a.wallet.selectAccount(accounts[0].address);
   return a;

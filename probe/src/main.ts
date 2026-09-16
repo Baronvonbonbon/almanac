@@ -1,6 +1,6 @@
 import "./style.css";
 import { isInsideContainerSync } from "@parity/product-sdk";
-import { DOT_NAME } from "../product.mjs";
+import { PROBE_DOT_NAME } from "../product.mjs";
 import { CHECKS } from "./checks";
 import { Journal } from "./journal";
 import type { Check, Outcome, Status } from "./types";
@@ -122,7 +122,7 @@ function reportSection(journal: Journal): HTMLElement {
       probe: __PROBE_VERSION__,
       build: __BUILD_ID__,
       sdk: __SDK_VERSIONS__,
-      product: DOT_NAME,
+      product: PROBE_DOT_NAME,
       inApp,
       userAgent: navigator.userAgent,
       exportedAt: new Date().toISOString(),
@@ -193,8 +193,8 @@ async function main() {
         "p",
         { className: "env" },
         inApp
-          ? `Running inside the Polkadot app as ${DOT_NAME}.`
-          : `Running in a web browser, so only some checks can run. Open ${DOT_NAME} in the Polkadot app for the rest.`,
+          ? `Running inside the Polkadot app as ${PROBE_DOT_NAME}.`
+          : `Running in a web browser, so only some checks can run. Open ${PROBE_DOT_NAME} in the Polkadot app for the rest.`,
       ),
       el(
         "p",

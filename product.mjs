@@ -5,9 +5,15 @@
 // call exercises an identity that never published anything and reports a confident "no"
 // (broadside/docs/DEPLOY.md, sonde/product.mjs).
 //
-// The probe deliberately runs under the prototype label rather than a throwaway one: storage,
-// product accounts and allowances are all keyed by it, so its answers describe the identity the app
-// itself uses.
+// Each of the three has a name of its own. A name serves one bundle at a time, so while the app and
+// the probe shared one, publishing either replaced the other — which kept P10 (the probe in a phone
+// browser) blocked whenever the app was live. *Changed 2026-09-16.*
+//
+// What that costs, written down because it is easy to forget: the probe now measures **its own**
+// identity. Storage, product accounts and Bulletin allowances are all keyed by PRODUCT_ID, so a
+// finding about specific accounts or quotas — P6b's slot account, P6 and P8's authorizations — is a
+// claim about `almanacprobe`, not about `almanacapp`. Platform behaviour still generalises; anything
+// account-specific must be re-run under the app's own label to be a claim about the app.
 
 // Not "almanac01": pad requires Personhood Lite for a base of 6–8 letters with two trailing digits,
 // and refused it for a NoStatus signer on 2026-09-11. A base of 9+ letters is open to any account.
@@ -15,9 +21,17 @@ export const PRODUCT_ID = "almanacapp";
 export const DOT_NAME = `${PRODUCT_ID}.dot`;
 
 // The provider app (docs/DESIGN.md §9) is a Product of its own, so its storage, product accounts and
-// statement allowance are apart from almanac's. Decided 2026-09-15; its first deploy registers it.
+// statement allowance are apart from almanac's. Decided 2026-09-15; registered to the deploy key,
+// confirmed by `node tools/whois.mjs almanacappprovider` on 2026-09-16 — as is almanacapp itself, so
+// neither first deploy registers anything any more.
 export const PROVIDER_ID = "almanacappprovider";
 export const PROVIDER_DOT_NAME = `${PROVIDER_ID}.dot`;
+
+// The device probe (probe/), so the app and the probe can both be live at once. Unregistered as of
+// 2026-09-16 — `whois` says "owner none", available to all at 10 PAS — so its first deploy DOES
+// register it, permanently. A base of 9+ letters is open to any account, which "almanacprobe" is.
+export const PROBE_ID = "almanacprobe";
+export const PROBE_DOT_NAME = `${PROBE_ID}.dot`;
 
 // Must equal the --env passed to pad. The SDK defaults cloud storage to "paseo", which a devnet host
 // build does not carry — createApp then throws "Chain … is not supported by the current host".

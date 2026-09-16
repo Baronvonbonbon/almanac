@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "check": "npm run check -w app && npm run check -w provider && npm run build -w probe && node tools/deploy-key.mjs --check",
+    "demo": "node tools/demo.mjs",
     "whois": "node tools/whois.mjs",
     "retention": "node tools/retention.mjs",
     "deploy-key": "node tools/deploy-key.mjs",

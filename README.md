@@ -26,7 +26,7 @@ asked them to.
 | [`docs/DESIGN.md`](docs/DESIGN.md) | Experience, data, keys, backups, sharing |
 | [`docs/THREAT-MODEL.md`](docs/THREAT-MODEL.md) | Who almanac protects you from — and what it cannot |
 | [`app/`](app/) | The app. So far: the encrypted store, predictions, and a screen that checks storage works on a phone |
-| [`probe/`](probe/) | Phase 0 device probe, published to `almanacapp.dot` |
+| [`probe/`](probe/) | Phase 0 device probe, published to `almanacprobe.dot` |
 | [`product.mjs`](product.mjs) | The published identity, shared by the app and the probe |
 | [`tools/`](tools/) | `whois.mjs`, a read-only DotNS lookup; `deploy.mjs` and `deploy-key.mjs`, which publish the app or the probe |
 

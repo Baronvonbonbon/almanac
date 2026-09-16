@@ -29,7 +29,7 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Decision | Choice |
 |---|---|
 | Name | **almanac** |
-| Labels | `almanacapp.dot` — prototype and probe, open to any account. `almanac.dot` — production, needs Full personhood. `almanacappprovider.dot` — the provider app, decided 2026-09-15: open to any account, not registered yet; its first deploy registers it. `almanacapp.dot` was registered on 2026-09-13 and is owned by the deploy key until it is transferred to the phone account; `almanac.dot` is not registered. Registration is permanent. *Corrected 2026-09-11:* the prototype was `almanac01.dot` until `pad` refused it. `pad` requires Personhood Lite for a base of 6–8 letters with two trailing digits; only a base of 9+ letters (with or without two digits) is open to a NoStatus signer. The chain's own v2 check had said "Available to all" — `tools/whois.mjs` now prints `pad`'s rule first |
+| Labels | One name per bundle, since 2026-09-16: `almanacapp.dot` — the app, registered 2026-09-13. `almanacprobe.dot` — the device probe, **not registered yet; its first deploy registers it** (`whois`, 2026-09-16: owner none, 10 PAS). `almanacappprovider.dot` — the provider app, decided 2026-09-15 and registered since (`whois`, 2026-09-16). `almanac.dot` — production, needs Full personhood, not registered. All three registered names are owned by the deploy key until transferred to the phone account. Registration is permanent. *Changed 2026-09-16:* the probe shared `almanacapp.dot` with the app, and a name serves one bundle at a time, so each deploy replaced the other — which kept P10 blocked whenever the app was live. The cost of the split is that the probe now measures its own product identity (see Phase 0). *Corrected 2026-09-11:* the prototype was `almanac01.dot` until `pad` refused it. `pad` requires Personhood Lite for a base of 6–8 letters with two trailing digits; only a base of 9+ letters (with or without two digits) is open to a NoStatus signer — which `almanacprobe` is. The chain's own v2 check had said "Available to all" — `tools/whois.mjs` now prints `pad`'s rule first |
 | Environment | Products Devnet, which since the 2026-09-08 update runs on Paseo system chains: Asset Hub 1000, People 1004, Bulletin 1010 (`pad` 0.16.1 `environments.json`) |
 | Build standard | Production quality from day one. Devnet is labelled as a preview in the app, because it resets |
 | Contracts | **None** |
@@ -73,9 +73,14 @@ re-checks the ones marked with a check ID.
 ## Phase 0 — Device probe 🟡
 
 **The riskiest assumptions, measured first.** Each answer below can change the design, so none is
-assumed. The probe is published under the prototype label — so its answers are about the same
-product identity the app will use (host local storage, product accounts and allowances are all keyed
-by it).
+assumed. *Changed 2026-09-16: the probe has a name of its own, `almanacprobe.dot`.* It ran under the
+app's label so its answers described the identity the app would use — but a name serves one bundle at
+a time, so the app and the probe kept replacing each other, and P10 stayed blocked whenever the app
+was live. The cost of the split is written down where it can bite: host local storage, product
+accounts and Bulletin allowances are all keyed by the product id, so a finding about **specific
+accounts or quotas** — P6b's slot account, P6 and P8's authorizations — describes `almanacprobe`, not
+`almanacapp`. Platform behaviour still generalises; anything account-specific must be re-run under the
+app's own label before it is a claim about the app.
 
 **Produces**
 - [x] `probe/` — a Product that runs each check, keeps a journal in host local storage across runs
@@ -83,16 +88,23 @@ by it).
 - [x] `tools/whois.mjs` — read-only DotNS lookup
 - [x] `almanacapp.dot` registered and the probe published, 2026-09-13 — owned by the deploy key until
       it is transferred to the phone account
+- [ ] `almanacprobe.dot` registered and the probe published there (`npm run deploy -w probe`).
+      `whois`, 2026-09-16: owner none, open to any account, 10 PAS — so its first deploy registers it,
+      permanently
 - [ ] `docs/PROBE-REPORT.md` — the answers, with the raw JSON reports committed next to it. Started
       2026-09-14 with one Android phone
 - [x] `tools/retention.mjs` (`npm run retention`) — P7 from a desktop, through the devnet IPFS
       gateway, each block checked against its CID's own hash
 
-*Decided 2026-09-14: the app replaces the probe at `almanacapp.dot` for the first prototype deploy.
-The probe goes back on in a later deploy of its own for the iOS, reinstall and two-phone checks, and
-P10 in a phone browser. Host storage belongs to the name, not the bundle, so the probe's journal on
-the phone survives the swap. P7 carries on from a desktop in the meantime; only its through-the-app
-half waits.*
+*Superseded 2026-09-16: the probe has `almanacprobe.dot`, so nothing replaces anything — the app and
+the probe can both be live, and the iOS, reinstall and two-phone checks and P10 no longer wait for a
+turn at the label. One consequence to plan around: host storage belongs to the name, not the bundle,
+so the probe published under the new name starts with an **empty journal**, and the results gathered
+so far stay at `almanacapp.dot` only until the app replaces that bundle. Export them before that
+deploy.*
+
+*Decided 2026-09-14, now history: the app replaced the probe at `almanacapp.dot` for the first
+prototype deploy, and P7 carried on from a desktop in the meantime.*
 
 | ID | Question | How | Decides |
 |---|---|---|---|
@@ -121,8 +133,9 @@ half waits.*
 ## Phase 1 — Foundations 🟡
 
 **Produces**
-- [x] `app/` scaffold (React 19 + Vite 8 + TS). It shares the published identity with the probe through
-      `product.mjs` at the repo root, and its start screen shows it
+- [x] `app/` scaffold (React 19 + Vite 8 + TS). Its published identity comes from `product.mjs` at the
+      repo root, and its start screen shows it. *Changed 2026-09-16: it no longer shares that identity
+      with the probe, which has `almanacprobe.dot`*
 - [x] `src/platform/` — host local storage and entropy, plus an in-memory host for dev and tests.
       Notifications, cloud storage and statements join with the phases that use them (4–6). The SDK's
       `./testing` fake models storage but not entropy, so it tests the real-host adapter rather than
@@ -146,8 +159,9 @@ half waits.*
 
 **Gate**
 - [ ] The vault round-trips on a device through the real host. The start screen does exactly this.
-      One name holds one bundle, so the app goes to `almanacapp.dot` (`npm run deploy -w app`) once
-      the probe's reports are exported
+      The app goes to `almanacapp.dot` (`npm run deploy -w app`), which still replaces the probe
+      bundle published there on 2026-09-13 — so export its reports first, or publish the probe to
+      `almanacprobe.dot` beforehand
 - [x] `dist/` fits the budget — 350 KiB of 512 KiB, no trimming needed
 - [x] The prediction engine passes fixtures: regular, irregular, PCOS-like, postpartum gap, one
       cycle, no cycles
@@ -174,7 +188,8 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
       bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and 449 KiB of code
       of 512
 
-**First run on a phone** — after `npm run deploy -w app`, which replaces the probe
+**First run on a phone** — after `npm run deploy -w app`, which replaces the probe bundle still at
+`almanacapp.dot` (the probe's own name is `almanacprobe.dot`)
 - [ ] Close the Polkadot app fully, then open almanac, so the new build loads; *Preview* shows in
       the top bar
 - [ ] Onboarding in each look, with its fonts; the look follows the app's light or dark, not the

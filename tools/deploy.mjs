@@ -15,7 +15,7 @@ import { randomInt } from "node:crypto";
 import { readdirSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
-import { CLOUD_ENV, DOT_NAME, PROVIDER_DOT_NAME } from "../product.mjs";
+import { CLOUD_ENV, DOT_NAME, PROBE_DOT_NAME, PROVIDER_DOT_NAME } from "../product.mjs";
 import { KEY_FILE, accountOf, readKey } from "./deploy-key.mjs";
 
 const PAD = "@polkadot-community-foundation/polkadot-app-deploy@0.16.1";
@@ -24,14 +24,18 @@ const repo = resolve(import.meta.dirname, "..");
 // Per workspace: what dist/ is built from (besides ../product.mjs, which all read), a check that must
 // pass on the built dist/ whatever way this was started, the name it goes to, and what to say first.
 const TARGETS = {
-  probe: { sources: ["src", "index.html", "product.mjs"], dotName: DOT_NAME, shared: true },
+  probe: {
+    sources: ["src", "index.html", "product.mjs"],
+    dotName: PROBE_DOT_NAME,
+    // Its own name since 2026-09-16, so publishing the app no longer replaces it. The trade is that
+    // the probe measures its own product identity — see the note in product.mjs.
+    note: "The probe has a name of its own: nothing of almanac's is replaced. Findings about specific accounts or quotas describe almanacprobe, not almanacapp.",
+  },
   app: {
     sources: ["src", "index.html"],
     // The promise of no external requests and the bundle budget, enforced at the last step too.
     verify: ["node", ["scripts/guard-dist.mjs"]],
     dotName: DOT_NAME,
-    shared: true,
-    note: "If the probe is published there now, export its reports first.",
   },
   provider: {
     // It bundles almanac's own code for the share formats, the vault and the rest.
@@ -117,9 +121,8 @@ const commit = git("rev-parse", "--short", "HEAD") || "an unknown commit";
 const dirty = git("status", "--porcelain") !== "";
 
 console.log(`\nThis publishes ${name}/dist — ${commit}${dirty ? ", plus uncommitted changes" : ""} — to ${dotName} on ${CLOUD_ENV}.`);
-// app/ and probe/ share the name, and a name serves one bundle at a time. What each keeps on the phone
-// survives the swap: host storage belongs to the name, not the bundle, and their keys do not overlap.
-if (target.shared) console.log(`${dotName} serves one bundle at a time, so this replaces whichever of the app or the probe is there now.`);
+// Each of the three has its own name now, so a publish replaces only that one. What a name keeps on
+// the phone survives the swap: host storage belongs to the name, not the bundle.
 if (target.note) console.log(target.note);
 console.log(`If ${dotName} is not yours yet, pad will REGISTER it — permanently.\n`);
 const rl = createInterface({ input: process.stdin, output: process.stdout });

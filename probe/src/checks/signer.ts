@@ -1,6 +1,6 @@
 import { getAccountsProvider } from "@parity/product-sdk-host";
 import { deriveProductAccountPublicKey } from "@parity/product-sdk-keys";
-import { DOT_NAME, PRODUCT_ID } from "../../product.mjs";
+import { PROBE_DOT_NAME, PROBE_ID } from "../../product.mjs";
 import { getApp } from "../app";
 import type { Check } from "../types";
 import { errText, hex, short, ss58PublicKey } from "../util";
@@ -24,7 +24,7 @@ export const signer: Check = {
     const provider = await getAccountsProvider();
     if (provider) {
       for (const i of INDICES) {
-        hostKeys[i] = await provider.getProductAccount(DOT_NAME, i).match(
+        hostKeys[i] = await provider.getProductAccount(PROBE_DOT_NAME, i).match(
           (a) => hex(a.publicKey),
           (e) => `error — ${errText(e)}`,
         );
@@ -58,7 +58,7 @@ export const signer: Check = {
         log(`${short(a.address)}: ${errText(e)}`);
         continue;
       }
-      for (const pid of [PRODUCT_ID, DOT_NAME]) {
+      for (const pid of [PROBE_ID, PROBE_DOT_NAME]) {
         for (const i of INDICES) {
           try {
             if (hex(deriveProductAccountPublicKey(pub, pid, i)) === hostKeys[i]) matches.push(`${short(a.address)} + "${pid}" #${i}`);

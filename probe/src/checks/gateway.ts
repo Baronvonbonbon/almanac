@@ -1,5 +1,5 @@
 import { isInsideContainerSync } from "@parity/product-sdk";
-import { PRODUCT_ID } from "../../product.mjs";
+import { PROBE_ID } from "../../product.mjs";
 import type { Check } from "../types";
 import { errText, since, withTimeout } from "../util";
 
@@ -19,7 +19,7 @@ export const gateway: Check = {
     "Whether a doctor's timed link can open in a normal browser and still be stopped — or has to become expire-only.",
   steps: [
     "Run it here inside the Polkadot app.",
-    `Then open ${PRODUCT_ID}.dev-dot.li in a phone browser and run it there, pasting a CID from P6.`,
+    `Then open ${PROBE_ID}.dev-dot.li in a phone browser and run it there, pasting a CID from P6.`,
   ],
   input: { label: "CID to fetch", placeholder: "bafy… (defaults to the newest P6 upload)" },
   async run({ journal, input, log }) {

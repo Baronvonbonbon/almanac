@@ -64,16 +64,18 @@ The Phase 0 gate needs every check on at least one Android and one iOS phone.
       bytes stored the way the SDK uploads, 2026-09-14 13:56 UTC) and
       `bafkreif5zpe5s4ja4kk67benbljh4u5bwynkqfd66prm3p3prkhtuxt2na` (an 18 KB piece of the first
       probe build, 2026-09-13 15:11 UTC, readable through the gateway only). This is the retention
-      test until P6 works. While the app holds `almanacapp.dot`, run it from a desktop with
-      `npm run retention` — the gateway half; the through-the-app half waits for the probe's next
-      deploy. The first check at 15 days or later falls on 2026-09-28 for the older one
+      test until P6 works. Run it from a desktop with `npm run retention` — the gateway half; the
+      through-the-app half waits for the probe to be published to `almanacprobe.dot`, which since
+      2026-09-16 no longer waits on the app. The first check at 15 days or later falls on 2026-09-28
+      for the older one
       and 2026-09-29 for the newer
 - [ ] P6b at the sizes a backup actually is — 16 KiB, 64 KiB, 256 KiB, 1 MiB (DESIGN §8's padding
       buckets) — against 4 MiB a claim. P6b answered the question it was added for on 2026-09-16 at
       256 bytes; what one upload may carry, whether the host chunks, and what happens when the quota
       runs out mid-backup are all still unmeasured
 - [ ] P9b and P9c on two phones
-- [ ] P10 in a phone browser, at `almanacapp.dev-dot.li` — once the probe is published there again
+- [ ] P10 in a phone browser, at `almanacprobe.dev-dot.li` — once the probe is published to its own
+      name (2026-09-16: it has one, so this no longer waits for the app to give the label back)
 - [ ] P13 — WebRTC inside the app: the `WebRtc` permission, a reload, then two phones on one Wi-Fi
       with no STUN server. Added 2026-09-14, for provider shares
 - [ ] P14 — reading a QR code on iOS: `BarcodeDetector`, or the size of a JavaScript reader
