@@ -22,3 +22,17 @@ export const PROVIDER_DOT_NAME = `${PROVIDER_ID}.dot`;
 // Must equal the --env passed to pad. The SDK defaults cloud storage to "paseo", which a devnet host
 // build does not carry — createApp then throws "Chain … is not supported by the current host".
 export const CLOUD_ENV = "devnet";
+
+// The registry that vouches for providers (docs/DESIGN.md §9, provider registration). almanac checks
+// a clinic's attestation against this key and makes no share for a clinic it cannot verify, so this
+// is what almanac trusts when it decides who may become a patient's provider — and it is checked on
+// the phone, with nothing sent anywhere.
+//
+// The secret half lives at ~/.config/almanac/registry-key, made by tools/registry-key.mjs, and never
+// belongs in a bundle or on a phone. Changing this key stops every attestation signed by the old one
+// from verifying, which stops every clinic pairing until each is vouched for again.
+//
+// **A demo registry.** A real one would be held by whoever is entitled to say that a clinic is a
+// clinic — a medical board or an accreditation body — rather than by whoever wrote the app
+// (THREAT-MODEL R15). Made 2026-09-16.
+export const REGISTRY_PUBLIC_KEY = "cc82bd9d751561e47cdc790256755e7c1834a5eb751433f88eb754568b4af302";

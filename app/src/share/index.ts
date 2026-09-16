@@ -3,6 +3,18 @@
  * behind them. Pure — no host, no vault, no screen — so the provider app (provider/) imports this
  * very code, as "@app/share", and the two can never disagree about a format.
  */
+export {
+  ATTESTATION_BYTES,
+  attest,
+  newSigningKeyPair,
+  readAttestation,
+  signPairing,
+  TIER,
+  verifyAttestation,
+  verifyPairing,
+  type Attestation,
+  type Tier,
+} from "./attest";
 export { ShareError, type ShareProblem } from "./errors";
 export { FRAME_BYTES, FRAME_PREFIX, joinFrames, readFrame, toFrames, type Frame } from "./frames";
 export { almanacPair, checkDigits, keyPairFrom, newKeyPair, pairDigits, providerPair, type KeyPair, type PairKeys } from "./keys";

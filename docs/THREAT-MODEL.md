@@ -121,6 +121,30 @@ a clinic's address with a patient's share. So the provider app fetches through t
 lookup, on the Polkadot app's own network path, and never a public gateway — which P6b and P7 show
 works for the BLAKE2b CIDs almanac uploads.
 
+**R13 — A clinic's identity key is worth more than its device.** Registration gives a provider app a
+long-lived key the registry has vouched for, and everything else it holds is per patient and short
+lived. Whoever takes that key can make pairing codes that almanac believes, as that clinic, anywhere
+— this is R11 made worse, because before registration a thief could only ask patients the clinic
+already had. Mitigations: the key lives in the provider app's vault under its device key, behind the
+PIN; an attestation lasts weeks, so a revoked or stolen identity stops working without anyone having
+to reach the thief's device; and the registry will not renew one that has been revoked. almanac cannot
+tell a stolen identity from its owner, and does not pretend to — the six digits bind the channel, not
+the clinic.
+
+**R14 — The registry says which clinics use almanac.** Approvals, licence payments and renewals are on
+a public chain, so it is visible that a clinic is registered, roughly what it pays and when it renews.
+No patient appears anywhere in it: patients verify offline, so the chain never learns that anyone
+visited anyone. This is a disclosure about providers, and they should be told of it before they
+register, not after.
+
+**R15 — A registry is a gatekeeper on care.** almanac refusing to pair with an unregistered clinic is
+what makes registration mean anything, and it is also a way for almanac to stop a patient sharing with
+their own doctor: a clinic offline past its attestation's expiry, a registry that loses its signing
+key, an Approver who is slow, or a developer who decides who counts as a clinician. The design keeps
+that power small — approval is separate from paying, a lapse drops to a free tier rather than to
+nothing, and an opening already allowed can never be cut off — but it does not remove it. Whoever
+holds the Approver role holds this, which is the argument for it not staying with the developer.
+
 ## Not in scope
 
 - Malware or a compromised operating system on the phone

@@ -501,6 +501,52 @@ those labels, no export, no copy.
 - It keeps almanac's promise of no requests outside the app, under the same check and budget as
   almanac.
 
+### Provider registration and licence
+
+*Decided 2026-09-16. A provider app is not something anyone should be able to publish and point at
+patients, so a registry says which clinics are real, and a licence pays for the app that serves them.*
+
+**Approval comes first, and is separate from paying.** An **Approver** — the developer now, the role
+written so a medical board or an accreditation body can hold it later — decides that a clinic is a
+clinic. The evidence for that (a licence number, a jurisdiction) is submitted out of band and only its
+**hash** is kept on chain: the registry says *approved*, never *here are their papers*.
+
+**The licence sits on top of approval.** A **free tier of one seat** for an approved clinic, and a
+paid tier per clinic per year, seats added pro rata. A lapsed licence **drops to the free tier** — it
+never drops to nothing. What a lapse stops: taking **new** patients, and **asking** to reopen a share.
+What it never stops: an opening the patient has already allowed. A licence must not be able to fail in
+the middle of a consultation.
+
+**almanac refuses to pair with a clinic the registry has not vouched for**, or whose attestation has
+run out. That is the only enforcement a patient can feel — a contract cannot stop a modified app from
+reading a share it already holds, so what a contract is really for is saying who may take new patients,
+and being paid for it.
+
+**The patient's phone asks nobody.** The check is an **attestation** — the registry's signature over
+the clinic's identity key, a tier, an expiry and the clinic's name — carried inside the pairing code
+and checked against a registry key built into the bundle (`app/src/share/attest.ts`). No chain call,
+no network, nothing leaves the phone. Two reasons, and the second is the stronger: a clinic room may
+have no signal, and asking a chain *"is this provider licensed?"* would tell whoever answered which
+provider this patient is sitting with. A light client would not fix that — it fetches proofs of the
+keys it asks about — and would not fit either: smoldot is some 6.5 MB against a 640 KiB code budget,
+every byte of which is uploaded to Bulletin and renewed.
+
+**Revocation is an expiry.** An attestation lasts weeks, not years. The provider app renews it while it
+is online, **through the host's chain client** — no new outbound requests, no allowlist entry, no bundle
+cost. A clinic that is revoked simply stops being renewed, and stops being able to pair when what it
+holds runs out.
+
+**Off the phone, trust nobody.** Issuing attestations, watching the registry and auditing it want a
+verifying client rather than a public RPC, and that is exactly what `pine-rpc` is for: a smoldot light
+client behind an `eth_*` endpoint on localhost, which the registry operator — or any clinic, or anyone
+checking the developer's claims — can run.
+
+**The signatures here are the only ones in almanac, and they are about the clinic.** Everything between
+almanac and a provider app stays sealed rather than signed, so neither can prove to anyone else what
+passed between them. The registry signs a statement about a clinic; the clinic signs its own pairing
+code. The patient signs nothing, and an attestation is evidence that a clinic exists, never that it has
+a patient.
+
 **Bulletin rails** — designed, not yet built; unblocked 2026-09-16 by P6b, which found an upload path
 that works (the host's, not the SDK's). The same sealed selection, padded and uploaded, so an updated
 share can reach the provider away from the visit. Before the first upload almanac says, once: *To let

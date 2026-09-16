@@ -267,6 +267,23 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
       that opens it (three openings a statement, not four), and the pairing still in person only —
       [DESIGN §9](DESIGN.md#provider-shares), decided 2026-09-16. Needs P6b at a share's real size
       first: a share is 2–16 KiB, and only 256 bytes has been measured works
+- [ ] Provider registration and licence ([DESIGN §9](DESIGN.md#provider-registration-and-licence),
+      decided 2026-09-16). An Approver role the developer holds and a board could take over; credential
+      evidence kept as a hash; a free tier of one seat for an approved clinic and a paid tier per clinic
+      per year, seats pro rata; a lapse drops to the free tier. A lapse stops new pairings and asking to
+      reopen, never an opening already allowed
+  - [x] `share/attest.ts` — the attestation the registry signs and almanac checks offline, and the
+        clinic's signature over its own pairing code, with tests (2026-09-16)
+  - [ ] The registry public key in `product.mjs`, from `tools/registry-key.mjs`
+  - [ ] The pairing code carries the identity key, the attestation and that signature; almanac refuses
+        an unregistered or expired provider in words that say which it is
+  - [ ] `ProviderRegistry` — approve, revoke, buy and extend a licence, read status. **Gated on
+        [devnet #10](https://github.com/Polkadot-Community-Foundation/products-devnet-issues/issues/10):
+        deploying a new contract name traps on an outdated CDM registry, open and untouched since
+        2026-08-06.** Built and tested against a local node meanwhile
+  - [ ] P15 — try `cdm deploy` of a new name on devnet, so #10 is measured rather than assumed
+  - [ ] The provider app renews its attestation through the host's chain client; `pine-rpc` for
+        issuing and auditing off the phone
 - [ ] WebRTC at the visit, if P13 shows it works
 - [ ] Then: the visit summary (copied as text), and live shares for family or a partner
 
