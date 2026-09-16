@@ -16,6 +16,7 @@ export {
   type Tier,
 } from "./attest";
 export { ShareError, type ShareProblem } from "./errors";
+export { REGISTRY_KEY, REGISTRY_PUBLIC_KEY } from "./registry";
 export { FRAME_BYTES, FRAME_PREFIX, joinFrames, readFrame, toFrames, type Frame } from "./frames";
 export { almanacPair, checkDigits, keyPairFrom, newKeyPair, pairDigits, providerPair, type KeyPair, type PairKeys } from "./keys";
 export {
