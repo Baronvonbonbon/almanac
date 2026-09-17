@@ -84,6 +84,12 @@ export class CodeCollector {
 export interface Opening {
   shareKey: Uint8Array;
   until: number;
+  /**
+   * The blob this opening is for, fetched when the approval named one (docs/DESIGN.md §9) — what the
+   * patient chose to share as it stood when they allowed it. Without one, the copy read at the visit
+   * is opened instead. In memory like the key, and never written anywhere.
+   */
+  payload?: Uint8Array;
 }
 
 /**
@@ -115,8 +121,8 @@ export function readVisit(bytes: Uint8Array, pairing: Pairing, label: string, no
 }
 
 /** What a patient's share holds, opened with the key of an opening. Held only by the screen that shows it. */
-export async function openSelection(patient: Patient, shareKey: Uint8Array): Promise<Selection> {
-  const { header, payload } = openStored(fromHex(patient.stored), shareKey);
+export async function openSelection(patient: Patient, opening: Opening): Promise<Selection> {
+  const { header, payload } = openStored(opening.payload ?? fromHex(patient.stored), opening.shareKey);
   if (hex(header.id) !== patient.id) throw new ShareError("damaged", "another share");
   return decodeSelection(payload);
 }

@@ -482,11 +482,46 @@ an opening     the provider app makes a key E for each request; the answer carri
   share ends, since the patient answers whenever they next open almanac. *Refined 2026-09-15,
   building the provider app: E was to stay in memory too, which would have lost every answer that
   came after the app closed.*
+- **What stopping can and cannot do.** *Decided 2026-09-16, written down here 2026-09-17 — THREAT-MODEL
+  R10 referred to this paragraph before it existed.* Three windows, and they are not the same:
+  - **Before any opening:** the provider holds the sealed selection and no key. Stop, and it stays
+    sealed for good. This one is cryptography, not a promise.
+  - **Between openings:** stopping withholds the next key, so nothing made after it can be opened.
+  - **After an opening:** what that opening gave is past almanac's reach. By codes it is a copy on
+    their device (R2); on Bulletin it is a world-readable object they can fetch again with no app at
+    all (R10).
+
+  So a payload on Bulletin is sealed under **a fresh `KS` for every upload**, never the share's own
+  key: an opening's key opens that one upload and nothing else, and a provider who kept the key from
+  one opening cannot read the next. Retention — about a fortnight (§8, B1) — is the only deletion
+  almanac has, and it is a backstop, not a promise.
+
+  One consequence reaches the provider's screen, and is not a detail: since the key an approval
+  carries opens that blob alone, a blob that cannot be fetched **cannot be stood in for by the copy
+  read at the visit** — that copy does not open with this key. The provider app says so and asks the
+  patient again, rather than quietly showing something older than what was allowed. *Found 2026-09-17
+  writing the round-trip test, which had been drafted expecting the opposite.*
+
+  Three things follow, decided with it:
+  - **The visit stays offline.** The payload at the visit travels by codes and touches no network, so
+    a share that is never reopened publishes nothing at all. Only a later opening — one the patient
+    allowed, knowing what that does — puts a blob on Bulletin.
+  - **Each upload is the whole selection as it stands**, re-sealed under its own key, never an
+    increment on an earlier one. An increment would need the provider app to have kept the earlier
+    plaintext, which is the one thing it promises not to do.
+  - **The blob goes up first, the approval last**, as the backup pointer is written last (§8): an
+    upload that fails leaves nothing allowed and nothing pointed at.
+
+  And, once, before the first upload a patient ever makes: a notice saying an encrypted copy goes on a
+  public network, that stopping cannot take it back, and that it becomes unreadable to everyone in
+  about a fortnight. Nothing is uploaded before that has been agreed to — the same gate backups have
+  (§8, R7).
 
 | Message | From → to | Carried by | Size |
 |---|---|---|---|
 | Pairing code | provider app → almanac | a code on screen | about 100 bytes |
-| Share, with the first approval | almanac → provider app | a short loop of codes; WebRTC after P13; Bulletin after P6 | padded to 2, 4, 8 or 16 KiB |
+| Share, with the first approval | almanac → provider app | a short loop of codes; WebRTC after P13. Never Bulletin — the visit stays offline | padded to 2, 4, 8 or 16 KiB |
+| A later opening's payload | almanac → provider app | a blob on Bulletin, named by the CID in the approval that opens it, under a key of its own | padded to 2, 4, 8 or 16 KiB |
 | Request | provider app → almanac | the provider app's one requests statement | 93 bytes; five fit |
 | Approval, or stop | almanac → provider app | almanac's one sharing statement, replaced each time | 157 bytes; three fit. *Changed 2026-09-16: 125 bytes and four, before an approval carried the CID of the blob it opens* |
 

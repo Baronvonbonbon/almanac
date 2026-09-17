@@ -1,10 +1,15 @@
-import { hex } from "../lib/bytes";
+import { randomBytes } from "@parity/product-sdk-crypto";
+import { localToday } from "../cycle";
+import { allDays, loadSettings } from "../data";
+import { fromHex, hex } from "../lib/bytes";
 import type { Host } from "../platform";
-import { almanacPair, openRequest, REQUEST_BYTES, slots, type Request } from "../share";
+import { almanacPair, encodeSelection, MAX_BLOB_PAYLOAD, openRequest, REQUEST_BYTES, sealPayload, ShareError, slots, type Request } from "../share";
+import { KEY_BYTES } from "../share/wire";
 import type { Vault } from "../vault";
 import { shareKeys } from "./keys";
 import { sendSharing } from "./outbox";
-import { answerRequests, isLive, readShares, type ShareRecord } from "./records";
+import { answerRequests, isLive, readOnlineOk, readShares, type ShareRecord } from "./records";
+import { selectForShare } from "./select";
 import { openingUntil, type Opening } from "./times";
 import type { ShareRequest } from "./useShareRequests";
 
@@ -95,7 +100,31 @@ export async function answer(host: Host, vault: Vault, request: ShareRequest, op
     return null;
   }
   const until = openingUntil(opening, now, record.ends);
-  await answerRequests(vault, record.id, request.keys, { at: now, until, key: request.key });
+  const upload = await uploadFor(host, vault, record, now);
+  await answerRequests(vault, record.id, request.keys, { at: now, until, key: request.key, ...upload });
   await sendSharing(host, vault, now);
   return until;
+}
+
+/**
+ * The blob a later opening opens (docs/DESIGN.md §9): everything the share covers **as it stands
+ * now**, sealed under a key of its own and put on Bulletin — so the provider sees what has been
+ * logged since the visit, rather than the copy frozen there.
+ *
+ * Nothing at all until the patient has agreed to it and there is somewhere to put it; then today's
+ * behaviour stands and the approval opens the payload from the visit. The whole selection each time,
+ * never an increment on an earlier one: an increment would need the provider app to have kept the
+ * earlier plaintext, which is the one thing it promises not to do.
+ *
+ * It goes up **before** the opening is kept, so an upload that fails leaves nothing allowed and
+ * nothing pointed at — the patient sees it fail and can answer again.
+ */
+async function uploadFor(host: Host, vault: Vault, record: ShareRecord, now: number): Promise<{ cid?: string; payloadKey?: string }> {
+  if (!host.blobs || !(await readOnlineOk(vault))) return {};
+  const [settings, entries] = await Promise.all([loadSettings(vault), allDays(vault)]);
+  const payload = await encodeSelection(selectForShare(entries, settings, record.choice, localToday(new Date(now))));
+  if (payload.length > MAX_BLOB_PAYLOAD) throw new ShareError("too-large", "more than a share can hold");
+  const key = randomBytes(KEY_BYTES);
+  const header = { id: fromHex(record.id), senderKey: shareKeys(record).sender.publicKey, ends: record.ends };
+  return { cid: hex(await host.blobs.put(sealPayload(header, payload, key))), payloadKey: hex(key) };
 }

@@ -30,7 +30,7 @@ export function Viewer({ patient, opening, now, onDone }: { patient: Patient; op
   useEffect(() => {
     if (!opening) return;
     let live = true;
-    openSelection(patient, opening.shareKey).then(
+    openSelection(patient, opening).then(
       (s) => live && setSelection(s),
       (e: unknown) => live && setError(t("failed", { message: e instanceof Error ? e.message : String(e) })),
     );

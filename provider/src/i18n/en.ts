@@ -68,6 +68,7 @@ export const en = {
     waiting: "Waiting for their OK. Asked {when}.",
     shared: "Shared until {date}",
     allowed: "{name} lets you look until {time}",
+    unreachable: "Couldn't reach what {name} shared. Ask them to allow it again.",
     stopped: "{name} stopped sharing. Their share is deleted from this device.",
   },
   patient: {

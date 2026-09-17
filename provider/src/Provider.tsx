@@ -67,9 +67,12 @@ export function Provider({ host, vault, tryout, onLock, onErased }: { host: Host
     const patient = kept.find((p) => p.id === heard.id);
     if (!patient) return;
     if (heard.kind === "allowed") {
-      setOpenings((all) => new Map(all).set(patient.id, heard.opening));
+      const opening = await openingFrom(heard, patient);
       await setAsking(vault, patient.id, undefined);
-      setToast(t("patients.allowed", { name: patientName(patient), time: timeOf(heard.opening.until) }));
+      if (opening) {
+        setOpenings((all) => new Map(all).set(patient.id, opening));
+        setToast(t("patients.allowed", { name: patientName(patient), time: timeOf(heard.opening.until) }));
+      }
     } else {
       setOpenings((all) => new Map([...all].filter(([id]) => id !== patient.id)));
       await forgetPatient(vault, patient.id);
@@ -77,6 +80,28 @@ export function Provider({ host, vault, tryout, onLock, onErased }: { host: Host
       setView((v) => ("id" in v && v.id === patient.id ? { at: "list" } : v));
     }
     await reload();
+  }
+
+  /**
+   * An approval that names a blob opens that blob — what the patient chose as it stood when they
+   * allowed it (docs/DESIGN.md §9) — rather than the copy read at the visit. Fetched here, where the
+   * answer arrives, so it is held in memory with the opening and never written anywhere.
+   *
+   * There is no falling back to the visit's copy. Each upload has a key of its own, so the key this
+   * approval carries opens that one blob and nothing else — the copy from the visit would not open
+   * with it. Unreachable means asking again: `null`, and the provider is told.
+   */
+  async function openingFrom(heard: Extract<Heard, { kind: "allowed" }>, patient: Patient): Promise<Opening | null> {
+    if (!heard.cid) return heard.opening;
+    let payload: Uint8Array | null = null;
+    try {
+      payload = (await host.blobs?.get(heard.cid)) ?? null;
+    } catch {
+      // Told below, like one that simply was not found.
+    }
+    if (payload) return { ...heard.opening, payload };
+    setToast(t("patients.unreachable", { name: patientName(patient) }));
+    return null;
   }
 
   const openingOf = (id: string): Opening | null => {

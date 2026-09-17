@@ -34,7 +34,19 @@ export {
   type Stop,
 } from "./messages";
 export { checkName, NAME_BYTES, PAIRING_PREFIX, pairingCode, readPairingCode, verifyProvider, type Pairing } from "./pairing";
-export { MAX_PAYLOAD, newShare, openStored, readShare, sealShare, SHARE_BUCKETS, type NewShare, type ReceivedShare, type ShareHeader } from "./share";
+export {
+  MAX_BLOB_PAYLOAD,
+  MAX_PAYLOAD,
+  newShare,
+  openStored,
+  readShare,
+  sealPayload,
+  sealShare,
+  SHARE_BUCKETS,
+  type NewShare,
+  type ReceivedShare,
+  type ShareHeader,
+} from "./share";
 export {
   CATEGORIES,
   decodeSelection,

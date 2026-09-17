@@ -185,10 +185,11 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
       settings with the look, the mode toggles and the usual lengths
 - [x] Web tryout mode, with the same look picker, and example months on request
 - [x] Hearth, Moonpaper and Pebble, each light and dark, following the host theme; their fonts
-      bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and **486 KiB of code
-      of 512** as of 2026-09-17, after Phase 4. Twenty-six KiB of headroom left, so the next thing that
-      wants a library needs a reason: the Bulletin path deliberately carries a 32-byte content hash
-      rather than a CID string so that multiformats never entered the bundle
+      bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and **486.5 KiB of
+      code of 512** as of 2026-09-17, after Phase 4 and Phase 5's Bulletin rails. 25.5 KiB of headroom
+      left, so the next thing that wants a library needs a reason: the Bulletin path deliberately
+      carries a 32-byte content hash rather than a CID string so that multiformats never entered the
+      bundle
 
 **First run on a phone** — after `npm run deploy -w app`, which replaces the probe bundle still at
 `almanacapp.dot` (the probe's own name is `almanacprobe.dot`)
@@ -340,8 +341,20 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
 - [ ] Bulletin rails with the one-time notice. Unblocked 2026-09-16 (P6b): upload through the host's
       preimage call, not `cloudStorage.upload`. A fresh `KS` for each upload, the CID in the approval
       that opens it (three openings a statement, not four), and the pairing still in person only —
-      [DESIGN §9](DESIGN.md#provider-shares), decided 2026-09-16. Needs P6b at a share's real size
-      first: a share is 2–16 KiB, and only 256 bytes has been measured works
+      [DESIGN §9](DESIGN.md#provider-shares), decided 2026-09-16. **Its measurement gate is
+      discharged:** P6c (2026-09-17) put 16 KiB through 1 MiB up whole, byte for byte, and a share is
+      2–16 KiB — where only 256 bytes had been measured before
+  - [x] The rails themselves (2026-09-17). `sealPayload` — a blob shaped exactly as the provider app
+        already keeps a share, so `openStored` opens it unchanged and the header sealed inside still
+        ties it to its share; the upload on *Allow*, carrying the whole selection **as it stands**, so
+        a later opening shows what was logged since the visit rather than the copy frozen there; the
+        CID and that upload's own key kept on the opening; the provider fetching the blob its approval
+        names. **Gated off by default:** nothing uploads until the patient has agreed
+        (`readOnlineOk`), so the plumbing cannot run ahead of the notice — the gate backups have at
+        [DESIGN §8](DESIGN.md#backups), R7. Tests pin the two guarantees §9 rests on: an opening's key
+        is never the share's, and one opening's key opens that upload and no other
+  - [ ] The notice itself, once, before a patient's first upload. Until it ships nothing is ever
+        uploaded, since agreeing is the only thing that sets the gate
 - [ ] Provider registration and licence ([DESIGN §9](DESIGN.md#provider-registration-and-licence),
       decided 2026-09-16). An Approver role the developer holds and a board could take over; credential
       evidence kept as a hash; a free tier of one seat for an approved clinic and a paid tier per clinic

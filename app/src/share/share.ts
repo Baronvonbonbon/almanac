@@ -22,6 +22,8 @@ import { equal, getU32, ID_BYTES, KEY_BYTES, KIND, putU32, SEAL_OVERHEAD, second
 export const SHARE_BUCKETS = [2, 4, 8, 16].map((k) => k * 1024);
 const HEADER = 2 + ID_BYTES + KEY_BYTES + 4;
 const FIXED = HEADER + ENTRY_BYTES + SEAL_OVERHEAD;
+/** A blob carries no approval — that goes in the statement — so it has `ENTRY_BYTES` more room. */
+const BLOB_FIXED = HEADER + SEAL_OVERHEAD;
 
 export interface NewShare {
   id: Uint8Array;
@@ -53,7 +55,7 @@ export const MAX_PAYLOAD = SHARE_BUCKETS[SHARE_BUCKETS.length - 1] - FIXED - HEA
 
 /** almanac: the share for the provider whose code was scanned, open at once until `until`. */
 export function sealShare(share: NewShare, pairing: Pairing, until: number): Uint8Array {
-  const header = encodeHeader(share);
+  const header = encodeHeader({ id: share.id, senderKey: share.sender.publicKey, ends: share.ends });
   const size = SHARE_BUCKETS.find((b) => b >= FIXED + HEADER + 4 + share.payload.length);
   if (!size) throw new ShareError("too-large", "more than a share can hold");
   const plain = new Uint8Array(size - FIXED);
@@ -63,6 +65,33 @@ export function sealShare(share: NewShare, pairing: Pairing, until: number): Uin
   // NO_CID: at the visit the payload is in this very share, carried by codes — there is no blob yet.
   const approval = sealApproval(almanacPair(share.sender, pairing.providerKey), share.sender, share.id, pairing.firstOpeningKey, until, share.shareKey, NO_CID);
   return concatBytes(header, approval, xchachaEncryptPacked(plain, share.shareKey));
+}
+
+/** The most a payload can be in a blob: more than the visit's share, which carries an approval too. */
+export const MAX_BLOB_PAYLOAD = SHARE_BUCKETS[SHARE_BUCKETS.length - 1] - BLOB_FIXED - HEADER - 4;
+
+/**
+ * almanac: a later opening's payload, as it goes on Bulletin (docs/DESIGN.md §9).
+ *
+ * Deliberately the same shape the provider app already keeps, so `openStored` opens it unchanged and
+ * the header sealed inside still ties it to this share — a blob moved under another share's header
+ * does not open. No approval inside: that travels in the sharing statement, naming this blob by its
+ * content hash.
+ *
+ * Sealed under a key of its own, never the share's (§9, "what stopping can and cannot do"): the key
+ * for one opening opens this upload and nothing else, so a provider who kept the key from an earlier
+ * opening cannot read this one, and stopping withholds the next key.
+ */
+export function sealPayload(of: ShareHeader, payload: Uint8Array, key: Uint8Array): Uint8Array {
+  const header = encodeHeader(of);
+  const size = SHARE_BUCKETS.find((b) => b >= BLOB_FIXED + HEADER + 4 + payload.length);
+  if (!size) throw new ShareError("too-large", "more than a share can hold");
+  const plain = new Uint8Array(size - BLOB_FIXED);
+  plain.set(header);
+  putU32(plain, HEADER, payload.length);
+  plain.set(payload, HEADER + 4);
+  // Exactly a bucket: HEADER + SEAL_OVERHEAD + (size - BLOB_FIXED) === size.
+  return concatBytes(header, xchachaEncryptPacked(plain, key));
 }
 
 export interface ReceivedShare {
@@ -98,13 +127,13 @@ export function openStored(stored: Uint8Array, shareKey: Uint8Array): { header: 
   return { header, payload: plain.slice(HEADER + 4, HEADER + 4 + length) };
 }
 
-function encodeHeader(share: NewShare): Uint8Array {
+function encodeHeader(of: ShareHeader): Uint8Array {
   const header = new Uint8Array(HEADER);
   header[0] = VERSION;
   header[1] = KIND.share;
-  header.set(share.id, 2);
-  header.set(share.sender.publicKey, 2 + ID_BYTES);
-  putU32(header, 2 + ID_BYTES + KEY_BYTES, seconds(share.ends));
+  header.set(of.id, 2);
+  header.set(of.senderKey, 2 + ID_BYTES);
+  putU32(header, 2 + ID_BYTES + KEY_BYTES, seconds(of.ends));
   return header;
 }
 

@@ -1,7 +1,7 @@
 import { equal } from "@app/share/wire";
 import { hex } from "@app/lib/bytes";
 import type { Host } from "@app/platform";
-import { ENTRY_BYTES, openEntry, slots, unmaskShareKey, type Approval, type Stop } from "@app/share";
+import { ENTRY_BYTES, NO_CID, openEntry, slots, unmaskShareKey, type Approval, type Stop } from "@app/share";
 import { patientKeys, type Patient } from "./patients";
 import type { Opening } from "./visit";
 
@@ -12,7 +12,8 @@ import type { Opening } from "./visit";
  * long as it is open, and hears answers already waiting as it opens.
  */
 
-export type Heard = { kind: "allowed"; id: string; opening: Opening } | { kind: "stopped"; id: string };
+/** `cid` is set only when the approval named a blob: without one, the copy read at the visit is opened. */
+export type Heard = { kind: "allowed"; id: string; opening: Opening; cid?: Uint8Array } | { kind: "stopped"; id: string };
 
 /** The topics to listen on, and a reader for what arrives: what in almanac's statement is for these patients. */
 export function answerReader(patients: Patient[], now: () => number): { topics: Uint8Array[]; read(data: Uint8Array): Heard[] } {
@@ -39,7 +40,12 @@ export function answerReader(patients: Patient[], now: () => number): { topics: 
           if (entry.kind === "stop") heard.push({ kind: "stopped", id: patient.id });
           // Only the request still waiting: an approval for an earlier one, or one whose time is up, opens nothing.
           else if (keys.asking && equal(entry.openingKey, keys.asking.publicKey) && entry.until > now())
-            heard.push({ kind: "allowed", id: patient.id, opening: { shareKey: unmaskShareKey(entry, keys.asking, keys.sender), until: entry.until } });
+            heard.push({
+              kind: "allowed",
+              id: patient.id,
+              opening: { shareKey: unmaskShareKey(entry, keys.asking, keys.sender), until: entry.until },
+              ...(equal(entry.cid, NO_CID) ? {} : { cid: entry.cid }),
+            });
         }
       return heard;
     },

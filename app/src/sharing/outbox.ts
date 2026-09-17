@@ -31,9 +31,13 @@ function entries(records: ShareRecord[], now: number): Entry[] {
     const pair = almanacPair(keys.sender, keys.providerKey);
     if (isLive(r, now)) {
       for (const o of r.openings)
-        if (o.key && o.until > now)
-          // NO_CID until the Bulletin rails upload a blob to point at (DESIGN §9, PLAN Phase 5).
-          out.push({ topic: pair.answerTopic, sealed: sealApproval(pair, keys.sender, keys.id, fromHex(o.key), o.until, keys.shareKey!, NO_CID), approval: true, at: o.at });
+        if (o.key && o.until > now) {
+          // An opening with an upload of its own carries that blob's key and CID; one without opens
+          // the payload from the visit, under the share's own key (DESIGN §9).
+          const openWith = o.payloadKey ? fromHex(o.payloadKey) : keys.shareKey!;
+          const cid = o.cid ? fromHex(o.cid) : NO_CID;
+          out.push({ topic: pair.answerTopic, sealed: sealApproval(pair, keys.sender, keys.id, fromHex(o.key), o.until, openWith, cid), approval: true, at: o.at });
+        }
     } else if (r.stopped !== undefined && r.ends > now) {
       out.push({ topic: pair.answerTopic, sealed: sealStop(pair, keys.id, r.stopped), approval: false, at: r.stopped });
     }

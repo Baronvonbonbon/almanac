@@ -19,6 +19,20 @@ export interface ShareChoice {
   to: ISODate;
 }
 
+export interface ShareOpening {
+  at: number;
+  until: number;
+  /** The key the provider app asked with — absent for the first, which went with the share. */
+  key?: string;
+  /**
+   * The blob on Bulletin this opening opens, and the key that opens it — both absent when it opens
+   * the payload from the visit instead (docs/DESIGN.md §9). Each upload has a key of its own, so the
+   * key for one opening opens that upload and no other.
+   */
+  cid?: string;
+  payloadKey?: string;
+}
+
 export interface ShareRecord {
   id: string;
   provider: { name: string; key: string; check: string };
@@ -30,17 +44,24 @@ export interface ShareRecord {
   /** Opens what was shared. Gone once the share stops. */
   shareKey?: string;
   stopped?: number;
-  /**
-   * Each opening allowed, and until when: the sharing history in Privacy. `key` is the one the
-   * provider app asked with — absent for the first, which went with the share.
-   */
-  openings: { at: number; until: number; key?: string }[];
+  /** Each opening allowed, and until when: the sharing history in Privacy. */
+  openings: ShareOpening[];
   /** The keys of requests answered, allowed or not — the last 32 — so none is asked about twice. */
   answered?: string[];
 }
 
 const SHARES = "shares";
 const ANSWERED_KEPT = 32;
+const ONLINE_OK = "sharing-online";
+
+/**
+ * When the patient agreed that a later opening may put a copy on Bulletin — `null` until they have
+ * been told (docs/DESIGN.md §9, the same gate backups have at §8, R7). **Nothing uploads before this
+ * is set.** Kept in the vault, so the decoy has its own and inherits no agreement from the real one.
+ */
+export const readOnlineOk = async (vault: Vault): Promise<number | null> => (await vault.readJSON<number>(ONLINE_OK)) ?? null;
+
+export const setOnlineOk = (vault: Vault, at: number): Promise<void> => vault.writeJSON(ONLINE_OK, at);
 
 export const readShares = async (vault: Vault): Promise<ShareRecord[]> => (await vault.readJSON<ShareRecord[]>(SHARES)) ?? [];
 
@@ -73,7 +94,7 @@ export const stopShare = (vault: Vault, id: string, now: number): Promise<void> 
  * Answers the provider app's requests to open a share: with the opening allowed, or with none for
  * "Not now". Either way they are not asked about again; the provider app can always ask anew.
  */
-export const answerRequests = (vault: Vault, id: string, keys: string[], opening?: { at: number; until: number; key: string }): Promise<void> =>
+export const answerRequests = (vault: Vault, id: string, keys: string[], opening?: ShareOpening & { key: string }): Promise<void> =>
   change(vault, id, (r) => ({
     ...r,
     openings: opening ? [...r.openings, opening] : r.openings,

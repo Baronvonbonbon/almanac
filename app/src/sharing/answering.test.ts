@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { hex, text, utf8 } from "../lib/bytes";
-import { memoryHost, MemoryStatements, type StatementPort } from "../platform";
+import { saveDay } from "../data";
+import { fromHex, hex, text, utf8 } from "../lib/bytes";
+import { memoryHost, MemoryBlobs, MemoryStatements, type StatementPort } from "../platform";
 import {
+  decodeSelection,
   ENTRY_BYTES,
   newKeyPair,
   newShare,
@@ -28,7 +30,7 @@ import { demoPairing } from "../share/testing";
 import { Vault, type KdfParams } from "../vault";
 import { answer, listenForRequests } from "./answering";
 import { sendIfDue, sendSharing, sharingStatement } from "./outbox";
-import { addShare, readShares, shareRecord, stopShare, type ShareChoice } from "./records";
+import { addShare, readShares, setOnlineOk, shareRecord, stopShare, type ShareChoice } from "./records";
 import type { ShareRequest } from "./useShareRequests";
 
 const FAST: KdfParams = { N: 2 ** 10, r: 8, p: 1 };
@@ -50,6 +52,17 @@ interface Provider {
 async function almanac(store = new MemoryStatements(() => NOW), port: StatementPort = store.port("almanac")): Promise<Almanac> {
   const host = memoryHost("almanac", undefined, port);
   return { store, host, vault: await Vault.create(host, FAST) };
+}
+
+/** almanac with somewhere to put a blob, and — unless `agreed` is false — the patient's word for it. */
+async function online(agreed = true): Promise<Almanac & { blobs: MemoryBlobs }> {
+  const store = new MemoryStatements(() => NOW);
+  const blobs = new MemoryBlobs();
+  const host = memoryHost("almanac", undefined, store.port("almanac"), blobs);
+  const vault = await Vault.create(host, FAST);
+  if (agreed) await setOnlineOk(vault, NOW);
+  await saveDay(vault, { date: "2026-09-01", flow: "heavy", updatedAt: 1 });
+  return { store, host, vault, blobs };
 }
 
 /** A visit: almanac shares with a provider app, which keeps what it read from the codes. */
@@ -201,6 +214,59 @@ describe("a provider app asks, the patient answers", () => {
     expect(await sendIfDue(a.host, a.vault, NOW + HOUR)).toBe(true);
     expect(await hears(p)).toMatchObject([{ kind: "stop" }]);
     expect(await sendIfDue(a.host, a.vault, NOW + HOUR)).toBe(false);
+  });
+
+  it("with the patient's word for it, a later opening carries a blob of its own, under a key of its own", async () => {
+    const a = await online();
+    const p = await visit(a, "Dr Okafor");
+    const [opening] = await ask(p, [NOW - HOUR]);
+    expect(await answer(a.host, a.vault, (await waitingIn(a))[0], "hour", NOW)).toBe(NOW + HOUR);
+
+    // One upload, padded to a bucket, so its size says nothing about how much was logged.
+    expect(a.blobs.sizes()).toEqual([2048]);
+    const kept = (await readShares(a.vault))[0];
+    const last = kept.openings.at(-1)!;
+    // A key of its own, never the share's: this is what makes stopping withhold the next one (§9).
+    expect(last.payloadKey).toBeDefined();
+    expect(last.payloadKey).not.toBe(kept.shareKey);
+
+    // The provider opens the blob the approval names, and reads what was logged since the visit.
+    const [approval] = (await hears(p)) as Approval[];
+    expect(hex(approval.cid)).toBe(last.cid);
+    const key = unmaskShareKey(approval, opening, p.received.header.senderKey);
+    const blob = (await a.blobs.get(approval.cid))!;
+    expect((await decodeSelection(openStored(blob, key).payload)).days).toMatchObject({ "2026-09-01": { flow: "heavy" } });
+  });
+
+  it("a key from one opening opens that upload and no other", async () => {
+    const a = await online();
+    const p = await visit(a, "Dr Okafor");
+    await ask(p, [NOW - HOUR]);
+    await answer(a.host, a.vault, (await waitingIn(a))[0], "hour", NOW);
+    await ask(p, [NOW + MINUTE]);
+    await answer(a.host, a.vault, (await waitingIn(a))[0], "hour", NOW + MINUTE);
+
+    const uploads = (await readShares(a.vault))[0].openings.filter((o) => o.cid);
+    expect(uploads).toHaveLength(2);
+    const [one, two] = uploads;
+    expect(one.payloadKey).not.toBe(two.payloadKey);
+    // The earlier opening's key does not open the later upload: stopping before it withholds it.
+    const later = (await a.blobs.get(fromHex(two.cid!)))!;
+    expect(() => openStored(later, fromHex(one.payloadKey!))).toThrow();
+  });
+
+  it("nothing goes online until the patient has agreed: the approval opens the copy from the visit", async () => {
+    const a = await online(false);
+    const p = await visit(a, "Dr Okafor");
+    const [opening] = await ask(p, [NOW - HOUR]);
+    await answer(a.host, a.vault, (await waitingIn(a))[0], "hour", NOW);
+
+    expect(a.blobs.sizes()).toEqual([]);
+    expect((await readShares(a.vault))[0].openings.at(-1)).toEqual({ at: NOW, until: NOW + HOUR, key: hex(opening.publicKey) });
+    // NO_CID and the share's own key: exactly what a share carried by codes has always done.
+    const [approval] = (await hears(p)) as Approval[];
+    expect(approval.cid.every((b) => b === 0)).toBe(true);
+    expect(text(openStored(p.received.stored, unmaskShareKey(approval, opening, p.received.header.senderKey)).payload)).toBe("shared with Dr Okafor");
   });
 
   it("the web tryout has no statement store: nothing is sent, and nothing is heard", async () => {

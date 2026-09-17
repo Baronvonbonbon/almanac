@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { hex } from "@app/lib/bytes";
-import { memoryHost, MemoryStatements } from "@app/platform";
+import { saveDay } from "@app/data";
+import { memoryHost, MemoryBlobs, MemoryStatements } from "@app/platform";
 import { encodeSelection, newShare, readPairingCode, REQUEST_BYTES, sealShare, ShareError, slots, STATEMENT_BYTES, toFrames, type Selection } from "@app/share";
 import { answer, listenForRequests } from "@app/sharing/answering";
 import { sendSharing } from "@app/sharing/outbox";
-import { addShare, readShares, shareRecord, stopShare } from "@app/sharing/records";
+import { addShare, readShares, setOnlineOk, shareRecord, stopShare } from "@app/sharing/records";
 import type { ShareRequest } from "@app/sharing/useShareRequests";
 import { demoMe } from "@app/share/testing";
 import { Vault, type KdfParams } from "@app/vault";
@@ -33,12 +34,15 @@ const SELECTION: Selection = {
 type Side = { host: ReturnType<typeof memoryHost>; vault: Vault };
 
 /** almanac and the provider app, each with a vault, meeting in one statement store. */
-async function both(): Promise<{ store: MemoryStatements; almanac: Side; provider: Side }> {
+async function both(): Promise<{ store: MemoryStatements; blobs: MemoryBlobs; almanac: Side; provider: Side }> {
   const store = new MemoryStatements(() => NOW);
-  const almanacHost = memoryHost("almanac", undefined, store.port("almanac"));
-  const providerHost = memoryHost("provider", undefined, store.port("provider"));
+  // One Bulletin between them, as there is one in the world.
+  const blobs = new MemoryBlobs();
+  const almanacHost = memoryHost("almanac", undefined, store.port("almanac"), blobs);
+  const providerHost = memoryHost("provider", undefined, store.port("provider"), blobs);
   return {
     store,
+    blobs,
     almanac: { host: almanacHost, vault: await Vault.create(almanacHost, FAST) },
     provider: { host: providerHost, vault: await Vault.create(providerHost, FAST) },
   };
@@ -93,7 +97,7 @@ describe("the provider app, with almanac", () => {
     const { patient, opening } = readVisit(readAll(v.codes), v.pairing, "  J.S., 15 Sep ", NOW);
     expect(patient).toMatchObject({ id: v.id, label: "J.S., 15 Sep", read: NOW, ends: NOW + 7 * DAY });
     expect(opening.until).toBe(NOW + 15 * MINUTE);
-    expect(await openSelection(patient, opening.shareKey)).toEqual(SELECTION);
+    expect(await openSelection(patient, opening)).toEqual(SELECTION);
 
     await addPatient(provider.vault, patient);
     const kept = JSON.stringify(await readPatients(provider.vault));
@@ -137,13 +141,32 @@ describe("the provider app, with almanac", () => {
     const heard = await heardBy(provider, NOW + 2 * HOUR);
     expect(heard).toMatchObject([{ kind: "allowed", id: v.id, opening: { until: NOW + 2 * HOUR + 15 * MINUTE } }]);
     const allowed = heard[0] as Extract<Heard, { kind: "allowed" }>;
-    expect(await openSelection(patient, allowed.opening.shareKey)).toEqual(SELECTION);
+    expect(await openSelection(patient, allowed.opening)).toEqual(SELECTION);
 
     // Once heard, the request is answered: the same approval opens nothing again, and nor does one whose time is up.
     await setAsking(provider.vault, patient.id, undefined);
     expect(await heardBy(provider, NOW + 2 * HOUR)).toEqual([]);
     await ask(provider.host, provider.vault, patient.id, NOW + 3 * HOUR);
     expect(await heardBy(provider, NOW + 3 * HOUR)).toEqual([]);
+  });
+
+  it("a later opening shows what was logged since the visit, not the copy frozen there", async () => {
+    const { almanac, provider, blobs } = await both();
+    const v = await visit(almanac);
+    const { patient } = readVisit(readAll(v.codes), v.pairing, "", NOW);
+    await addPatient(provider.vault, patient);
+    await setOnlineOk(almanac.vault, NOW);
+    await saveDay(almanac.vault, { date: "2026-09-10", flow: "light", updatedAt: 1 });
+
+    await ask(provider.host, provider.vault, patient.id, NOW + HOUR);
+    await answer(almanac.host, almanac.vault, (await waitingIn(almanac, NOW + 2 * HOUR))[0], "quarter", NOW + 2 * HOUR);
+    const allowed = (await heardBy(provider, NOW + 2 * HOUR))[0] as Extract<Heard, { kind: "allowed" }>;
+    expect(allowed.cid).toBeDefined();
+
+    const payload = (await blobs.get(allowed.cid!))!;
+    expect((await openSelection(patient, { ...allowed.opening, payload })).days).toMatchObject({ "2026-09-10": { flow: "light" } });
+    // And the key it carries opens that blob alone: the copy from the visit does not open with it.
+    await expect(openSelection(patient, allowed.opening)).rejects.toThrow();
   });
 
   it("hears Stop sharing, after which almanac allows nothing more", async () => {
