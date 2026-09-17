@@ -161,8 +161,11 @@ Colours. Every text pair, in all six palettes, is checked to WCAG AA in Phase 2 
   640 KiB in all, counting code loaded only when a screen needs it (*raised 2026-09-15, for the QR
   reader*) — and a phone loads only the fonts of the look in use. Loaded only when needed: the QR
   reader (33 KiB, on a phone without its own) and the sharing screens with the share formats (34 KiB,
-  when Sharing is opened). *At 2026-09-15: 472 KiB at start, 548 KiB in all. The provider app, under
-  the same budget: 446 KiB at start, 478 KiB in all.*
+  when Sharing is opened). *At 2026-09-17, after Phase 4 and Phase 5's Bulletin rails: 487.6 KiB at
+  start, 561.8 KiB in all. The provider app, under the same budget: 458.2 KiB at start, 490.4 KiB in
+  all — it imports almanac's own share formats, sharing modules, vault and screens (`@app/…`) rather
+  than copies of them, so almanac's code budget is largely its budget too, and a change on almanac's
+  side moves both figures.*
 - **Shape.** Generous space, one accent, hairline dividers; radii as in the table.
 - **Meaning is never colour alone.** Flow shows as fill level and a label; predictions use an
   outline; the fertile window uses a pattern.
