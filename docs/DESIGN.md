@@ -327,8 +327,11 @@ backup that does not expire.*
 - **The snapshot** is every record of the vault except `protection`: a restored almanac starts
   without a PIN or duress PIN, which are set per phone.
 
-- **Padding buckets:** 16 KiB, 64 KiB, 256 KiB, 1 MiB — the smallest that fits. Final sizes come from
-  P6.
+- **Padding buckets:** 16 KiB, 64 KiB, 256 KiB, 1 MiB — the smallest that fits. *Confirmed 2026-09-17
+  (P6c): all four go up whole through the host's preimage path, each as one transaction under one
+  content hash, charged at exactly its own size with no overhead. The largest is the slowest by far —
+  16 KiB took 6.7 s, 1 MiB took 41 s — so a backup sized 1 MiB is a deliberate choice, not a free
+  one.*
 - **Schedule:** when the app opens and the last backup is at least 5 days old, plus *Back up now*.
   Never on every log, so neither timing nor size says how much was logged. The interval comes from
   P7.

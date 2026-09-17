@@ -233,9 +233,10 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
 
 ## Phase 4 — Encrypted Bulletin backups ⬜
 
-Depends on **P6c** (the size ladder, built 2026-09-16 and awaiting a device run), P7 (retention) and
-P9 (statement capacity). P6b proved the upload path at 256 bytes; the smallest bucket is 64× that, so
-nothing here is built until P6c has run on a phone.
+**Unblocked 2026-09-17 by P6c**, which stored all four buckets — 16 KiB, 64 KiB, 256 KiB and 1 MiB —
+whole, each as one transaction under one content hash, charged at exactly its own size. Still depends
+on P7 (retention) and P9 (statement capacity), which decide how often a backup refreshes and whether
+the pointer statement can live long enough to be worth writing.
 
 **What this is, and what it is not.** A Bulletin backup is a convenience layer over the copied
 backup, not the recovery path. Measured retention is about two weeks (P7), so it expires long before
@@ -252,9 +253,10 @@ stays the gate. Nothing here may make recovery depend on an account or a device 
       from `KB`. Last-write-wins, so the newest pointer is the backup. Well under 512 bytes, at the
       longest TTL P9 allows, and one of the two statements an account plans for (the other is the
       sharing outbox)
-- [ ] Padding to the largest bucket P6c proves of 16 KiB, 64 KiB, 256 KiB, 1 MiB — and no larger, so
-      a backup that outgrows the proven bucket falls back to the copied backup rather than failing
-      silently
+- [ ] Padding to the smallest of 16 KiB, 64 KiB, 256 KiB and 1 MiB that fits — all four proved on
+      2026-09-17 (P6c). A backup that outgrows 1 MiB falls back to the copied backup rather than
+      failing silently, and 1 MiB is a deliberate choice rather than a free one: it took 41 s where
+      16 KiB took 6.7 s, on a phone the person is waiting at
 - [ ] Schedule: on open, when the last backup is at least 5 days old, plus *Back up now*. Never on a
       log, so neither timing nor size says how much was logged
 - [ ] Restore: backup code → `KB` and `TB` → newest pointer on `TB` → fetch the CID **through the

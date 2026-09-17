@@ -99,6 +99,41 @@ interface Payment {
   signer: string | null;
   /** The signer's authorization, read after the upload was charged to it. */
   quota: string | null;
+  /** What the chain recorded about the upload itself. */
+  stored: Stored | null;
+}
+
+/**
+ * What `TransactionStorage.Transactions` keeps about one stored upload.
+ *
+ * `chunkTotalInBlock` is **not** how many pieces this upload was split into, though it reads like it.
+ * The pallet always cuts an upload into 256-byte chunks for its storage proofs and counts them across
+ * the whole block: on 2026-09-17 our 1 MiB upload recorded 4096 (= 1048576 / 256) and the next
+ * transaction in the same block, 659 bytes from somebody else, recorded 4099. So it is a running
+ * total, and says nothing about splitting.
+ *
+ * `size` is what settles that question: when it equals what was sent, the whole payload went up as
+ * one stored transaction under one content hash, with nothing to reassemble.
+ */
+interface Stored {
+  extrinsicIndex: number;
+  size: number;
+  chunkTotalInBlock: number;
+  hashing: string;
+}
+
+async function storedAt(api: BulletinApi, block: number, index: number): Promise<Stored | null> {
+  const list = (await withTimeout(api.query.TransactionStorage.Transactions.getValue(block), 30_000, "transactions")) as
+    | { size: number | bigint; extrinsic_index: number | bigint; block_chunks: number | bigint; hashing?: { type?: string } }[]
+    | undefined;
+  const info = list?.[index];
+  if (!info) return null;
+  return {
+    extrinsicIndex: Number(info.extrinsic_index),
+    size: Number(info.size),
+    chunkTotalInBlock: Number(info.block_chunks),
+    hashing: info.hashing?.type ?? "unknown",
+  };
 }
 
 type BulletinApi = ReturnType<ReturnType<typeof createClient>["getUnsafeApi"]>;
@@ -172,12 +207,18 @@ async function paymentFor(
     )) as [number, number] | undefined;
     if (at) {
       const [block, index] = at;
+      // TransactionByContentHash's second element indexes the block's *stored transactions*, not its
+      // extrinsics — TransactionInfo carries the real extrinsic index. Reading `extrinsics[index]`
+      // fetched the parachain inherent instead, a genuinely unsigned v5 bare extrinsic, and so this
+      // check twice reported that no account had paid while a slot account was paying all along
+      // (2026-09-17: TransactionByContentHash said [886611, 0]; the store call was extrinsic 2).
+      const stored = await storedAt(api, block, index).catch(() => null);
       const hash = await client._request<string, [number]>("chain_getBlockHash", [block]);
       const body = await client._request<{ block: { extrinsics: string[] } }, [string]>("chain_getBlock", [hash]);
-      const raw = body?.block?.extrinsics?.[index];
+      const raw = body?.block?.extrinsics?.[stored?.extrinsicIndex ?? index];
       const signer = raw ? signerOf(raw) : null;
       const quotaNow = signer ? await quotaOf(api, signer) : null;
-      return { block, signer, quota: signer ? quotaText(quotaNow) : null, quotaNow };
+      return { block, signer, quota: signer ? quotaText(quotaNow) : null, quotaNow, stored };
     }
     await new Promise((r) => setTimeout(r, 6_000)); // one Bulletin block
   }
@@ -318,6 +359,9 @@ export const preimageSubmit: Check = {
         block: paid?.block ?? null,
         payer: paid?.signer ?? null,
         payerQuota: paid?.quota ?? null,
+        storedSize: paid?.stored?.size ?? null,
+        chunkTotalInBlock: paid?.stored?.chunkTotalInBlock ?? null,
+        extrinsicIndex: paid?.stored?.extrinsicIndex ?? null,
       },
     };
   },
@@ -399,6 +443,13 @@ export const preimageLadder: Check = {
           return null;
         });
 
+        // Whether the whole payload went up as one stored transaction — the chain's own account of
+        // it, rather than an inference from the quota. Deliberately not the chunk count: see Stored.
+        if (paid?.stored) {
+          if (paid.stored.size < payload.length) splits = true;
+          else if (splits === null) splits = false;
+        }
+
         let cost: string;
         if (!paid) {
           // TransactionByContentHash indexes whole transactions. An upload that never appears under
@@ -422,7 +473,8 @@ export const preimageLadder: Check = {
           last = now ?? last;
         }
 
-        rows[kib(size)] = `stored in ${ms} ms, ${identical ? "identical bytes back" : back ? "DIFFERENT bytes back" : "not read back within 120 s"} — ${cost}`;
+        const chunkText = paid?.stored ? `, the chain recorded ${paid.stored.size} of ${payload.length} bytes` : "";
+        rows[kib(size)] = `stored in ${ms} ms, ${identical ? "identical bytes back" : back ? "DIFFERENT bytes back" : "not read back within 120 s"}${chunkText} — ${cost}`;
         log(`${kib(size)}: ${rows[kib(size)]}`);
       }
 
@@ -434,8 +486,8 @@ export const preimageLadder: Check = {
         : splits === null
           ? ""
           : splits
-            ? " The host splits one upload into several transactions."
-            : " One upload is one transaction, so the host does not split.";
+            ? " The chain recorded fewer bytes than were sent for an upload, so the host splits it."
+            : " Every upload went up whole: one transaction, one content hash, nothing to reassemble.";
 
       return {
         status: largest >= BUCKETS[BUCKETS.length - 1] ? "pass" : largest ? "info" : "fail",
