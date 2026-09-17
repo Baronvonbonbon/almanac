@@ -25,6 +25,10 @@ export const en = {
   qr: {
     point: "Point the camera at the code on the other screen.",
     part: "Code {n} of {of}",
+    looking: "Looking for the code…",
+    stillLooking: "Still looking. Hold the phone steady, about a hand's width from their screen.",
+    slowLooking: "Still nothing. Try moving a little closer, or a little further back, and make sure their whole code is in view.",
+    trouble: "This phone is having trouble reading codes. You can paste the code in instead.",
     noCamera: "There's no camera on this phone that the app can use.",
     denied: "The camera isn't allowed. You can allow it for the Polkadot app in your phone's settings, then try again.",
     unavailable: "The camera didn't start. Close the app, open it again, and try once more.",
@@ -269,6 +273,11 @@ export const en = {
     onlineOn: "Kept online {date}.",
     onlineLasts: "Backups kept online stay available while you open almanac at least once a week.",
     onlineDone: "Backup kept online",
+    stageSealing: "Packing up what you've logged…",
+    stageSending: "Sending {size}…",
+    stagePointing: "Saving where it went…",
+    stageFor: "{n}s",
+    stageSlow: "A large backup can take a minute. Keep almanac open.",
     heading: "almanac backup, {date}. It opens only with your backup code.",
   },
   restore: {

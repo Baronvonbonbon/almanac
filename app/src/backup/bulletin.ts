@@ -31,6 +31,16 @@ const LIFETIME_MS = 90 * 86_400_000;
 const LISTEN_MS = 20_000;
 
 /**
+ * How far a backup has got, for a screen to say so.
+ *
+ * There is no finer grain to be had: the host's `submit` is one promise with no progress of any kind
+ * (`PreimageManager.submit(value): Promise<HexString>`), so a percentage would be invented. These are
+ * the real boundaries — seal the snapshot, send the bytes, then say where they went — and P6c measured
+ * the middle one at 41 s for 1 MiB, which is the part worth naming while somebody waits.
+ */
+export type BackupStage = "sealing" | "sending" | "pointing";
+
+/**
  * Put everything logged so far on Bulletin, and say where it is. Returns the record to keep.
  *
  * Throws `BackupError` and changes nothing when it cannot: `no-storage` where there is nowhere to put
@@ -38,7 +48,13 @@ const LISTEN_MS = 20_000;
  * also what a spent quota looks like from here (B3). **The pointer is written last**, so a failed
  * backup leaves the previous one pointed at and restorable.
  */
-export async function backUpToBulletin(host: Host, vault: Vault, record: BackupRecord, now = Date.now()): Promise<BackupRecord> {
+export async function backUpToBulletin(
+  host: Host,
+  vault: Vault,
+  record: BackupRecord,
+  now = Date.now(),
+  onStage: (stage: BackupStage, bytes?: number) => void = () => {},
+): Promise<BackupRecord> {
   if (!host.blobs || !host.statements) throw new BackupError("no-storage", "this almanac has nowhere to keep a backup");
 
   const code = parseCode(record.code);
@@ -47,16 +63,19 @@ export async function backUpToBulletin(host: Host, vault: Vault, record: BackupR
 
   // The snapshot carries the record as it stands, without this upload: a restored almanac then makes
   // a backup of its own rather than believing in one made by a phone it is replacing.
+  onStage("sealing");
   const sealed = sealBackup(code.entropy, await takeSnapshot(vault, now));
   if (sealed.length > MAX_BULLETIN_BYTES) throw new BackupError("too-large", "more than one upload takes");
 
   let hash: Uint8Array;
   try {
+    onStage("sending", sealed.length);
     hash = await host.blobs.put(sealed);
   } catch (e) {
     throw new BackupError("refused", e instanceof Error ? e.message : String(e));
   }
 
+  onStage("pointing");
   const { data, topics } = pointerStatement(keys.key, keys.topic, { hash, at: now });
   await host.statements.publish({ channel: keys.channel, topics, data, expires: now + LIFETIME_MS });
 

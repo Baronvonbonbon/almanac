@@ -8,6 +8,7 @@ import { useCurrentPin } from "../protect/useCurrentPin";
 import type { CycleData } from "../shell/useCycle";
 import type { Vault } from "../vault";
 import { backUpToBulletin } from "./bulletin";
+import { UploadStatus, type Uploading } from "./UploadStatus";
 import { parseCode } from "./code";
 import { BackupError } from "./format";
 import { backupProblemText, codeProblemText } from "./messages";
@@ -28,6 +29,7 @@ export function BackupFlow({ vault, host, data, onBack, onChanged, onNotice }: {
   const [byHand, setByHand] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState<Uploading | null>(null);
   const current = useCurrentPin(vault, host);
 
   async function keep(next: BackupRecord) {
@@ -91,12 +93,15 @@ export function BackupFlow({ vault, host, data, onBack, onChanged, onNotice }: {
     try {
       const now = Date.now();
       const agreed: BackupRecord = record!.bulletinOk ? record! : { ...record!, bulletinOk: now };
-      await keep(await backUpToBulletin(host, vault, agreed, now));
+      // Each stage as it is reached, keeping the moment the whole thing started so the count is of
+      // the wait, not of the stage.
+      await keep(await backUpToBulletin(host, vault, agreed, now, (at, bytes) => setUploading((was) => ({ at, bytes, since: was?.since ?? Date.now() }))));
       onNotice(t("backup.onlineDone"));
     } catch (e) {
       setError(e instanceof BackupError ? backupProblemText(e.kind) : message(e));
     } finally {
       setBusy(false);
+      setUploading(null);
       setStep("main");
     }
   }
@@ -189,6 +194,7 @@ export function BackupFlow({ vault, host, data, onBack, onChanged, onNotice }: {
                 <>
                   <p className="flow-note">{onlineStatus}</p>
                   <p className="flow-note">{t("backup.onlineLasts")}</p>
+                  {uploading && <UploadStatus {...uploading} />}
                   <div className="flow-actions">
                     <button type="button" className="button secondary" disabled={busy} onClick={() => void backUpOnline()}>
                       {busy ? t("privacy.working") : t("backup.onlineNow")}
@@ -221,6 +227,7 @@ export function BackupFlow({ vault, host, data, onBack, onChanged, onNotice }: {
         <>
           <Heading>{t("backup.onlineAbout")}</Heading>
           <p>{t("backup.onlineNotice")}</p>
+          {uploading && <UploadStatus {...uploading} />}
           {error && <p role="alert">{error}</p>}
           <div className="flow-actions">
             <button type="button" className="button" disabled={busy} onClick={() => void backUpOnline()}>

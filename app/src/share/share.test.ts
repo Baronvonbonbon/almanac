@@ -70,6 +70,17 @@ describe("a provider's code", () => {
     expect(problem(() => pairingCode(demoPairing({ ...keys, name: "x".repeat(41) })))).toBe("format");
     expect(problem(() => pairingCode(demoPairing({ ...keys, name: "   " })))).toBe("format");
   });
+
+  it("reads a code however the camera hands it over: lowercased, or with space around it", () => {
+    const keys = { providerKey: newKeyPair().publicKey, firstOpeningKey: newKeyPair().publicKey };
+    const code = pairingCode(demoPairing({ ...keys, name: "Dr Okafor" }));
+    // The prefix used to be tested before anything was normalised, so a scanned code that arrived
+    // lowercased or with a trailing newline was refused as "not a provider's code" — while the same
+    // text pasted in worked, because the paste box upper-cased it first. Nothing on screen said which.
+    for (const text of [code.toLowerCase(), `\n${code}\n`, `  ${code}  `, `\n${code.toLowerCase()} `]) {
+      expect(hex(readPairingCode(text).providerKey)).toBe(hex(keys.providerKey));
+    }
+  });
 });
 
 describe("whether to believe a provider's code", () => {

@@ -15,7 +15,8 @@ export const FRAME_PREFIX = "ALMANAC:S:";
 /** Bytes per code: 640 characters of base32, about a version 20 code, which a phone reads off a screen. */
 export const FRAME_BYTES = 400;
 const MAX_FRAMES = 99;
-const FRAME = /^ALMANAC:S:(\d{1,2})\/(\d{1,2}):([0-9A-Z]{8}):([0-9A-Z]+)$/;
+/** Case-insensitive, and read from trimmed text: the same reason `readPairingCode` normalises first. */
+const FRAME = /^ALMANAC:S:(\d{1,2})\/(\d{1,2}):([0-9A-Z]{8}):([0-9A-Z]+)$/i;
 
 export interface Frame {
   index: number;
@@ -34,12 +35,12 @@ export function toFrames(bytes: Uint8Array, per = FRAME_BYTES): string[] {
 }
 
 export function readFrame(code: string): Frame {
-  const m = FRAME.exec(code);
+  const m = FRAME.exec(code.trim());
   const index = Number(m?.[1]);
   const total = Number(m?.[2]);
   if (!m || index < 1 || index > total) throw new ShareError("format", "not a share's code");
   try {
-    return { index, total, tag: m[3], chunk: fromBase32(m[4]) };
+    return { index, total, tag: m[3].toUpperCase(), chunk: fromBase32(m[4]) };
   } catch {
     throw new ShareError("format", "not a share's code");
   }

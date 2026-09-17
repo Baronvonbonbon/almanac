@@ -161,11 +161,11 @@ Colours. Every text pair, in all six palettes, is checked to WCAG AA in Phase 2 
   640 KiB in all, counting code loaded only when a screen needs it (*raised 2026-09-15, for the QR
   reader*) — and a phone loads only the fonts of the look in use. Loaded only when needed: the QR
   reader (33 KiB, on a phone without its own) and the sharing screens with the share formats (34 KiB,
-  when Sharing is opened). *At 2026-09-17, after Phase 4 and Phase 5's Bulletin rails: 487.6 KiB at
-  start, 561.8 KiB in all. The provider app, under the same budget: 458.2 KiB at start, 490.4 KiB in
-  all — it imports almanac's own share formats, sharing modules, vault and screens (`@app/…`) rather
-  than copies of them, so almanac's code budget is largely its budget too, and a change on almanac's
-  side moves both figures.*
+  when Sharing is opened). *At 2026-09-17, after Phase 4, Phase 5's Bulletin rails, and the camera and
+  upload status: 489.1 KiB at start, 563.8 KiB in all — 22.9 KiB of headroom, and narrowing. The
+  provider app, under the same budget: 459.3 KiB at start, 491.5 KiB in all — it imports almanac's own
+  share formats, sharing modules, vault and screens (`@app/…`) rather than copies of them, so
+  almanac's code budget is largely its budget too, and a change on almanac's side moves both figures.*
 - **Shape.** Generous space, one accent, hairline dividers; radii as in the table.
 - **Meaning is never colour alone.** Flow shows as fill level and a label; predictions use an
   outline; the fertile window uses a pattern.
@@ -621,7 +621,21 @@ in front of this patient. The cost is the QR code, which goes from version 7 to 
 the code held up at a visit stays one thing to scan. Measured, not guessed: nothing below version 12 is
 reachable while the attestation travels in the code, and dropping error correction only reaches 11 by
 making a screen-to-screen scan less forgiving. So if it ever needs to grow again it must be split
-rather than squeezed, and `app/src/qr/encode.test.ts` holds 13 as a ceiling against creep.
+rather than squeezed, and `app/src/qr/encode.test.ts` holds 13 as a ceiling against creep. *Measured
+2026-09-17, the other direction: raising error correction is not available either — quartile puts the
+same code at version 15 and high at 18, both over the ceiling. So a code that will not scan cannot be
+made more forgiving; it can only be split.*
+
+**Saying what the camera is doing.** *Added 2026-09-17, after a visit where a code would not scan and
+almanac said nothing at all.* Three states looked identical on screen — the camera finding nothing,
+the camera's reader failing outright, and a code read but refused — and only the third had words.
+Two defects sat behind that: `startScanner` swallowed every reader failure into "no code in this
+frame" (`.catch(() => [])`), so a phone whose detector throws on a dense code looked exactly like one
+pointed at a wall, for as long as anyone cared to hold it there; and `readPairingCode` tested its
+prefix before normalising, so a scanned code arriving lowercased or with a newline was refused as
+"not a provider's code" while the same text pasted in worked, because the paste box upper-cased it
+first. `readFrame` had the identical fault, facing the provider app. Both now normalise, and the
+camera says which of the three states it is in, escalating to what to try as the seconds pass.
 
 **A clinic registers before it can show a code at all.** The provider app makes the clinic an identity
 key on first launch and shows the public half; the registry issues an attestation *for that key and that

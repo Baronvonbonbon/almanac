@@ -3,6 +3,7 @@ import { backUpToBulletin } from "../backup/bulletin";
 import { BackupError } from "../backup/format";
 import { backupProblemText } from "../backup/messages";
 import { bulletinDue } from "../backup/record";
+import { UploadStatus, type Uploading } from "../backup/UploadStatus";
 import { CalendarView } from "../calendar/CalendarView";
 import type { DayEntry, ISODate } from "../cycle";
 import { saveDay, updateSettings, type Settings } from "../data";
@@ -89,6 +90,7 @@ export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault;
    * and a second one while the first is still going would spend quota for nothing.
    */
   const backingUp = useRef(false);
+  const [uploading, setUploading] = useState<Uploading | null>(null);
   useEffect(() => {
     if (backingUp.current || !data || !host.blobs) return;
     const record = data.privacy.backup ?? null;
@@ -96,9 +98,12 @@ export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault;
     backingUp.current = true;
     void (async () => {
       try {
-        await backUpToBulletin(host, vault, record!);
+        // Said quietly while it happens: a minute of nothing is what this looked like before.
+        await backUpToBulletin(host, vault, record!, Date.now(), (at, bytes) => setUploading((was) => ({ at, bytes, since: was?.since ?? Date.now() })));
+        setUploading(null);
         cycle.reload();
       } catch (e) {
+        setUploading(null);
         // Visible, not silent: a claim with nothing left in it looks exactly like this (§8, B3).
         setToast(e instanceof BackupError ? backupProblemText(e.kind) : message(e));
       }
@@ -200,6 +205,7 @@ export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault;
           onClose={() => setEditing(null)}
         />
       )}
+      {uploading && <UploadStatus {...uploading} />}
       <Toast message={toast} onDone={clearToast} />
     </div>
   );

@@ -61,6 +61,17 @@ describe("a backup on Bulletin", () => {
     expect(BUCKETS).toContain(w.blobs.sizes()[0]);
   });
 
+  it("says where it has got to, so a long upload does not look like a stuck screen", async () => {
+    const w = world();
+    const a = await ready(w);
+    const stages: { at: string; bytes?: number }[] = [];
+    await backUpToBulletin(a.host, a.vault, a.record, NOW, (at, bytes) => stages.push({ at, bytes }));
+    expect(stages.map((s) => s.at)).toEqual(["sealing", "sending", "pointing"]);
+    // "sending" carries the size, and it is the padded one that actually goes up.
+    expect(BUCKETS).toContain(stages[1].bytes);
+    expect(stages[1].bytes).toBe(w.blobs.sizes()[0]);
+  });
+
   it("is not found by another code", async () => {
     const w = world();
     const a = await ready(w);

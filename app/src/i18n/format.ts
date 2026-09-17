@@ -25,6 +25,15 @@ export const timeOf = (ms: number): string => new Intl.DateTimeFormat(LOCALE, { 
 export const monthTitle = (year: number, month: number): string =>
   format({ month: "long", year: "numeric" }).format(new Date(Date.UTC(year, month, 15)));
 
+/**
+ * A number of bytes, in the units a person reads: "16 KiB", "1 MiB".
+ *
+ * Backups are padded to 16 KiB, 64 KiB, 256 KiB or 1 MiB before they go up (backup/format.ts), so in
+ * practice this is always exact rather than rounded.
+ */
+export const sizeOf = (bytes: number): string =>
+  bytes >= 1024 * 1024 ? `${Math.round((bytes / (1024 * 1024)) * 10) / 10} MiB` : `${Math.max(1, Math.round(bytes / 1024))} KiB`;
+
 /** The phone's first day of the week: 1 is Monday, 7 is Sunday. */
 export function firstDayOfWeek(): number {
   try {

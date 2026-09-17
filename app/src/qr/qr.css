@@ -9,6 +9,15 @@
   background: #fff;
 }
 
+.qr-looking {
+  min-height: 2.5em;
+  margin: 0.5rem auto 0;
+  max-width: 22rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 .qr-loop {
   display: grid;
   justify-items: center;

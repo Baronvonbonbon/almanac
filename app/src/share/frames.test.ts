@@ -47,4 +47,15 @@ describe("a loop of codes", () => {
     expect(problem(() => readFrame("ALMANAC:S:3/2:ABCDEFGH:00"))).toBe("format");
     expect(problem(() => readFrame("ALMANAC:S:1/2:ABCDEFGH:UU"))).toBe("format");
   });
+
+  it("reads a code however the camera hands it over, as a provider's code is read", () => {
+    const bytes = randomBytes(600);
+    const [first] = toFrames(bytes);
+    // The same normalisation readPairingCode needed: the provider app scans these off the patient's
+    // screen, so it met the identical failure from the other side.
+    for (const text of [first.toLowerCase(), `\n${first}\n`, `  ${first}  `]) {
+      expect(hex(readFrame(text).chunk)).toBe(hex(readFrame(first).chunk));
+      expect(readFrame(text).tag).toBe(readFrame(first).tag);
+    }
+  });
 });

@@ -83,10 +83,15 @@ export function pairingCode(pairing: Pairing): string {
 
 /** What almanac read from the provider's screen, and the six digits to compare with it. */
 export function readPairingCode(code: string): Pairing & { check: string } {
-  if (!code.startsWith(PAIRING_PREFIX)) throw new ShareError("format", "not a provider's code");
+  // Trimmed and case-folded before anything else: a camera hands over whatever the code encodes, and
+  // a stray newline or a lowercased prefix used to fail here as "not a provider's code" — while the
+  // same text pasted in worked, because the paste box normalised it first. `fromBase32` already
+  // upper-cases, so only this check ever cared.
+  const text = code.trim();
+  if (!text.toUpperCase().startsWith(PAIRING_PREFIX)) throw new ShareError("format", "not a provider's code");
   let bytes: Uint8Array;
   try {
-    bytes = fromBase32(code.slice(PAIRING_PREFIX.length));
+    bytes = fromBase32(text.slice(PAIRING_PREFIX.length));
   } catch {
     throw new ShareError("format", "not a provider's code");
   }

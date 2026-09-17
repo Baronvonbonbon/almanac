@@ -29,6 +29,13 @@ interface NativeDetectorClass {
 /** How often the camera is looked at. */
 const EVERY_MS = 120;
 
+/**
+ * Consecutive failed reads before the screen is told. One is nothing — a frame caught mid-focus —
+ * but a reader that throws every time never reads anything, and used to look exactly like a camera
+ * pointed at a blank wall.
+ */
+const TROUBLE_AFTER = 5;
+
 async function reader(): Promise<Read> {
   const Native = (globalThis as { BarcodeDetector?: NativeDetectorClass }).BarcodeDetector;
   if (Native && (await Native.getSupportedFormats().catch((): string[] => [])).includes("qr_code")) {
@@ -56,7 +63,12 @@ async function reader(): Promise<Read> {
  * Starts the camera in `video` and calls `onCode` with each code it reads — each new one, not the same
  * one again and again — until `signal` aborts, which also turns the camera off.
  */
-export async function startScanner(video: HTMLVideoElement, onCode: (text: string) => void, signal: AbortSignal): Promise<void> {
+export async function startScanner(
+  video: HTMLVideoElement,
+  onCode: (text: string) => void,
+  signal: AbortSignal,
+  onTrouble: (e: unknown) => void = () => {},
+): Promise<void> {
   if (!navigator.mediaDevices?.getUserMedia) throw new ScanError("noCamera");
   let stream: MediaStream;
   try {
@@ -77,9 +89,20 @@ export async function startScanner(video: HTMLVideoElement, onCode: (text: strin
   }
   const read = await reader();
   let last = "";
+  let failures = 0;
   const look = async () => {
     if (signal.aborted) return;
-    for (const text of await read(video).catch(() => [])) {
+    let codes: string[] = [];
+    try {
+      codes = await read(video);
+      failures = 0;
+    } catch (e) {
+      // Not "no code in this frame" — the fallback reader says that with an empty array. This is the
+      // reader itself failing, which `.catch(() => [])` used to hide: a phone that could never read a
+      // code looked identical to one pointed at nothing, for as long as anyone cared to hold it there.
+      if (++failures === TROUBLE_AFTER) onTrouble(e);
+    }
+    for (const text of codes) {
       if (text !== last) {
         last = text;
         onCode(text);
