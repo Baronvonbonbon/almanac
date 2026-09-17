@@ -3,6 +3,7 @@ import { t } from "../i18n";
 import type { Host } from "../platform";
 import { Heading, message } from "../protect/FlowParts";
 import type { Vault } from "../vault";
+import { restoreFromBulletin } from "./bulletin";
 import { parseCode } from "./code";
 import { BackupError, openBackup, readBackupText } from "./format";
 import { backupProblemText, codeProblemText } from "./messages";
@@ -12,6 +13,9 @@ import "../protect/protect.css";
 /**
  * Onboarding's other way in (docs/DESIGN.md §8): a copied backup — pasted, or read from a file the
  * user picks (P4) — and the backup code. It works on any phone and any account.
+ *
+ * With nothing pasted, the code alone is enough where backups were kept online: it gives `TB`, the
+ * newest pointer on it names the backup, and `KB` opens it. Same code, same answer, no copy to find.
  */
 export function RestoreView({ host, onDone, onBack }: { host: Host; onDone(vault: Vault): void; onBack(): void }) {
   const [pasted, setPasted] = useState("");
@@ -19,20 +23,29 @@ export function RestoreView({ host, onDone, onBack }: { host: Host; onDone(vault
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [looking, setLooking] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
+  const canGoOnline = !!host.blobs && !!host.statements;
 
   async function restore(e: FormEvent) {
     e.preventDefault();
     setError(null);
     const parsed = parseCode(code);
     if ("problem" in parsed) return setError(codeProblemText(parsed.problem));
+    const copied = (file?.text ?? pasted).trim();
     setBusy(true);
+    setLooking(!copied);
     try {
-      const snapshot = openBackup(parsed.entropy, readBackupText(file?.text ?? pasted));
+      if (!copied) {
+        onDone((await restoreFromBulletin(host, code)).vault);
+        return;
+      }
+      const snapshot = openBackup(parsed.entropy, readBackupText(copied));
       onDone(await restoreSnapshot(host, snapshot));
     } catch (err) {
       setError(err instanceof BackupError ? backupProblemText(err.kind) : message(err));
       setBusy(false);
+      setLooking(false);
     }
   }
 
@@ -56,6 +69,11 @@ export function RestoreView({ host, onDone, onBack }: { host: Host; onDone(vault
           <button type="button" className="link-button flow-back" onClick={() => picker.current?.click()}>
             {t("restore.file")}
           </button>
+          {canGoOnline && (
+            <p className="flow-note">
+              <strong>{t("restore.online")}</strong> {t("restore.onlineNote")}
+            </p>
+          )}
           <input
             ref={picker}
             type="file"
@@ -74,8 +92,8 @@ export function RestoreView({ host, onDone, onBack }: { host: Host; onDone(vault
         {error && <p role="alert">{error}</p>}
       </div>
       <div className="onb-actions">
-        <button type="submit" className="button" disabled={busy || !(file || pasted.trim()) || !code.trim()}>
-          {busy ? t("restore.restoring") : t("restore.restore")}
+        <button type="submit" className="button" disabled={busy || !code.trim() || (!canGoOnline && !(file || pasted.trim()))}>
+          {looking ? t("restore.looking") : busy ? t("restore.restoring") : t("restore.restore")}
         </button>
       </div>
     </form>

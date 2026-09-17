@@ -185,8 +185,10 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
       settings with the look, the mode toggles and the usual lengths
 - [x] Web tryout mode, with the same look picker, and example months on request
 - [x] Hearth, Moonpaper and Pebble, each light and dark, following the host theme; their fonts
-      bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and 449 KiB of code
-      of 512
+      bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and **486 KiB of code
+      of 512** as of 2026-09-17, after Phase 4. Twenty-six KiB of headroom left, so the next thing that
+      wants a library needs a reason: the Bulletin path deliberately carries a 32-byte content hash
+      rather than a CID string so that multiformats never entered the bundle
 
 **First run on a phone** — after `npm run deploy -w app`, which replaces the probe bundle still at
 `almanacapp.dot` (the probe's own name is `almanacprobe.dot`)
@@ -278,10 +280,13 @@ stays the gate. Nothing here may make recovery depend on an account or a device 
 - [x] The 5-day rule (`bulletinDue`), and only once the code has been **checked**: a backup nobody has
       written the code down for is a blob on a public network that will outlive its purpose (R7) while
       helping no one
-- [ ] **The screens.** None of the above is reachable yet: *Back up now*, running it on open when due,
-      the status line (*Backed up 3 days ago*, and what P7's retention means), the one-time notice
-      before the first upload (DESIGN §8, R7), and *Restore from a backup* offering the code alone
-      as well as pasted text
+- [x] **The screens** (2026-09-17). Backup: the one-time notice, *Back up now*, and *Kept online
+      {date}* with what retention means for it. Restore: the backup code **alone**, nothing pasted,
+      where backups were kept online. Shell: it runs on open when due, once a session — a 1 MiB upload
+      took 41 s (P6c), so a second one over the first would spend quota for nothing — and a failure
+      reaches the person as a toast instead of being swallowed, since a claim with nothing left in it
+      looks exactly like that (B3). Agreeing to the notice is what sets `bulletinOk`, and **nothing
+      uploads before it is set, the schedule included** (R7)
 
 **Gate**
 - [ ] Reinstall → restore from the backup code alone, on a new account

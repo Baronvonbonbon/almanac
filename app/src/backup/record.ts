@@ -14,6 +14,12 @@ export interface BackupRecord {
   copiedAt?: number;
   /** The newest backup on Bulletin, if there is one: its content hash, and when it was made. */
   bulletin?: { at: number; hash: string };
+  /**
+   * When someone agreed to keep backups on Bulletin (DESIGN §8, R7). Absent until they have, and
+   * nothing is ever uploaded before it is set — including by the schedule, which is the whole point:
+   * a copy on a public network is not something to start doing on someone's behalf.
+   */
+  bulletinOk?: number;
 }
 
 /** DESIGN §8: on open, when the last Bulletin backup is at least this old — and never on a log. */
@@ -27,7 +33,9 @@ export const BULLETIN_EVERY_MS = 5 * 86_400_000;
  * purpose (R7) while helping no one. The copied backup has the same rule for the same reason.
  */
 export const bulletinDue = (record: BackupRecord | null, now: number): boolean =>
-  !!record?.checked && (record.bulletin === undefined || now - record.bulletin.at >= BULLETIN_EVERY_MS);
+  !!record?.checked &&
+  record.bulletinOk !== undefined &&
+  (record.bulletin === undefined || now - record.bulletin.at >= BULLETIN_EVERY_MS);
 
 const BACKUP = "backup";
 

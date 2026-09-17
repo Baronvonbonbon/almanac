@@ -120,12 +120,18 @@ describe("a backup on Bulletin", () => {
 });
 
 describe("when a backup is due", () => {
-  const record = (over: Partial<BackupRecord> = {}): BackupRecord => ({ code: newCode(), checked: true, ...over });
+  const record = (over: Partial<BackupRecord> = {}): BackupRecord => ({ code: newCode(), checked: true, bulletinOk: NOW - 30 * DAY, ...over });
 
   it("waits until the code has been written down and checked", () => {
     expect(bulletinDue(record({ checked: false }), NOW)).toBe(false);
     expect(bulletinDue(null, NOW)).toBe(false);
     expect(bulletinDue(record(), NOW)).toBe(true);
+  });
+
+  it("waits until someone has agreed to it, however overdue it is", () => {
+    // R7: the schedule must never be what first puts a copy on a public network.
+    expect(bulletinDue(record({ bulletinOk: undefined }), NOW)).toBe(false);
+    expect(bulletinDue(record({ bulletinOk: undefined, bulletin: { at: NOW - 400 * DAY, hash: "" } }), NOW)).toBe(false);
   });
 
   it("is every five days, not every log", () => {

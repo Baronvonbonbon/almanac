@@ -1,4 +1,8 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { backUpToBulletin } from "../backup/bulletin";
+import { BackupError } from "../backup/format";
+import { backupProblemText } from "../backup/messages";
+import { bulletinDue } from "../backup/record";
 import { CalendarView } from "../calendar/CalendarView";
 import type { DayEntry, ISODate } from "../cycle";
 import { saveDay, updateSettings, type Settings } from "../data";
@@ -75,6 +79,31 @@ export function Shell({ vault, host, tryout, onLock, onErased }: { vault: Vault;
       cycle.reload();
     }
   }
+
+  /**
+   * A backup goes online when almanac opens and the last one is five days old (docs/DESIGN.md §8) —
+   * never on a log, so neither its timing nor its size says how much was logged.
+   *
+   * `bulletinDue` requires that someone agreed to it first (R7), so this can never be what starts
+   * putting copies on a public network. Once a session: a 1 MiB upload took 41 s on a phone (P6c),
+   * and a second one while the first is still going would spend quota for nothing.
+   */
+  const backingUp = useRef(false);
+  useEffect(() => {
+    if (backingUp.current || !data || !host.blobs) return;
+    const record = data.privacy.backup ?? null;
+    if (!bulletinDue(record, Date.now())) return;
+    backingUp.current = true;
+    void (async () => {
+      try {
+        await backUpToBulletin(host, vault, record!);
+        cycle.reload();
+      } catch (e) {
+        // Visible, not silent: a claim with nothing left in it looks exactly like this (§8, B3).
+        setToast(e instanceof BackupError ? backupProblemText(e.kind) : message(e));
+      }
+    })();
+  }, [data, host, vault, cycle]);
 
   // The web tryout only: example months, so a tester can see the calendar and insights filled in.
   async function addExamples() {

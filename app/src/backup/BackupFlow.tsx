@@ -7,12 +7,14 @@ import { PinPad } from "../protect/PinPad";
 import { useCurrentPin } from "../protect/useCurrentPin";
 import type { CycleData } from "../shell/useCycle";
 import type { Vault } from "../vault";
+import { backUpToBulletin } from "./bulletin";
 import { parseCode } from "./code";
-import { codeProblemText } from "./messages";
+import { BackupError } from "./format";
+import { backupProblemText, codeProblemText } from "./messages";
 import { backupAsText, isStale, saveBackup, startBackup, type BackupRecord } from "./record";
 import "../protect/protect.css";
 
-type Step = "intro" | "code" | "check" | "main" | "current";
+type Step = "intro" | "code" | "check" | "main" | "current" | "online";
 
 /**
  * The copied backup (docs/DESIGN.md §8): a backup code, shown once and checked against what was
@@ -79,9 +81,32 @@ export function BackupFlow({ vault, host, data, onBack, onChanged, onNotice }: {
     }
   }
 
+  /**
+   * Keeping it online (DESIGN §8). The notice comes first and only once: agreeing is what sets
+   * `bulletinOk`, and nothing — not this button, not the schedule — uploads before it is set (R7).
+   */
+  async function backUpOnline() {
+    setBusy(true);
+    setError(null);
+    try {
+      const now = Date.now();
+      const agreed: BackupRecord = record!.bulletinOk ? record! : { ...record!, bulletinOk: now };
+      await keep(await backUpToBulletin(host, vault, agreed, now));
+      onNotice(t("backup.onlineDone"));
+    } catch (e) {
+      setError(e instanceof BackupError ? backupProblemText(e.kind) : message(e));
+    } finally {
+      setBusy(false);
+      setStep("main");
+    }
+  }
+
   const status = !record?.copiedAt
     ? t("backup.notCopied")
     : `${t("backup.copiedOn", { date: dateOf(record.copiedAt) })} ${isStale(record, data.entries) ? t("backup.stale") : t("backup.fresh")}`;
+  // Not offered where there is nowhere to put one — the web tryout has neither.
+  const canGoOnline = !!host.blobs && !!host.statements;
+  const onlineStatus = record?.bulletin ? t("backup.onlineOn", { date: dateOf(record.bulletin.at) }) : t("backup.onlineNever");
 
   return (
     <section className="steps">
@@ -157,6 +182,31 @@ export function BackupFlow({ vault, host, data, onBack, onChanged, onNotice }: {
               </button>
             </div>
           )}
+          {canGoOnline && (
+            <section className="settings-group" aria-labelledby="backup-online">
+              <h2 id="backup-online">{t("backup.online")}</h2>
+              {record.bulletinOk ? (
+                <>
+                  <p className="flow-note">{onlineStatus}</p>
+                  <p className="flow-note">{t("backup.onlineLasts")}</p>
+                  <div className="flow-actions">
+                    <button type="button" className="button secondary" disabled={busy} onClick={() => void backUpOnline()}>
+                      {busy ? t("privacy.working") : t("backup.onlineNow")}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="flow-note">{t("backup.onlineNote")}</p>
+                  <div className="flow-actions">
+                    <button type="button" className="button secondary" onClick={() => setStep("online")}>
+                      {t("backup.online")}
+                    </button>
+                  </div>
+                </>
+              )}
+            </section>
+          )}
           <button
             type="button"
             className="link-button flow-back"
@@ -165,6 +215,21 @@ export function BackupFlow({ vault, host, data, onBack, onChanged, onNotice }: {
             {showCode ? t("backup.hideCode") : t("backup.showCode")}
           </button>
           {showCode && <CodeBox code={record.code} />}
+        </>
+      )}
+      {step === "online" && record && (
+        <>
+          <Heading>{t("backup.onlineAbout")}</Heading>
+          <p>{t("backup.onlineNotice")}</p>
+          {error && <p role="alert">{error}</p>}
+          <div className="flow-actions">
+            <button type="button" className="button" disabled={busy} onClick={() => void backUpOnline()}>
+              {busy ? t("privacy.working") : t("backup.onlineAgree")}
+            </button>
+            <button type="button" className="button secondary" disabled={busy} onClick={() => setStep("main")}>
+              {t("backup.onlineNotNow")}
+            </button>
+          </div>
         </>
       )}
       {step === "current" && (
