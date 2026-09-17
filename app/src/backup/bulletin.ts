@@ -3,7 +3,7 @@ import type { Host } from "../platform";
 import type { KdfParams, Vault } from "../vault";
 import { backupKeys, parseCode } from "./code";
 import { BackupError, openBackup, sealBackup } from "./format";
-import { BACKUP_CHANNEL, newestPointer, pointerStatement } from "./pointer";
+import { newestPointer, pointerStatement } from "./pointer";
 import { saveBackup, type BackupRecord } from "./record";
 import { restoreSnapshot, takeSnapshot } from "./snapshot";
 
@@ -58,7 +58,7 @@ export async function backUpToBulletin(host: Host, vault: Vault, record: BackupR
   }
 
   const { data, topics } = pointerStatement(keys.key, keys.topic, { hash, at: now });
-  await host.statements.publish({ channel: BACKUP_CHANNEL, topics, data, expires: now + LIFETIME_MS });
+  await host.statements.publish({ channel: keys.channel, topics, data, expires: now + LIFETIME_MS });
 
   const next: BackupRecord = { ...record, bulletin: { at: now, hash: hex(hash) } };
   await saveBackup(vault, next);

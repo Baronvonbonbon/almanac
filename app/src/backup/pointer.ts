@@ -1,5 +1,4 @@
-import { blake2b256, deriveKey, xchachaDecryptPacked, xchachaEncryptPacked } from "@parity/product-sdk-crypto";
-import { utf8 } from "../lib/bytes";
+import { deriveKey, xchachaDecryptPacked, xchachaEncryptPacked } from "@parity/product-sdk-crypto";
 import { packSlots, slots, topicsFor } from "../share";
 
 /**
@@ -9,8 +8,11 @@ import { packSlots, slots, topicsFor } from "../share";
  *
  * A backup on Bulletin is only findable by its content hash, and the hash is not derived from
  * anything — so something has to carry it. That something is one statement, on a topic `TB` derived
- * from the backup code, replaced whole each time a backup is made: last-write-wins on its own
- * channel, so the newest statement *is* the pointer.
+ * from the backup code, replaced whole each time a backup is made: last-write-wins on a channel of
+ * its own, so the newest statement *is* the pointer.
+ *
+ * That channel is derived from the backup code too (`backupKeys` in code.ts), not fixed: replacement
+ * is per account and channel (P9), and one account holds both this vault and its duress decoy.
  *
  * It is sealed under a key from `KB`, so the backup code alone opens it. Nothing else about it can be
  * read: whoever is watching the statement store sees 512 bytes on four topics, exactly like almanac's
@@ -24,7 +26,6 @@ import { packSlots, slots, topicsFor } from "../share";
  */
 
 const SALT = "almanac/v1";
-export const BACKUP_CHANNEL = blake2b256(utf8("almanac/v1/backup"));
 
 const KIND = 1;
 const HASH_BYTES = 32;

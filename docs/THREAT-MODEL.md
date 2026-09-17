@@ -58,6 +58,11 @@ publishes forgets both.
 **R3 — A careful coercer might tell the decoy from the real vault by behaviour,** not by storage —
 for example, upload history on Bulletin that does not match the decoy's contents. Open question: the
 decoy should probably back up on the same schedule. See [PLAN open questions](PLAN.md#open-questions).
+Until 2026-09-17 that advice was unsafe to follow: both vaults published the backup pointer on one
+fixed channel, and the store replaces a statement per account and channel, so a decoy backing up
+destroyed the real vault's only pointer. The channel is now derived from each backup code, so the two
+cannot evict each other — but whether an account holds the three statements this would need is still
+unsettled (DESIGN §8, B4).
 Storage can give it away too, to someone who copies it at two different times: between the copies,
 only the slot in use changes. If they later watch the duress PIN open a slot that never changed,
 they can tell it is the decoy. One copy alone shows nothing (DESIGN §5).

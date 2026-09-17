@@ -56,7 +56,23 @@ export function parseCode(input: string): { code: string; entropy: Uint8Array } 
   return check(entropy) === sum ? { code: cleaned, entropy } : { problem: "check" };
 }
 
-/** KB, which locks each backup's own key, and TB, the topic a backup's pointer goes out on (Phase 4). */
-export function backupKeys(entropy: Uint8Array): { key: Uint8Array; topic: Uint8Array } {
-  return { key: deriveKey(entropy, SALT, "backup/key"), topic: deriveKey(entropy, SALT, "backup/topic") };
+/**
+ * KB, which locks each backup's own key; TB, the topic a backup's pointer goes out on; and the channel
+ * that pointer is published on (Phase 4).
+ *
+ * The channel is derived per code rather than fixed, because the store replaces a statement per
+ * *account and channel* (P9) and one account holds two vaults — this one and the duress decoy. On a
+ * shared constant, a decoy's backup would replace the real vault's pointer, leaving the real backup
+ * sitting on Bulletin with nothing pointing at it. Separate codes, separate channels, neither evicts
+ * the other.
+ *
+ * Unlike `key` and `topic`, the channel is not load-bearing for opening a backup: a restore matches on
+ * the topic and never looks at the channel, so changing it strands nothing.
+ */
+export function backupKeys(entropy: Uint8Array): { key: Uint8Array; topic: Uint8Array; channel: Uint8Array } {
+  return {
+    key: deriveKey(entropy, SALT, "backup/key"),
+    topic: deriveKey(entropy, SALT, "backup/topic"),
+    channel: deriveKey(entropy, SALT, "backup/channel"),
+  };
 }

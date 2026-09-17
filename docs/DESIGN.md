@@ -335,8 +335,13 @@ backup that does not expire.*
 - **Schedule:** when the app opens and the last backup is at least 5 days old, plus *Back up now*.
   Never on every log, so neither timing nor size says how much was logged. The interval comes from
   P7.
-- **Pointer:** a statement on topic `TB`, channel `H("almanac/backup")`, whose data is the CID and
-  time encrypted under a key derived from KB — well under 512 bytes. The longest TTL P9 allows.
+- **Pointer:** a statement on topic `TB`, on a channel derived from the backup code as well, whose
+  data is the CID and time encrypted under a key derived from KB — well under 512 bytes. The longest
+  TTL P9 allows. *The channel was a fixed `H("almanac/backup")` until 2026-09-17. That was a defect:
+  the store replaces a statement per account and channel (P9), and one account holds two vaults, so a
+  decoy that backed up replaced the real vault's pointer and left the real backup on Bulletin with
+  nothing naming it — a silent, total loss found only by someone trying to restore. Deriving the
+  channel per code costs nothing, since a restore matches on the topic and never reads the channel.*
 - **Restore:** enter the backup code → derive KB and TB → read the newest pointer on TB → fetch the
   CID → unwrap DK → decrypt. The backup code does not depend on the Polkadot account, so this works
   after an account reset. *P7, 2026-09-14 (Android): the fetch works through the app itself, but
@@ -366,7 +371,7 @@ is not testing it.*
 | **B1** | A Bulletin backup **expires**, in about a fortnight. It is a convenience layer, never the only backup, and the copied backup stays required | P7, still running: measured retention ~2 weeks against Parity's docs saying content persists | Three full weeks of P7. If retention is shorter than the 5-day refresh, the interval shrinks or the feature does not ship |
 | **B2** | One upload may be up to **1 MiB**, charged at exactly its own size, as one transaction | P6c, 2026-09-17, all four buckets | Re-run P6c under **almanac's own product label**. Today's numbers are the probe's — see B5 |
 | **B3** | A backup may **fail for want of quota**, so it fails visibly and never moves the pointer: the previous backup still restores | P6b/P6c: 10 transactions and 4 MiB a claim, ~14 days, on a slot account no Product API names | What actually happens when the quota runs out mid-backup. Deliberately unmeasured: a spent claim blocks real work for a fortnight |
-| **B4** | An account holds **two statements** — the sharing outbox and the backup pointer | P9, unsettled: three runs implied two, four, and more | Settle capacity. If an account holds only one, the pointer and the outbox cannot coexist and the pointer needs another home (PLAN, open questions) |
+| **B4** | An account holds **two statements** — the sharing outbox and the backup pointer. A decoy that also backs up needs a **third**, since each backup code now has a channel of its own | P9, unsettled: three runs implied two, four, and more | Settle capacity. If an account holds only one, the pointer and the outbox cannot coexist and the pointer needs another home (PLAN, open questions). If it holds exactly two, a decoy that backs up costs the real vault its pointer by capacity rather than by eviction — so settle this before advising the decoy to back up (THREAT-MODEL R3) |
 | **B5** | Bulletin behaves for almanac as it does for the probe | **It has not been measured for almanac at all.** Storage, product accounts and allowances are keyed by the product id, and every upload measurement so far is `almanacprobe`'s | Re-run P6b and P6c under `almanacapp`. This is the weakest assumption here |
 | **B6** | The host's lookup finds **BLAKE2b-256 only**, so almanac uploads nothing else and reads only through the app | P7: a SHA-256 blob never came back through the app, though the gateway served it | Nothing further, unless the host's lookup changes |
 | **B7** | A second phone can **find a statement it did not write**, which is what restore rests on | P9b/P9c, 2026-09-17: phone B found phone A's statement by topic | Whether the two phones were on different **accounts** — P9c did not record it, and R1 turns on it |

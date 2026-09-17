@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { hex } from "../lib/bytes";
 import { STATEMENT_BYTES, TOPICS } from "../share";
 import { backupKeys } from "./code";
-import { BACKUP_CHANNEL, newestPointer, openPointer, POINTER_BYTES, pointerStatement, sealPointer } from "./pointer";
+import { newestPointer, openPointer, POINTER_BYTES, pointerStatement, sealPointer } from "./pointer";
 
 const NOW = Date.UTC(2026, 8, 17, 9, 30);
 const DAY = 24 * 60 * 60_000;
@@ -72,8 +72,15 @@ describe("the pointer statement", () => {
     expect(newestPointer(keys.key, [noise, newer, good])).not.toBeNull();
   });
 
-  it("has a channel of its own, so it never replaces the sharing statement", async () => {
+  it("puts each backup code on its own channel, so no pointer ever replaces another", async () => {
     const { SHARING_CHANNEL } = await import("../share");
-    expect(hex(BACKUP_CHANNEL)).not.toBe(hex(SHARING_CHANNEL));
+    // The store replaces a statement per account and channel (P9), and one account holds both this
+    // vault and its duress decoy. On a shared channel a decoy's backup would evict the real pointer,
+    // leaving the real backup on Bulletin with nothing naming it.
+    expect(hex(keys.channel)).not.toBe(hex(other.channel));
+    expect(hex(keys.channel)).not.toBe(hex(SHARING_CHANNEL));
+    // Never reused from the parts that open a backup.
+    expect(hex(keys.channel)).not.toBe(hex(keys.key));
+    expect(hex(keys.channel)).not.toBe(hex(keys.topic));
   });
 });

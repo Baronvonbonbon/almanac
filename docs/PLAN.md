@@ -408,7 +408,17 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
 Not decidable by measurement alone.
 
 - **Decoy vault and backups.** Should the decoy also back up on the same schedule, so upload history
-  cannot reveal which vault is in use? See THREAT-MODEL R3.
+  cannot reveal which vault is in use? See THREAT-MODEL R3. The blocker is no longer correctness —
+  each backup code now has its own statement channel, so a decoy's pointer no longer replaces the
+  real vault's (2026-09-17) — but capacity: doing this needs a third statement on one account, and
+  P9 has not settled how many an account holds (DESIGN §8, B4).
+- **The sharing statement has the same shape as the backup pointer had.** The outbox publishes on one
+  fixed `SHARING_CHANNEL`, and the store replaces per account and channel — so a share created inside
+  the decoy would replace the real vault's outbox statement and silently stop every live share. The
+  backup pointer's fix does not transfer: a share's keys are per share, not per vault, so there is no
+  per-vault secret to derive a channel from, and a channel salt kept in each vault spends another
+  statement against unsettled capacity (DESIGN §8, B4). Nothing does this on its own — a decoy starts
+  with no shares (sharing/records.ts) — but a decoy that is actually used could.
 - **Quantum.** Shares use X25519 sealed boxes. If ciphertext outlives Bulletin's retention, a future
   quantum adversary could open it. `product-sdk-crypto` declares ML-KEM types but has not implemented
   them. Revisit before Phase 5 ships.
