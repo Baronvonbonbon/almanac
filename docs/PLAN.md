@@ -185,8 +185,8 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
       settings with the look, the mode toggles and the usual lengths
 - [x] Web tryout mode, with the same look picker, and example months on request
 - [x] Hearth, Moonpaper and Pebble, each light and dark, following the host theme; their fonts
-      bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and **486.5 KiB of
-      code of 512** as of 2026-09-17, after Phase 4 and Phase 5's Bulletin rails. 25.5 KiB of headroom
+      bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and **487.3 KiB of
+      code of 512** as of 2026-09-17, after Phase 4 and Phase 5's Bulletin rails. 24.7 KiB of headroom
       left, so the next thing that wants a library needs a reason: the Bulletin path deliberately
       carries a 32-byte content hash rather than a CID string so that multiformats never entered the
       bundle
@@ -353,8 +353,13 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
         (`readOnlineOk`), so the plumbing cannot run ahead of the notice — the gate backups have at
         [DESIGN §8](DESIGN.md#backups), R7. Tests pin the two guarantees §9 rests on: an opening's key
         is never the share's, and one opening's key opens that upload and no other
-  - [ ] The notice itself, once, before a patient's first upload. Until it ships nothing is ever
-        uploaded, since agreeing is the only thing that sets the gate
+  - [x] The notice itself (2026-09-17), in Privacy → Sharing rather than interrupting an *Allow*: a
+        provider is waiting at that moment, and backups set the precedent of keeping the notice inside
+        the flow that owns the subject (§8's `online` step). It says what a copy online does, that
+        stopping cannot take one back, and that each is locked separately so stopping always withholds
+        the next. Agreeing remains the only thing that sets the gate, so nothing can have been
+        uploaded before someone read it. Offered only where there is somewhere to put one, so the web
+        tryout never shows it
 - [ ] Provider registration and licence ([DESIGN §9](DESIGN.md#provider-registration-and-licence),
       decided 2026-09-16). An Approver role the developer holds and a board could take over; credential
       evidence kept as a hash; a free tier of one seat for an approved clinic and a paid tier per clinic

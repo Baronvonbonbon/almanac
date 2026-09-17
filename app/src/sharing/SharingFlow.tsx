@@ -7,13 +7,13 @@ import type { CycleData } from "../shell/useCycle";
 import { Row } from "../ui/Row";
 import type { Vault } from "../vault";
 import { sendSharing } from "./outbox";
-import { isLive, openUntil, stopShare, type ShareRecord } from "./records";
+import { isLive, openUntil, setOnlineOk, stopShare, type ShareRecord } from "./records";
 import { categoriesText, rangeText } from "./SelectionView";
 import { ShareFlow, spaced } from "./ShareFlow";
 import "../protect/protect.css";
 import "./sharing.css";
 
-type View = { at: "list" } | { at: "new" } | { at: "one" | "stop"; id: string };
+type View = { at: "list" } | { at: "new" } | { at: "online" } | { at: "one" | "stop"; id: string };
 
 /**
  * Privacy's Sharing (docs/DESIGN.md §9): what almanac can promise, a new share with a provider, and the
@@ -54,6 +54,19 @@ export function SharingFlow({
       />
     );
 
+  if (view.at === "online")
+    return (
+      <OnlineNotice
+        vault={vault}
+        onBack={toList}
+        onAgreed={() => {
+          onChanged();
+          onNotice(t("sharing.onlineDone"));
+          toList();
+        }}
+      />
+    );
+
   const record = view.at === "list" ? undefined : shares.find((r) => r.id === view.id);
   if (view.at === "one" && record) return <OneShare record={record} now={now} onBack={toList} onStop={() => setView({ at: "stop", id: record.id })} />;
   if (view.at === "stop" && record)
@@ -84,8 +97,60 @@ export function SharingFlow({
           {t("sharing.start")}
         </button>
       </div>
+      {/* Not offered where there is nowhere to put one — the web tryout has no storage (DESIGN §9). */}
+      {host.blobs && (
+        <section className="share-group" aria-labelledby="share-online">
+          <h2 id="share-online">{t("sharing.online")}</h2>
+          <p className="flow-note">{data.privacy.onlineOk ? t("sharing.onlineOn", { date: dateOf(data.privacy.onlineOk) }) : t("sharing.onlineNote")}</p>
+          {!data.privacy.onlineOk && (
+            <div className="flow-actions">
+              <button type="button" className="button secondary" onClick={() => setView({ at: "online" })}>
+                {t("sharing.online")}
+              </button>
+            </div>
+          )}
+        </section>
+      )}
       <ShareList id="share-now" title={t("sharing.now")} records={shares.filter((r) => isLive(r, now))} now={now} onOpen={open} />
       <ShareList id="share-stopped" title={t("sharing.stopped")} records={shares.filter((r) => !isLive(r, now))} now={now} onOpen={open} />
+    </section>
+  );
+}
+
+/**
+ * Before anything a patient shares ever goes on Bulletin (docs/DESIGN.md §9): what it does, what
+ * stopping cannot undo, and how long it lasts. Shown once. Agreeing is the only thing that sets the
+ * gate, so until someone has read this and said yes, no opening ever uploads anything.
+ */
+function OnlineNotice({ vault, onBack, onAgreed }: { vault: Vault; onBack(): void; onAgreed(): void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function agree() {
+    setBusy(true);
+    setError(null);
+    try {
+      await setOnlineOk(vault, Date.now());
+      onAgreed();
+    } catch (e) {
+      setError(message(e));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="confirm">
+      <Heading>{t("sharing.onlineAbout")}</Heading>
+      <p>{t("sharing.onlineNotice")}</p>
+      {error && <p role="alert">{error}</p>}
+      <div className="flow-actions">
+        <button type="button" className="button" disabled={busy} onClick={() => void agree()}>
+          {busy ? t("privacy.working") : t("sharing.onlineAgree")}
+        </button>
+        <button type="button" className="button secondary" disabled={busy} onClick={onBack}>
+          {t("sharing.onlineNotNow")}
+        </button>
+      </div>
     </section>
   );
 }

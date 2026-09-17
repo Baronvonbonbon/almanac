@@ -312,6 +312,16 @@ export const en = {
     about: "Share what you choose with a doctor, midwife or clinic, at a visit. They use the almanac provider app.",
     promise: "They can't open it without your OK. When you stop sharing, they get nothing new and their app deletes its copy. Anything they saw, they could have written down or photographed.",
     start: "Share with a provider",
+    online: "Send what's new after a visit",
+    onlineNote:
+      "When a provider asks to see your share again, almanac can send what you've logged since the visit. Until you turn this on, they see only what you showed them at the visit.",
+    onlineAbout: "Before almanac sends anything",
+    onlineNotice:
+      "A copy goes online, locked so only that provider can open it — nobody else, and not us. It can't be taken back: stopping a share stops anything new, but a copy already sent stays until it lapses, about a fortnight later. Each one is locked separately, so stopping always withholds the next.",
+    onlineAgree: "Send what's new",
+    onlineNotNow: "Not now",
+    onlineOn: "On since {date}.",
+    onlineDone: "almanac will send what's new when you allow an opening",
     now: "Sharing now",
     stopped: "Stopped",
     rowEnds: "Ends {date}",

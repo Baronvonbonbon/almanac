@@ -5,7 +5,7 @@ import { almanacPair, newKeyPair, newShare, pairingCode, readPairingCode } from 
 import { demoPairing } from "../share/testing";
 import { Vault, type KdfParams } from "../vault";
 import { shareKeys } from "./keys";
-import { addShare, answerRequests, isLive, keptShares, openUntil, pruneShares, readShares, shareRecord, stopShare, type ShareChoice } from "./records";
+import { addShare, answerRequests, isLive, keptShares, openUntil, pruneShares, readOnlineOk, readShares, setOnlineOk, shareRecord, stopShare, type ShareChoice } from "./records";
 
 const FAST: KdfParams = { N: 2 ** 10, r: 8, p: 1 };
 const NOW = Date.UTC(2026, 8, 14, 9, 30);
@@ -22,6 +22,17 @@ async function made() {
   await addShare(vault, record);
   return { host, vault, share, pairing, record };
 }
+
+describe("keeping a copy online", () => {
+  it("is off until someone agrees, and stays on once they have", async () => {
+    const host = memoryHost("online");
+    const vault = await Vault.create(host, FAST);
+    // Nothing uploads while this is null: it is the only gate on it (docs/DESIGN.md §9).
+    expect(await readOnlineOk(vault)).toBeNull();
+    await setOnlineOk(vault, 1_700_000_000_000);
+    expect(await readOnlineOk(vault)).toBe(1_700_000_000_000);
+  });
+});
 
 describe("shares in the vault", () => {
   it("keep what almanac needs to answer the provider app, and nothing it doesn't", async () => {
