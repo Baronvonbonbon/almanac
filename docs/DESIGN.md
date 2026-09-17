@@ -502,6 +502,15 @@ an opening     the provider app makes a key E for each request; the answer carri
   patient again, rather than quietly showing something older than what was allowed. *Found 2026-09-17
   writing the round-trip test, which had been drafted expecting the opposite.*
 
+  A second consequence reaches the patient's own screen. Sharing's standing promise — *stop, and they
+  get nothing new and their app deletes its copy* — was written when the payload lived only on the
+  provider's device. It stays exactly true with uploads off, which is every share until someone
+  agrees. Once a copy has gone it understates what remains: they need not have written anything down,
+  because the object itself is still there. So the Sharing screen adds what stopping cannot reach, and
+  so does *Stop sharing* — the latter only for a share that actually has one out there, rather than
+  wherever the setting happens to be on. THREAT-MODEL R10's "R2 sharpened", in the words a patient
+  reads (2026-09-17).
+
   Three things follow, decided with it:
   - **The visit stays offline.** The payload at the visit travels by codes and touches no network, so
     a share that is never reopened publishes nothing at all. Only a later opening — one the patient

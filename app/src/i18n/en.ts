@@ -311,6 +311,8 @@ export const en = {
     title: "Sharing",
     about: "Share what you choose with a doctor, midwife or clinic, at a visit. They use the almanac provider app.",
     promise: "They can't open it without your OK. When you stop sharing, they get nothing new and their app deletes its copy. Anything they saw, they could have written down or photographed.",
+    promiseOnline:
+      "You're sending what's new after visits. Each copy sent stays online until it lapses, about a fortnight. Stopping withholds the next one, but can't take back one already sent.",
     start: "Share with a provider",
     online: "Send what's new after a visit",
     onlineNote:
@@ -418,6 +420,8 @@ export const en = {
     stop: {
       title: "Stop sharing with {name}?",
       body: "They won't be able to open it again, and almanac tells their app to delete its copy. It deletes it by {date} anyway, when this share would have ended.",
+      bodyOnline:
+        "You've sent them what's new at least once. That copy stays online until it lapses, about a fortnight after it went, and stopping can't reach it — it only withholds the next.",
       openNow: "It's open on their screen until {time}, and stays open until then.",
       confirm: "Stop sharing",
       keep: "Keep sharing",

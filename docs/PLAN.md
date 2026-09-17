@@ -185,8 +185,8 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
       settings with the look, the mode toggles and the usual lengths
 - [x] Web tryout mode, with the same look picker, and example months on request
 - [x] Hearth, Moonpaper and Pebble, each light and dark, following the host theme; their fonts
-      bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and **487.3 KiB of
-      code of 512** as of 2026-09-17, after Phase 4 and Phase 5's Bulletin rails. 24.7 KiB of headroom
+      bundled, within a 400 KiB font budget separate from the code's — 242 KiB, and **487.6 KiB of
+      code of 512** as of 2026-09-17, after Phase 4 and Phase 5's Bulletin rails. 24.4 KiB of headroom
       left, so the next thing that wants a library needs a reason: the Bulletin path deliberately
       carries a 32-byte content hash rather than a CID string so that multiformats never entered the
       bundle

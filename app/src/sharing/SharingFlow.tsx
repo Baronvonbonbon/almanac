@@ -92,6 +92,8 @@ export function SharingFlow({
       <Heading>{t("sharing.title")}</Heading>
       <p>{t("sharing.about")}</p>
       <p className="share-promise">{t("sharing.promise")}</p>
+      {/* What stopping cannot do once a copy is public — R2 sharpened by R10 (DESIGN §9). */}
+      {data.privacy.onlineOk !== null && <p className="share-promise">{t("sharing.promiseOnline")}</p>}
       <div className="flow-actions">
         <button type="button" className="button" onClick={() => setView({ at: "new" })}>
           {t("sharing.start")}
@@ -262,6 +264,8 @@ function StopSharing({
     <section className="confirm">
       <Heading>{t("sharing.stop.title", { name: r.provider.name })}</Heading>
       <p>{t("sharing.stop.body", { date: dateOf(r.ends) })}</p>
+      {/* Only where this share actually has one out there, rather than wherever the setting is on. */}
+      {r.openings.some((o) => o.cid) && <p>{t("sharing.stop.bodyOnline")}</p>}
       {open && <p>{t("sharing.stop.openNow", { time: timeOf(open) })}</p>}
       {error && <p role="alert">{error}</p>}
       <div className="flow-actions">
