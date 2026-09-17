@@ -290,7 +290,13 @@ stays the gate. Nothing here may make recovery depend on an account or a device 
       uploads before it is set, the schedule included** (R7)
 
 **Gate**
-- [ ] Reinstall → restore from the backup code alone, on a new account
+- [ ] Reinstall → restore from the backup code alone, on a new account. **Half of it ran 2026-09-17:**
+      restore from Bulletin works **on the same device** — the code alone gave `KB` and `TB`, the
+      newest pointer was found on it, the blob fetched through the host and the snapshot opened. That
+      proves the path end to end, and it is not what this gate is for: the same device is the same
+      account and the same host storage, so nothing yet shows a phone that never held the writer's
+      keys finding the pointer (B7), or a restore surviving an account reset (R8). Still to run on a
+      second phone, or after a reset
 - [ ] Backup timing and size do not depend on how much was logged
 - [ ] A backup that cannot be paid for fails without moving the pointer, so the previous backup still
       restores

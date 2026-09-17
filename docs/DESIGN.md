@@ -349,7 +349,13 @@ backup that does not expire.*
   CID → unwrap DK → decrypt. The backup code does not depend on the Polkadot account, so this works
   after an account reset. *P7, 2026-09-14 (Android): the fetch works through the app itself, but
   only for BLAKE2b-256 CIDs — the SDK's default, which almanac keeps for everything it uploads. The
-  host did not find a SHA-256 upload that the gateway served.*
+  host did not find a SHA-256 upload that the gateway served.* *Run 2026-09-17 (Android): the whole
+  path works **on the same device** — the code alone gave KB and TB, the newest pointer was found on
+  TB, the blob fetched through the host and the snapshot opened. Note what that does and does not
+  show: the same device is the same account and the same host storage, so it is evidence for the
+  mechanism and none at all for the sentence above it. Whether a restore survives an account reset
+  (R8), or reaches a phone that never held the writer's keys (B7), is still unmeasured — PLAN's
+  Phase 4 gate stays open on exactly that.*
 - **Fallback:** the same backup, copied as text — to paste into a note, an email to yourself, or a
   password manager — and restored with the same backup code, by pasting it or by choosing a file
   that holds it. *Corrected 2026-09-14 (P4, Android): no file can leave the app — a download, sharing
