@@ -22,7 +22,13 @@ const FIXED = HEADER + WRAPPED_KEY_BYTES + SEAL_OVERHEAD + 4;
 
 export const BUCKETS = [16, 64, 256, 1024].map((k) => k * 1024);
 
-export type BackupProblem = "format" | "newer" | "wrong-code" | "too-large";
+/**
+ * The last three are Bulletin's, not the format's (DESIGN §8): nowhere to put a backup, the host
+ * refusing to store one, and no backup found for a code — which covers both "none was ever made" and
+ * "the one it points at has expired", because from the outside those look the same and neither is
+ * worth telling apart in front of someone who has lost their phone.
+ */
+export type BackupProblem = "format" | "newer" | "wrong-code" | "too-large" | "no-storage" | "refused" | "not-found";
 
 export class BackupError extends Error {
   constructor(

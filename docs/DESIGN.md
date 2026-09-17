@@ -354,6 +354,23 @@ backup that does not expire.*
 - **Status line:** *Backed up 3 days ago.* If retention is about two weeks (P7): *Backups stay
   available while you open almanac at least once a week.*
 
+#### What Bulletin backups assume — to validate before a production launch
+
+*Written 2026-09-17, building Phase 4 on conservative assumptions rather than waiting for every
+measurement. Each one is safe if it turns out to be wrong — the copied backup keeps working, and
+nothing here is the recovery path — but each must be settled before almanac is offered to anyone who
+is not testing it.*
+
+| # | Assumed | Resting on | To validate before launch |
+|---|---|---|---|
+| **B1** | A Bulletin backup **expires**, in about a fortnight. It is a convenience layer, never the only backup, and the copied backup stays required | P7, still running: measured retention ~2 weeks against Parity's docs saying content persists | Three full weeks of P7. If retention is shorter than the 5-day refresh, the interval shrinks or the feature does not ship |
+| **B2** | One upload may be up to **1 MiB**, charged at exactly its own size, as one transaction | P6c, 2026-09-17, all four buckets | Re-run P6c under **almanac's own product label**. Today's numbers are the probe's — see B5 |
+| **B3** | A backup may **fail for want of quota**, so it fails visibly and never moves the pointer: the previous backup still restores | P6b/P6c: 10 transactions and 4 MiB a claim, ~14 days, on a slot account no Product API names | What actually happens when the quota runs out mid-backup. Deliberately unmeasured: a spent claim blocks real work for a fortnight |
+| **B4** | An account holds **two statements** — the sharing outbox and the backup pointer | P9, unsettled: three runs implied two, four, and more | Settle capacity. If an account holds only one, the pointer and the outbox cannot coexist and the pointer needs another home (PLAN, open questions) |
+| **B5** | Bulletin behaves for almanac as it does for the probe | **It has not been measured for almanac at all.** Storage, product accounts and allowances are keyed by the product id, and every upload measurement so far is `almanacprobe`'s | Re-run P6b and P6c under `almanacapp`. This is the weakest assumption here |
+| **B6** | The host's lookup finds **BLAKE2b-256 only**, so almanac uploads nothing else and reads only through the app | P7: a SHA-256 blob never came back through the app, though the gateway served it | Nothing further, unless the host's lookup changes |
+| **B7** | A second phone can **find a statement it did not write**, which is what restore rests on | P9b/P9c, 2026-09-17: phone B found phone A's statement by topic | Whether the two phones were on different **accounts** — P9c did not record it, and R1 turns on it |
+
 ## 9. Sharing
 
 Once someone has seen your data, no technology can make them unsee it. So in almanac:

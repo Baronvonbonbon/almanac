@@ -24,6 +24,21 @@ export interface StatementPort {
   listen(topics: Uint8Array[], heard: (data: Uint8Array) => void): () => void;
 }
 
+/**
+ * Bulletin, as almanac uses it for backups (docs/DESIGN.md §8): put bytes, get them back by their
+ * content hash. Absent where there is nowhere to put them — the web tryout.
+ *
+ * The hash is the 32 bytes a BLAKE2b-256 CID carries, never a CID string. The host's lookup takes the
+ * digest alone (P7), and almanac only ever reads through the host, so nothing here builds or parses a
+ * CID — which also keeps a multiformats library out of a bundle with 63 KiB of room left.
+ */
+export interface Blobs {
+  /** Stores bytes and returns their 32-byte content hash. Throws when the host will not store them. */
+  put(bytes: Uint8Array): Promise<Uint8Array>;
+  /** The bytes for a content hash, or `null` when they cannot be found in time. */
+  get(hash: Uint8Array): Promise<Uint8Array | null>;
+}
+
 export interface Host {
   readonly kind: "polkadot" | "memory";
   readonly storage: Storage;
@@ -36,4 +51,6 @@ export interface Host {
   subscribeVariant?(callback: (variant: "light" | "dark") => void): () => void;
   /** Absent where there is no statement store: the web tryout. */
   readonly statements?: StatementPort;
+  /** Absent where backups cannot be uploaded: the web tryout. */
+  readonly blobs?: Blobs;
 }

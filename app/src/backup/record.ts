@@ -12,7 +12,22 @@ export interface BackupRecord {
   code: string;
   checked: boolean;
   copiedAt?: number;
+  /** The newest backup on Bulletin, if there is one: its content hash, and when it was made. */
+  bulletin?: { at: number; hash: string };
 }
+
+/** DESIGN §8: on open, when the last Bulletin backup is at least this old — and never on a log. */
+export const BULLETIN_EVERY_MS = 5 * 86_400_000;
+
+/**
+ * Whether to put a backup on Bulletin now.
+ *
+ * Only once the code has been **checked**. Before that nobody has written it down, and a backup
+ * nobody can open is worse than no backup: it is a blob on a public network that will outlive its
+ * purpose (R7) while helping no one. The copied backup has the same rule for the same reason.
+ */
+export const bulletinDue = (record: BackupRecord | null, now: number): boolean =>
+  !!record?.checked && (record.bulletin === undefined || now - record.bulletin.at >= BULLETIN_EVERY_MS);
 
 const BACKUP = "backup";
 

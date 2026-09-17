@@ -238,6 +238,12 @@ whole, each as one transaction under one content hash, charged at exactly its ow
 on P7 (retention) and P9 (statement capacity), which decide how often a backup refreshes and whether
 the pointer statement can live long enough to be worth writing.
 
+**Built on assumptions, and they are written down.** [DESIGN §8's table **B1–B7**](DESIGN.md#what-bulletin-backups-assume--to-validate-before-a-production-launch)
+lists every one, what it rests on, and what must be measured before this is offered to anyone who is
+not testing it. Each is safe if wrong — the copied backup keeps working — but **B5 is the weakest**:
+every Bulletin measurement so far belongs to the probe's product identity, not almanac's. None of
+these are optional before a production launch.
+
 **What this is, and what it is not.** A Bulletin backup is a convenience layer over the copied
 backup, not the recovery path. Measured retention is about two weeks (P7), so it expires long before
 the failure it exists for — a phone lost and replaced months later. The copied backup stays the only
@@ -245,30 +251,37 @@ backup that does not expire (DESIGN §8), and *restore from the backup code alon
 stays the gate. Nothing here may make recovery depend on an account or a device (R8).
 
 **Produces**
-- [ ] `app/src/backup/bulletin.ts` — upload a sealed backup through the host's own path,
+- [x] `platform/` — a `Blobs` port beside `statements`, absent in the tryout the same way (2026-09-17).
+      It carries the **32-byte content hash, never a CID string**: the host's lookup takes the digest
+      alone (P7) and almanac only ever reads through the host, which keeps a multiformats library out
+      of a bundle with 38 KiB of room left
+- [x] `app/src/backup/bulletin.ts` — upload a sealed backup through the host's own path,
       `getPreimageManager().submit()` (P6b). Never `cloudStorage.upload`: it signs with the product
-      account, which holds no authorization, and is refused `Invalid: Payment` (P6)
-- [ ] The pointer — a statement on topic `TB` from `backupKeys().topic`, derived since Phase 3 and
-      still unused, on channel `H("almanac/backup")`, holding the CID and the time sealed under a key
-      from `KB`. Last-write-wins, so the newest pointer is the backup. Well under 512 bytes, at the
-      longest TTL P9 allows, and one of the two statements an account plans for (the other is the
-      sharing outbox)
-- [ ] Padding to the smallest of 16 KiB, 64 KiB, 256 KiB and 1 MiB that fits — all four proved on
-      2026-09-17 (P6c). A backup that outgrows 1 MiB falls back to the copied backup rather than
-      failing silently, and 1 MiB is a deliberate choice rather than a free one: it took 41 s where
-      16 KiB took 6.7 s, on a phone the person is waiting at
-- [ ] Schedule: on open, when the last backup is at least 5 days old, plus *Back up now*. Never on a
-      log, so neither timing nor size says how much was logged
-- [ ] Restore: backup code → `KB` and `TB` → newest pointer on `TB` → fetch the CID **through the
-      app** (BLAKE2b-256 only — the host's lookup finds nothing else, P7) → unwrap `BK` → decrypt.
-      No account, no device key, nothing but the code
-- [ ] The one-time notice before the first upload (DESIGN §8, R7): what goes to Bulletin, that nobody
-      can read it without the code, and that the copy may outlive the backup
-- [ ] Status wording: *Backed up 3 days ago*, and what P7's retention number means — *Backups stay
-      available while you open almanac at least once a week*
-- [ ] Quota failure is visible, not silent. Each upload spends a transaction and its bytes from the
-      slot account's claim (10 transactions / 4 MiB, expiring ~14 days, P6b). When there is not
-      enough left, almanac says so and leaves the copied backup's status untouched
+      account, which holds no authorization, and is refused `Invalid: Payment` (P6). *Built 2026-09-17*
+- [x] The pointer (`backup/pointer.ts`) — a statement on topic `TB` from `backupKeys().topic`, derived
+      since Phase 3 and unused until now, on channel `H("almanac/v1/backup")`, holding the content hash
+      and the time sealed under a key from `KB`. Last-write-wins, so the newest pointer is the backup.
+      Built from the *same* `packSlots`/`topicsFor` as the sharing statement, so it is indistinguishable
+      from one: 512 bytes, four topics, random filler. A statement that announced itself as a backup
+      pointer would say that this account keeps backups, and how often
+- [x] Padding to the smallest of 16 KiB, 64 KiB, 256 KiB and 1 MiB that fits — all four proved on
+      2026-09-17 (P6c). A backup that outgrows 1 MiB is refused rather than half-stored, and 1 MiB is a
+      deliberate choice rather than a free one: it took 41 s where 16 KiB took 6.7 s, on a phone the
+      person is waiting at
+- [x] Restore by the backup code alone: `KB` and `TB` → newest pointer on `TB` → fetch **through the
+      app** (BLAKE2b-256 only, P7) → unwrap `BK` → decrypt. No account, no device key, nothing but the
+      code. Tested across two hosts with separate storage and accounts, which P9b/P9c measured for real
+      on the same day
+- [x] A failed upload changes nothing: **the pointer is written last**, so a refusal — which is also
+      what a spent quota looks like from inside the app (B3) — leaves the previous backup pointed at
+      and restorable. Tested
+- [x] The 5-day rule (`bulletinDue`), and only once the code has been **checked**: a backup nobody has
+      written the code down for is a blob on a public network that will outlive its purpose (R7) while
+      helping no one
+- [ ] **The screens.** None of the above is reachable yet: *Back up now*, running it on open when due,
+      the status line (*Backed up 3 days ago*, and what P7's retention means), the one-time notice
+      before the first upload (DESIGN §8, R7), and *Restore from a backup* offering the code alone
+      as well as pasted text
 
 **Gate**
 - [ ] Reinstall → restore from the backup code alone, on a new account
@@ -310,8 +323,9 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
       the patient; and a forgotten PIN started it again. Not yet on a phone, and its name is not
       registered: its first deploy, `npm run deploy -w provider`, registers it, permanently
 - [x] The sharing statement: approvals and stops for every provider, at one fixed size, sent again
-      on every change and kept due until it goes (2026-09-15). On a phone, it waits for the provider
-      app to be published, and for P9b and P9c — delivery between two phones
+      on every change and kept due until it goes (2026-09-15). On a phone, it waits only for the
+      provider app to be published: delivery between two phones was measured on 2026-09-17 (P9b/P9c),
+      phone B finding a statement phone A wrote, on a topic both worked out from a shared code
 - [x] The second check, on both screens (2026-09-16): six digits from the pair key, which exists only
       once each side holds the other's key — so unlike the digits on the provider's code, they catch
       almanac's own codes being substituted on the way back. almanac shows them beside the codes it is

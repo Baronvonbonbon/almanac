@@ -1,6 +1,6 @@
-import { deriveKey } from "@parity/product-sdk-crypto";
+import { blake2b256, deriveKey } from "@parity/product-sdk-crypto";
 import { hex, utf8 } from "../lib/bytes";
-import type { Host, StatementPort, Storage } from "./host";
+import type { Blobs, Host, StatementPort, Storage } from "./host";
 
 /** Storage in a Map. It can also list its contents, which tests use to inspect the raw store. */
 export class MemoryStorage implements Storage {
@@ -76,6 +76,34 @@ export class MemoryStatements {
 
 const matches = (topics: string[], statement: Held) => statement.topics.some((t) => topics.includes(t));
 
+/**
+ * Bulletin in a Map, keyed by content hash as the real one is. It never forgets, which the real one
+ * does after about a fortnight (P7) — so a test that cares about a backup expiring must say so itself.
+ */
+export class MemoryBlobs implements Blobs {
+  private readonly map = new Map<string, Uint8Array>();
+
+  async put(bytes: Uint8Array): Promise<Uint8Array> {
+    const hash = blake2b256(bytes);
+    this.map.set(hex(hash), bytes.slice());
+    return hash;
+  }
+
+  async get(hash: Uint8Array): Promise<Uint8Array | null> {
+    return this.map.get(hex(hash))?.slice() ?? null;
+  }
+
+  /** What it holds, for tests: how many blobs, and how large each is. */
+  sizes(): number[] {
+    return [...this.map.values()].map((b) => b.length);
+  }
+
+  /** Drops everything, standing in for Bulletin letting a backup expire. */
+  forget(): void {
+    this.map.clear();
+  }
+}
+
 export type MemoryHost = Host & { storage: MemoryStorage };
 
 /**
@@ -84,11 +112,12 @@ export type MemoryHost = Host & { storage: MemoryStorage };
  * existing `storage` to model the same phone opened by a different account, and `statements` to give
  * it a statement store — the web tryout has none.
  */
-export function memoryHost(seed = "almanac-dev", storage = new MemoryStorage(), statements?: StatementPort): MemoryHost {
+export function memoryHost(seed = "almanac-dev", storage = new MemoryStorage(), statements?: StatementPort, blobs?: Blobs): MemoryHost {
   return {
     kind: "memory",
     storage,
     ...(statements ? { statements } : {}),
+    ...(blobs ? { blobs } : {}),
     async deriveEntropy(input) {
       return deriveKey(utf8(seed), "almanac/memory-host", input);
     },

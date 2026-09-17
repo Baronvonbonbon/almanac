@@ -7,5 +7,19 @@ export const codeProblemText = (problem: CodeProblem): string =>
   problem === "character" ? t("restore.codeCharacter") : problem === "length" ? t("restore.codeLength") : t("restore.codeCheck");
 
 /** What went wrong opening a backup, in words. */
-export const backupProblemText = (problem: BackupProblem): string =>
-  problem === "wrong-code" ? t("restore.wrongCode") : problem === "newer" ? t("restore.newer") : t("restore.format");
+export const backupProblemText = (problem: BackupProblem): string => {
+  switch (problem) {
+    case "wrong-code":
+      return t("restore.wrongCode");
+    case "newer":
+      return t("restore.newer");
+    case "no-storage":
+      return t("restore.noStorage");
+    case "refused":
+      return t("restore.refused");
+    case "not-found":
+      return t("restore.notFound");
+    default:
+      return t("restore.format");
+  }
+};
