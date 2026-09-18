@@ -50,7 +50,9 @@ to conceive — only the first is on). No backup code on day one: it is offered 
 been logged, or the first time backups or sharing are turned on, and a gentle reminder stays in the
 Privacy screen until it is saved. *Changed 2026-09-14: the look picker is new, making four screens.
 The backup code moved from after the first week to after three logged days: while Bulletin backups
-are blocked (P6) the copied backup is the only backup, and the devnet has already reset once.*
+are blocked (P6) the copied backup is the only backup, and the devnet has already reset once.
+Bulletin backups have worked since 2026-09-17 (P6b, §8); the copied backup stays the one that does not
+expire, so the timing stands.*
 The last period's start is tapped on a month of days rather than in the phone's own date picker,
 which has not been checked inside the Polkadot app. Nothing is stored until the last screen, apart
 from the look. Below *Continue*, the first screen offers *Restore from a backup* (§8).
@@ -661,8 +663,8 @@ passed between them. The registry signs a statement about a clinic; the clinic s
 code. The patient signs nothing, and an attestation is evidence that a clinic exists, never that it has
 a patient.
 
-**Bulletin rails** — designed, not yet built; unblocked 2026-09-16 by P6b, which found an upload path
-that works (the host's, not the SDK's). The same sealed selection, padded and uploaded, so an updated
+**Bulletin rails** — built 2026-09-17, and off until the patient agrees to the notice below; unblocked
+2026-09-16 by P6b, which found an upload path that works (the host's, not the SDK's). The same sealed selection, padded and uploaded, so an updated
 share can reach the provider away from the visit. Before the first upload almanac says, once: *To let
 your provider see this away from the visit, almanac puts an encrypted copy on a public storage network
 run by many computers. Nobody can read it without your OK, and the copy may stay there after the share

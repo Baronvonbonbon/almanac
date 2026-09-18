@@ -27,9 +27,9 @@ export const DOT_NAME = `${PRODUCT_ID}.dot`;
 export const PROVIDER_ID = "almanacappprovider";
 export const PROVIDER_DOT_NAME = `${PROVIDER_ID}.dot`;
 
-// The device probe (probe/), so the app and the probe can both be live at once. Unregistered as of
-// 2026-09-16 — `whois` says "owner none", available to all at 10 PAS — so its first deploy DOES
-// register it, permanently. A base of 9+ letters is open to any account, which "almanacprobe" is.
+// The device probe (probe/), so the app and the probe can both be live at once. Registered by its
+// first deploy (2026-09-17) and owned by the deploy key (`whois`, 2026-09-18). A base of 9+ letters is
+// open to any account, which "almanacprobe" is.
 export const PROBE_ID = "almanacprobe";
 export const PROBE_DOT_NAME = `${PROBE_ID}.dot`;
 

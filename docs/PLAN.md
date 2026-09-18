@@ -2,15 +2,17 @@
 
 > The tracked plan. A phase closes when the commit that records its evidence lands — the probe
 > report, the passing run, the device recording — not when someone says it is done.
+>
+> Brought up to date with the commits on 2026-09-18.
 
 | Phase | | Status |
 |---|---|---|
-| 0 | Device probe — measure the platform before building on it | 🟡 run on one Android phone ([report](PROBE-REPORT.md)); iOS and two-phone checks wait for the probe's next deploy; P7 continues from a desktop; Bulletin uploads blocked |
-| 1 | Foundations — vault, data model, predictions | 🟡 built and tested; the on-device check waits on publishing |
-| 2 | Core experience — design, logging, calendar, tryout mode | 🟡 built, and walked through in a browser in all three looks; publishing next |
+| 0 | Device probe — measure the platform before building on it | 🟡 Android answered, including delivery between two phones (P9b/P9c) and Bulletin uploads through the host (P6b/P6c) ([report](PROBE-REPORT.md)); iOS, a reinstall, P5, P13 and P14 to go; P7's first 15-day fetch falls on 2026-09-28 |
+| 1 | Foundations — vault, data model, predictions | 🟡 built and tested; the app runs on Android (2026-09-17), but the vault round-trip gate is not recorded as run |
+| 2 | Core experience — design, logging, calendar, tryout mode | 🟡 built and published to `almanacapp.dot`; the first-run checklist and outside testers to go |
 | 3 | Protection — PIN, duress PIN, erase, export file, backup code | 🟡 built, and walked through in a browser; restore on a second phone to go |
-| 4 | Encrypted Bulletin backups | ⬜ |
-| 5 | Sharing — provider share and provider app, visit summary, live share | ⬜ designed ([DESIGN §9](DESIGN.md#provider-shares)) |
+| 4 | Encrypted Bulletin backups | 🟡 built 2026-09-17; restore from the backup code works on the same Android phone; restore on a new account to go |
+| 5 | Sharing — provider share and provider app, visit summary, live share | 🟡 provider shares, the provider app and the Bulletin rails built; the provider registry waits on devnet #10; the two-phone gate to go |
 | 6 | Reminders, insights, health nudges | ⬜ |
 | 7 | Production readiness | ⬜ |
 
@@ -29,11 +31,11 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Decision | Choice |
 |---|---|
 | Name | **almanac** |
-| Labels | One name per bundle, since 2026-09-16: `almanacapp.dot` — the app, registered 2026-09-13. `almanacprobe.dot` — the device probe, **not registered yet; its first deploy registers it** (`whois`, 2026-09-16: owner none, 10 PAS). `almanacappprovider.dot` — the provider app, decided 2026-09-15 and registered since (`whois`, 2026-09-16). `almanac.dot` — production, needs Full personhood, not registered. All three registered names are owned by the deploy key until transferred to the phone account. Registration is permanent. *Changed 2026-09-16:* the probe shared `almanacapp.dot` with the app, and a name serves one bundle at a time, so each deploy replaced the other — which kept P10 blocked whenever the app was live. The cost of the split is that the probe now measures its own product identity (see Phase 0). *Corrected 2026-09-11:* the prototype was `almanac01.dot` until `pad` refused it. `pad` requires Personhood Lite for a base of 6–8 letters with two trailing digits; only a base of 9+ letters (with or without two digits) is open to a NoStatus signer — which `almanacprobe` is. The chain's own v2 check had said "Available to all" — `tools/whois.mjs` now prints `pad`'s rule first |
+| Labels | One name per bundle, since 2026-09-16: `almanacapp.dot` — the app, registered 2026-09-13. `almanacprobe.dot` — the device probe, registered by its first deploy (2026-09-17). `almanacappprovider.dot` — the provider app, decided 2026-09-15. `almanac.dot` — production, needs Full personhood, not registered. `whois`, 2026-09-18: **all three registered names are owned by the deploy key** (`0x8448…a56A`), and stay so until `pad transfer` hands each to the phone account. Registration is permanent. *Changed 2026-09-16:* the probe shared `almanacapp.dot` with the app, and a name serves one bundle at a time, so each deploy replaced the other — which kept P10 blocked whenever the app was live. The cost of the split is that the probe now measures its own product identity (see Phase 0). *Corrected 2026-09-11:* the prototype was `almanac01.dot` until `pad` refused it. `pad` requires Personhood Lite for a base of 6–8 letters with two trailing digits; only a base of 9+ letters (with or without two digits) is open to a NoStatus signer — which `almanacprobe` is. The chain's own v2 check had said "Available to all" — `tools/whois.mjs` now prints `pad`'s rule first |
 | Environment | Products Devnet, which since the 2026-09-08 update runs on Paseo system chains: Asset Hub 1000, People 1004, Bulletin 1010 (`pad` 0.16.1 `environments.json`) |
 | Build standard | Production quality from day one. Devnet is labelled as a preview in the app, because it resets |
 | Contracts | **None** |
-| Stack | React + Vite + TypeScript. `@parity/product-sdk` 0.27, `-host` 0.19.1, `-crypto` 0.1.1, `-local-storage` 0.3.9, `-statement-store` 0.6.9. npm, not pnpm — `pad` has a phantom dependency pnpm refuses (see `broadside/docs/DEPLOY.md`) |
+| Stack | React + Vite + TypeScript. `@parity/product-sdk` 0.27, `-host` 0.19.1, `-crypto` 0.1.1, `-local-storage` 0.3.9, `-statement-store` 0.6.9. *Newer releases exist as of 2026-09-18 — `-host` 0.21.0, `truapi` 0.17.0, adding `pocket` and `renderer` host APIs and no change almanac needs; not adopted, since every measurement here is against 0.19.1 and the bundle has 22.9 KiB of room.* npm, not pnpm — `pad` has a phantom dependency pnpm refuses (see `broadside/docs/DEPLOY.md`) |
 | Crypto | XChaCha20-Poly1305 and HKDF-SHA256 from `@parity/product-sdk-crypto`; scrypt from `@noble/hashes` for PINs |
 | Identity | `deriveEntropy` only. **`getUserId` is never called** — it is a global handle any Product can read. Enforced in CI |
 | Optional modes | Fertility window, trying to conceive, pregnancy — all off by default |
@@ -44,6 +46,7 @@ to a chain**, and nothing in the daily flow needs a signature. See [`DESIGN.md`]
 | Web gateway | Tryout mode: example months on request, nothing saved, a clear "use the Polkadot app" banner. Opened as a fallback when the host can't be used ([DESIGN §2](DESIGN.md#2-surfaces)) |
 | Look | Soft, warm, minimal — in three looks, picked on the first screen and changeable in Settings: Hearth (the default), Moonpaper, Pebble ([DESIGN §4](DESIGN.md#4-look--soft-warm-minimal)) |
 | License · language | GPL-3.0-or-later · English, with every string externalised from day one |
+| Source | Public at [github.com/Baronvonbonbon/almanac](https://github.com/Baronvonbonbon/almanac) since 2026-09-18, `main` the default branch. The deploy and registry keys live in `~/.config/almanac`, never in the repo — the history was checked for keys and account addresses before it went public |
 
 ## Constraints already known
 
@@ -88,11 +91,10 @@ app's own label before it is a claim about the app.
 - [x] `tools/whois.mjs` — read-only DotNS lookup
 - [x] `almanacapp.dot` registered and the probe published, 2026-09-13 — owned by the deploy key until
       it is transferred to the phone account
-- [ ] `almanacprobe.dot` registered and the probe published there (`npm run deploy -w probe`).
-      `whois`, 2026-09-16: owner none, open to any account, 10 PAS — so its first deploy registers it,
-      permanently
-- [ ] `docs/PROBE-REPORT.md` — the answers, with the raw JSON reports committed next to it. Started
-      2026-09-14 with one Android phone
+- [x] `almanacprobe.dot` registered and the probe published there (`npm run deploy -w probe`) —
+      P6c ran under it on 2026-09-17; owned by the deploy key (`whois`, 2026-09-18)
+- [x] `docs/PROBE-REPORT.md` — the answers, with the raw JSON reports committed next to it. Android so
+      far (2026-09-13 – 17); iOS is the Phase 0 gate
 - [x] `tools/retention.mjs` (`npm run retention`) — P7 from a desktop, through the devnet IPFS
       gateway, each block checked against its CID's own hash
 
@@ -148,7 +150,7 @@ prototype deploy, and P7 carried on from a desktop in the meantime.*
 - [x] `src/cycle/` — period detection, predictions, fertile-window estimate
       ([DESIGN §7](DESIGN.md#7-predictions)), with property-based tests
 - [x] `src/i18n/` — every string externalised
-- [x] CI (`.github/workflows/ci.yml`, not yet run on GitHub): typecheck, tests, crypto test vectors
+- [x] CI (`.github/workflows/ci.yml`; first run on GitHub 2026-09-18, green): typecheck, tests, crypto test vectors
       (RFC 5869 and RFC 7914, plus pinned v1 derivations and a sealed v1 record), a `dist/` guard
       against external URLs, the banned words checked over `src/i18n/`, and a `src/` guard against
       `getUserId`. Neither text check can read `dist/`: the SDK there contains `getUserId`, and words
@@ -159,9 +161,10 @@ prototype deploy, and P7 carried on from a desktop in the meantime.*
 
 **Gate**
 - [ ] The vault round-trips on a device through the real host. The start screen does exactly this.
-      The app goes to `almanacapp.dot` (`npm run deploy -w app`), which still replaces the probe
-      bundle published there on 2026-09-13 — so export its reports first, or publish the probe to
-      `almanacprobe.dot` beforehand
+      *2026-09-18:* the app is published to `almanacapp.dot` and ran on Android on 2026-09-17 (Phase 4's
+      same-device restore), which it could not do without a working vault — but the round-trip itself
+      is not recorded, so this stays open until it is. The probe now lives at `almanacprobe.dot`, so
+      the app no longer replaces it
 - [x] `dist/` fits the budget — 350 KiB of 512 KiB, no trimming needed
 - [x] The prediction engine passes fixtures: regular, irregular, PCOS-like, postpartum gap, one
       cycle, no cycles
@@ -192,8 +195,8 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
       carries a 32-byte content hash rather than a CID string so that multiformats never entered the
       bundle
 
-**First run on a phone** — after `npm run deploy -w app`, which replaces the probe bundle still at
-`almanacapp.dot` (the probe's own name is `almanacprobe.dot`)
+**First run on a phone** — the app is at `almanacapp.dot` and has run on Android (2026-09-17). None
+of the steps below was recorded one by one, so each is ticked only when it is
 - [ ] Close the Polkadot app fully, then open almanac, so the new build loads; *Preview* shows in
       the top bar
 - [ ] Onboarding in each look, with its fonts; the look follows the app's light or dark, not the
@@ -235,7 +238,7 @@ bundle; instead the probe goes back on in a later deploy of its own (Phase 0).
 - [x] After erase, no record decrypts with any old key — automated test, including an erase cut
       short right after its first write, with and without a PIN (`vault.test.ts`, 2026-09-14)
 
-## Phase 4 — Encrypted Bulletin backups ⬜
+## Phase 4 — Encrypted Bulletin backups 🟡
 
 **Unblocked 2026-09-17 by P6c**, which stored all four buckets — 16 KiB, 64 KiB, 256 KiB and 1 MiB —
 whole, each as one transaction under one content hash, charged at exactly its own size. Still depends
@@ -258,7 +261,7 @@ stays the gate. Nothing here may make recovery depend on an account or a device 
 - [x] `platform/` — a `Blobs` port beside `statements`, absent in the tryout the same way (2026-09-17).
       It carries the **32-byte content hash, never a CID string**: the host's lookup takes the digest
       alone (P7) and almanac only ever reads through the host, which keeps a multiformats library out
-      of a bundle with 38 KiB of room left
+      of a bundle with little room left (22.9 KiB after Phase 5's rails, 2026-09-17)
 - [x] `app/src/backup/bulletin.ts` — upload a sealed backup through the host's own path,
       `getPreimageManager().submit()` (P6b). Never `cloudStorage.upload`: it signs with the product
       account, which holds no authorization, and is refused `Invalid: Payment` (P6). *Built 2026-09-17*
@@ -304,11 +307,12 @@ stays the gate. Nothing here may make recovery depend on an account or a device 
 - [ ] A pointer written by the decoy vault is indistinguishable from the real one's (open question
       below: whether the decoy backs up at all)
 
-## Phase 5 — Sharing ⬜
+## Phase 5 — Sharing 🟡
 
 Provider shares first ([DESIGN §9](DESIGN.md#provider-shares)), decided 2026-09-14: in person by
 codes now; later openings through the statement store; WebRTC once P13 shows it works; Bulletin
-rails built but switched off until P6. Depends on P9 (delivery between two phones), P12 and P14
+rails built, and off until the patient agrees to the notice. *P6's block was lifted by P6b
+(2026-09-16): uploads go through the host's preimage call.* Depends on P9 (delivery between two phones), P12 and P14
 (reading codes), P13 and P6.
 
 **Produces**
@@ -333,8 +337,8 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
       a stub SDK against almanac's own code. Its code was read off the screen and scanned; almanac's
       six codes were read by a fake camera in about 2 s. The share closed when the first opening
       ended; a request was answered with *Allow*; locking closed the opening; *Stop sharing* deleted
-      the patient; and a forgotten PIN started it again. Not yet on a phone, and its name is not
-      registered: its first deploy, `npm run deploy -w provider`, registers it, permanently
+      the patient; and a forgotten PIN started it again. `almanacappprovider.dot` is registered and
+      owned by the deploy key (`whois`, 2026-09-18). A run on a phone is not recorded here yet
 - [x] The sharing statement: approvals and stops for every provider, at one fixed size, sent again
       on every change and kept due until it goes (2026-09-15). On a phone, it waits only for the
       provider app to be published: delivery between two phones was measured on 2026-09-17 (P9b/P9c),
@@ -345,7 +349,7 @@ rails built but switched off until P6. Depends on P9 (delivery between two phone
       displaying; the provider app shows them after reading and keeps nothing until they are confirmed
 - [x] The provider app's settings say what the registry vouched for — free or licensed, and until when
       — so a clinic can see a lapse coming instead of meeting it at a visit (2026-09-16)
-- [ ] Bulletin rails with the one-time notice. Unblocked 2026-09-16 (P6b): upload through the host's
+- [x] Bulletin rails with the one-time notice — both halves built 2026-09-17. Unblocked 2026-09-16 (P6b): upload through the host's
       preimage call, not `cloudStorage.upload`. A fresh `KS` for each upload, the CID in the approval
       that opens it (three openings a statement, not four), and the pairing still in person only —
       [DESIGN §9](DESIGN.md#provider-shares), decided 2026-09-16. **Its measurement gate is
